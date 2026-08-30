@@ -69,7 +69,9 @@ function citationItems(data: unknown): StreamCitation[] {
     const values = Array.isArray(data)
         ? data
         : data && typeof data === 'object'
-            ? (data as { citations?: unknown; items?: unknown }).citations ?? (data as { items?: unknown }).items
+            ? (data as { citations?: unknown; items?: unknown; delta?: {sources?: unknown} }).citations
+              ?? (data as { items?: unknown }).items
+              ?? (data as { delta?: {sources?: unknown} }).delta?.sources
             : undefined
     return Array.isArray(values)
         ? values.filter((value): value is StreamCitation => Boolean(value) && typeof value === 'object')
@@ -96,14 +98,27 @@ function numberValue(data: unknown, key: string): number | undefined {
 
 type StreamTerminalEvent = 'done' | 'error'
 
-function dispatchSseEvent(block: string, handlers: StreamHandlers): StreamTerminalEvent | undefined {
+function dispatchSseEvent(block: string, handlers: StreamHandlers, state: {standard: boolean}): StreamTerminalEvent | undefined {
     const sseEvent = parseSseEvent(block)
     if (!sseEvent) return
     const data = readJson(sseEvent.data)
-    if (sseEvent.event === 'citation' || sseEvent.event === 'citations') {
+    if (sseEvent.event === 'citation' || sseEvent.event === 'citations' || sseEvent.event === 'sources') {
         handlers.onCitations?.(citationItems(data))
     } else if (sseEvent.event === 'chunk') {
-        handlers.onDelta?.(textValue(data, ['delta', 'text', 'content']))
+        if (!state.standard) handlers.onDelta?.(textValue(data, ['delta', 'text', 'content']))
+    } else if (sseEvent.event === 'message') {
+        if (data === '[DONE]') return 'done'
+        const sources = data && typeof data === 'object'
+            ? (data as {delta?: {sources?: unknown}}).delta?.sources
+            : undefined
+        if (Array.isArray(sources)) handlers.onCitations?.(citationItems(sources))
+        const delta = data && typeof data === 'object'
+            ? (data as {choices?: Array<{delta?: {content?: unknown}}>}).choices?.[0]?.delta?.content
+            : undefined
+        if (typeof delta === 'string' && delta) {
+            state.standard = true
+            handlers.onDelta?.(delta)
+        }
     } else if (sseEvent.event === 'done') {
         handlers.onDone?.({
             recordId: numberValue(data, 'recordId'),
@@ -117,13 +132,14 @@ function dispatchSseEvent(block: string, handlers: StreamHandlers): StreamTermin
     if (sseEvent.event === 'done' || sseEvent.event === 'error') return sseEvent.event
 }
 
-export async function streamChat(payload: Record<string, unknown>, handlers: StreamHandlers) {
+export async function streamChat(payload: Record<string, unknown>, handlers: StreamHandlers, signal?: AbortSignal) {
     try {
         const token = typeof localStorage !== 'undefined' ? localStorage.getItem('rag_token') : null
         const res = await fetch(`${API_BASE_URL}/rag/chat`, {
             method: 'POST',
             headers: {'Content-Type': 'application/json', ...(token ? {Authorization: `Bearer ${token}`} : {})},
-            body: JSON.stringify(payload)
+            body: JSON.stringify(payload),
+            signal,
         })
         if (!res.ok || !res.body) {
             let body: unknown
@@ -142,6 +158,8 @@ export async function streamChat(payload: Record<string, unknown>, handlers: Str
         const reader = res.body.getReader()
         const decoder = new TextDecoder()
         let buffer = ''
+        let terminal = false
+        const state = {standard: false}
         try {
             while (true) {
                 const {done, value} = await reader.read()
@@ -150,8 +168,9 @@ export async function streamChat(payload: Record<string, unknown>, handlers: Str
                     const blocks = buffer.split('\n\n')
                     buffer = blocks.pop() || ''
                     for (const block of blocks) {
-                        const terminalEvent = dispatchSseEvent(block, handlers)
+                        const terminalEvent = dispatchSseEvent(block, handlers, state)
                         if (terminalEvent) {
+                            terminal = true
                             try {
                                 await reader.cancel()
                             } catch {
@@ -164,11 +183,13 @@ export async function streamChat(payload: Record<string, unknown>, handlers: Str
                 if (done) break
             }
             buffer += decoder.decode().replace(/\r\n/g, '\n')
-            if (buffer.trim()) dispatchSseEvent(buffer, handlers)
+            if (buffer.trim()) dispatchSseEvent(buffer, handlers, state)
+            if (!terminal) handlers.onError?.(new Error('问答连接已意外关闭'))
         } finally {
             reader.releaseLock()
         }
     } catch (error) {
+        if ((error as { name?: string })?.name === 'AbortError') return
         handlers.onError?.(toApiError(error))
     }
 }

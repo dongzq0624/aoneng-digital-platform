@@ -9,6 +9,10 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
+import org.springframework.http.codec.ServerSentEvent;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
 import java.util.*;
 
@@ -31,7 +35,7 @@ public class RagController {
     }
 
     @PostMapping(value = "/chat", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    public SseEmitter chat(@AuthenticationPrincipal String username, @RequestBody Map<String, Object> req) {
+    public Flux<ServerSentEvent<Object>> chat(@AuthenticationPrincipal String username, @RequestBody Map<String, Object> req) {
         PlatformRepository.KbScope scope = requireChatAccess(username);
         String question = stringValue(req.get("question"));
         if (question.isBlank()) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "问题不能为空");
@@ -49,9 +53,52 @@ public class RagController {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, e.getMessage(), e);
         }
 
-        SseEmitter emitter = new SseEmitter(0L);
-        new Thread(() -> streamAnswer(emitter, scope, turn, question, permittedKbIds), "rag-chat-" + turn.assistantMessageId()).start();
-        return emitter;
+        return reactiveAnswer(scope, turn, question, permittedKbIds);
+    }
+
+    private Flux<ServerSentEvent<Object>> reactiveAnswer(PlatformRepository.KbScope scope, PlatformRepository.ChatTurn turn,
+                                                          String question, List<Long> permittedKbIds) {
+        return Mono.fromCallable(() -> retrieval.retrieve(question, permittedKbIds)).subscribeOn(Schedulers.boundedElastic())
+                .flatMapMany(result -> {
+                    StringBuilder context = new StringBuilder();
+                    Map<String, Map<String, Object>> citations = new LinkedHashMap<>();
+                    List<Long> chunkIds = new ArrayList<>();
+                    for (Map<String, Object> hit : result.hits()) {
+                        Map<String, Object> payload = payload(hit.get("payload"));
+                        String content = text(payload, "content", "text", "snippet");
+                        long docId = number(payload.get("doc_id"), 0L), kbId = number(payload.get("kb_id"), 0L);
+                        Map<String, Object> document = indexedDocument(docId, kbId);
+                        if (content.isBlank() || document == null) continue;
+                        if (isCiteablePdf(document, payload)) {
+                            long pageNo = number(payload.get("page_no"), number(payload.get("pageNo"), 0L));
+                            citations.putIfAbsent(sourceKey(docId, pageNo), citation(hit, payload, content, document));
+                            context.append("[source:").append(docId).append('-').append(pageNo).append("]\n");
+                        }
+                        context.append(content).append('\n');
+                        long chunkId = number(payload.get("chunk_id"), number(hit.get("id"), 0L));
+                        if (chunkId > 0 && !chunkIds.contains(chunkId)) chunkIds.add(chunkId);
+                    }
+                    List<Map<String, Object>> sources = publicCitations(groupCitations(new ArrayList<>(citations.values())));
+                    StringBuilder answer = new StringBuilder();
+                    Flux<ServerSentEvent<Object>> source = Flux.just(event("message", Map.of("choices", List.of(Map.of("index", 0, "delta", Map.of("role", "assistant"))))),
+                            event("sources", sources));
+                    Flux<ServerSentEvent<Object>> model = dash.streamChatFlux(question, context.toString()).doOnNext(answer::append)
+                            .map(delta -> event("message", Map.of("choices", List.of(Map.of("index", 0, "delta", Map.of("content", delta))))));
+                    Mono<ServerSentEvent<Object>> done = Mono.fromCallable(() -> {
+                        String clean = removeSourceMarkers(answer.toString());
+                        long id = repo.completeChatTurn(turn, scope.userId(), question, clean, permittedKbIds, chunkIds,
+                                citedSources(answer.toString(), citations), 0, result.trace());
+                        return event("done", Map.of("recordId", id, "conversationId", turn.conversationId(),
+                                "userMessageId", turn.userMessageId(), "messageId", turn.assistantMessageId()));
+                    }).subscribeOn(Schedulers.boundedElastic());
+                    return source.concatWith(model).concatWith(done).concatWithValues(event("message", "[DONE]"));
+                }).timeout(java.time.Duration.ofSeconds(120))
+                .onErrorResume(error -> Flux.just(event("error", Map.of("message", "问答生成失败，请稍后重试",
+                        "conversationId", turn.conversationId(), "messageId", turn.assistantMessageId()))));
+    }
+
+    private ServerSentEvent<Object> event(String name, Object data) {
+        return ServerSentEvent.builder(data).event(name).build();
     }
 
     @GetMapping("/conversations")

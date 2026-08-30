@@ -5,243 +5,15 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="bbcf13ae-cb9e-43a8-8224-323ad3b04ac0" name="更改" comment="">
-      <change afterPath="$PROJECT_DIR$/.agents/skills/banner-design/SKILL.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/banner-design/references/banner-sizes-and-styles.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/brand/SKILL.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/brand/references/approval-checklist.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/brand/references/asset-organization.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/brand/references/brand-guideline-template.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/brand/references/color-palette-management.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/brand/references/consistency-checklist.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/brand/references/logo-usage-rules.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/brand/references/messaging-framework.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/brand/references/typography-specifications.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/brand/references/update.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/brand/references/visual-identity.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/brand/references/voice-framework.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/brand/scripts/extract-colors.cjs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/brand/scripts/inject-brand-context.cjs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/brand/scripts/sync-brand-to-tokens.cjs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/brand/scripts/tests/test_sync_brand_to_tokens.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/brand/scripts/validate-asset.cjs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/brand/templates/brand-guidelines-starter.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/design-system/SKILL.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/design-system/data/slide-backgrounds.csv" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/design-system/data/slide-charts.csv" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/design-system/data/slide-color-logic.csv" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/design-system/data/slide-copy.csv" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/design-system/data/slide-layout-logic.csv" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/design-system/data/slide-layouts.csv" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/design-system/data/slide-strategies.csv" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/design-system/data/slide-typography.csv" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/design-system/references/component-specs.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/design-system/references/component-tokens.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/design-system/references/primitive-tokens.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/design-system/references/semantic-tokens.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/design-system/references/states-and-variants.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/design-system/references/tailwind-integration.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/design-system/references/token-architecture.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/design-system/scripts/embed-tokens.cjs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/design-system/scripts/fetch-background.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/design-system/scripts/generate-slide.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/design-system/scripts/generate-tokens.cjs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/design-system/scripts/html-token-validator.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/design-system/scripts/search-slides.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/design-system/scripts/slide-token-validator.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/design-system/scripts/slide_search_core.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/design-system/scripts/tests/test_validate_tokens.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/design-system/scripts/validate-tokens.cjs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/design-system/templates/design-tokens-starter.json" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/design/SKILL.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/design/data/cip/deliverables.csv" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/design/data/cip/industries.csv" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/design/data/cip/mockup-contexts.csv" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/design/data/cip/styles.csv" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/design/data/icon/styles.csv" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/design/data/logo/colors.csv" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/design/data/logo/industries.csv" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/design/data/logo/styles.csv" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/design/references/banner-sizes-and-styles.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/design/references/cip-deliverable-guide.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/design/references/cip-design.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/design/references/cip-prompt-engineering.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/design/references/cip-style-guide.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/design/references/design-routing.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/design/references/icon-design.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/design/references/logo-color-psychology.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/design/references/logo-design.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/design/references/logo-prompt-engineering.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/design/references/logo-style-guide.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/design/references/slides-copywriting-formulas.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/design/references/slides-create.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/design/references/slides-html-template.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/design/references/slides-layout-patterns.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/design/references/slides-strategies.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/design/references/slides.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/design/references/social-photos-design.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/design/scripts/cip/core.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/design/scripts/cip/generate.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/design/scripts/cip/render-html.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/design/scripts/cip/search.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/design/scripts/icon/generate.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/design/scripts/logo/core.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/design/scripts/logo/generate.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/design/scripts/logo/search.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/slides/SKILL.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/slides/references/copywriting-formulas.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/slides/references/create.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/slides/references/html-template.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/slides/references/layout-patterns.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/slides/references/slide-strategies.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/ui-styling/LICENSE.txt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/ui-styling/SKILL.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/ui-styling/references/canvas-design-system.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/ui-styling/references/shadcn-accessibility.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/ui-styling/references/shadcn-components.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/ui-styling/references/shadcn-theming.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/ui-styling/references/tailwind-customization.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/ui-styling/references/tailwind-responsive.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/ui-styling/references/tailwind-utilities.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/ui-styling/scripts/requirements.txt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/ui-styling/scripts/shadcn_add.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/ui-styling/scripts/tailwind_config_gen.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/ui-styling/scripts/tests/coverage-ui.json" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/ui-styling/scripts/tests/requirements.txt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/ui-styling/scripts/tests/test_shadcn_add.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/ui-styling/scripts/tests/test_tailwind_config_gen.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/ui-ux-pro-max/SKILL.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/ui-ux-pro-max/data/app-interface.csv" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/ui-ux-pro-max/data/catalog-summary.json" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/ui-ux-pro-max/data/charts.csv" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/ui-ux-pro-max/data/colors.csv" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/ui-ux-pro-max/data/data-provenance.json" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/ui-ux-pro-max/data/google-font-licenses.json" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/ui-ux-pro-max/data/google-fonts.csv" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/ui-ux-pro-max/data/icons.csv" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/ui-ux-pro-max/data/landing.csv" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/ui-ux-pro-max/data/motion.csv" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/ui-ux-pro-max/data/phosphor-icons-upstream.json" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/ui-ux-pro-max/data/products.csv" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/ui-ux-pro-max/data/react-performance.csv" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/ui-ux-pro-max/data/stacks/angular.csv" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/ui-ux-pro-max/data/stacks/astro.csv" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/ui-ux-pro-max/data/stacks/avalonia.csv" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/ui-ux-pro-max/data/stacks/flutter.csv" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/ui-ux-pro-max/data/stacks/html-tailwind.csv" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/ui-ux-pro-max/data/stacks/javafx.csv" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/ui-ux-pro-max/data/stacks/jetpack-compose.csv" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/ui-ux-pro-max/data/stacks/laravel.csv" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/ui-ux-pro-max/data/stacks/nextjs.csv" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/ui-ux-pro-max/data/stacks/nuxt-ui.csv" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/ui-ux-pro-max/data/stacks/nuxtjs.csv" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/ui-ux-pro-max/data/stacks/react-native.csv" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/ui-ux-pro-max/data/stacks/react.csv" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/ui-ux-pro-max/data/stacks/shadcn.csv" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/ui-ux-pro-max/data/stacks/svelte.csv" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/ui-ux-pro-max/data/stacks/swiftui.csv" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/ui-ux-pro-max/data/stacks/threejs.csv" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/ui-ux-pro-max/data/stacks/uno.csv" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/ui-ux-pro-max/data/stacks/uwp.csv" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/ui-ux-pro-max/data/stacks/vue.csv" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/ui-ux-pro-max/data/stacks/winui.csv" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/ui-ux-pro-max/data/stacks/wpf.csv" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/ui-ux-pro-max/data/styles.csv" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/ui-ux-pro-max/data/typography.csv" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/ui-ux-pro-max/data/ui-reasoning.csv" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/ui-ux-pro-max/data/ux-guidelines.csv" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/ui-ux-pro-max/scripts/core.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/ui-ux-pro-max/scripts/design_system.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/ui-ux-pro-max/scripts/reasoning_contract.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/ui-ux-pro-max/scripts/search.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/ui-ux-pro-max/scripts/tests/fixtures/catalogs/google-api.json" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/ui-ux-pro-max/scripts/tests/fixtures/catalogs/google-catalog.json" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/ui-ux-pro-max/scripts/tests/fixtures/catalogs/google-existing.csv" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/ui-ux-pro-max/scripts/tests/fixtures/catalogs/google-metadata.json" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/ui-ux-pro-max/scripts/tests/fixtures/catalogs/google-overrides.json" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/ui-ux-pro-max/scripts/tests/fixtures/catalogs/icons-curated.csv" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/ui-ux-pro-max/scripts/tests/fixtures/catalogs/phosphor-core.json" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/ui-ux-pro-max/scripts/tests/fixtures/catalogs/phosphor-package.json" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/ui-ux-pro-max/scripts/tests/fixtures/catalogs/phosphor-react-exports.json" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/ui-ux-pro-max/scripts/tests/fixtures/catalogs/phosphor-react-package.json" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/ui-ux-pro-max/scripts/tests/fixtures/relevance-baseline.json" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/ui-ux-pro-max/scripts/tests/fixtures/relevance-cases.json" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/ui-ux-pro-max/scripts/tests/fixtures/relevance-thresholds.json" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/ui-ux-pro-max/scripts/tests/test_catalog_refresh.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/ui-ux-pro-max/scripts/tests/test_core.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/ui-ux-pro-max/scripts/tests/test_core_data_quality.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/ui-ux-pro-max/scripts/tests/test_data_contracts.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/ui-ux-pro-max/scripts/tests/test_design_system_mode.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/ui-ux-pro-max/scripts/tests/test_native_desktop_stack_freshness.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/ui-ux-pro-max/scripts/tests/test_relevance_evaluator.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/ui-ux-pro-max/scripts/tests/test_style_taxonomy.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/ui-ux-pro-max/scripts/tests/test_text_layout_resilience.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/ui-ux-pro-max/scripts/tests/test_web_stack_freshness.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.agents/skills/ui-ux-pro-max/scripts/validate_data.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.env" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.env.example" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/claudeCodeTabState.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.vite/deps/_metadata.json" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.vite/deps/package.json" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/CODEX_IMPLEMENTATION_PLAN.md（Codex 实施方案）.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/backend/Dockerfile" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/backend/pom.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/backend/src/main/java/com/example/rag/RagApplication.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/backend/src/main/java/com/example/rag/config/MinioConfig.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/backend/src/main/java/com/example/rag/config/RagModelConfig.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/backend/src/main/java/com/example/rag/config/SecurityConfig.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/backend/src/main/java/com/example/rag/controller/AuditController.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/backend/src/main/java/com/example/rag/controller/AuthController.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/backend/src/main/java/com/example/rag/controller/DashboardController.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/backend/src/main/java/com/example/rag/controller/KnowledgeBaseController.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/backend/src/main/java/com/example/rag/controller/RagController.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/backend/src/main/java/com/example/rag/controller/SystemController.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/backend/src/main/java/com/example/rag/security/JwtAuthenticationFilter.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/backend/src/main/java/com/example/rag/security/JwtUtil.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/backend/src/main/java/com/example/rag/service/ChunkService.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/backend/src/main/java/com/example/rag/service/DashScopeService.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/backend/src/main/java/com/example/rag/service/DepartmentDataInitializer.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/backend/src/main/java/com/example/rag/service/DocParseService.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/backend/src/main/java/com/example/rag/service/PlatformRepository.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/backend/src/main/java/com/example/rag/service/QdrantService.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/backend/src/main/resources/application.yml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/docker-compose.yml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/docs/init.sql" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/frontend/.env.example" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/frontend/Dockerfile" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/frontend/UI_DESIGN_SYSTEM.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/frontend/index.html" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/frontend/nginx.conf" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/frontend/package-lock.json" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/frontend/package.json" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/frontend/src/App.vue" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/frontend/src/api.ts" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/frontend/src/api/auth.ts" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/frontend/src/api/kb.ts" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/frontend/src/api/rag.ts" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/frontend/src/env.d.ts" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/frontend/src/main.ts" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/frontend/src/router.ts" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/frontend/src/styles.scss" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/frontend/src/types.ts" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/frontend/src/utils/sse.ts" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/frontend/src/views/audit/Audit.vue" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/frontend/src/views/chat/Chat.vue" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/frontend/src/views/dashboard/Dashboard.vue" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/frontend/src/views/kb/KnowledgeBaseDetail.vue" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/frontend/src/views/kb/KnowledgeBases.vue" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/frontend/src/views/layout/AppLayout.vue" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/frontend/src/views/login/Login.vue" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/frontend/src/views/profile/Profile.vue" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/frontend/src/views/system/Departments.vue" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/frontend/src/views/system/Menus.vue" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/frontend/src/views/system/Roles.vue" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/frontend/src/views/system/Users.vue" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/frontend/tsconfig.json" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/frontend/vite.config.ts" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/init.sql（数据库建表脚本）.sql" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/RAG 聊天流式输出 — 企业主流架构方案（可推翻现有实现）.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/claudeCodeTabState.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/claudeCodeTabState.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/backend/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/example/rag/controller/RagController.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/src/main/java/com/example/rag/controller/RagController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/example/rag/service/DashScopeService.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/src/main/java/com/example/rag/service/DashScopeService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/utils/sse.ts" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/utils/sse.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/views/chat/Chat.vue" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/views/chat/Chat.vue" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -255,6 +27,9 @@
   <component name="KubernetesApiProvider">{
   &quot;isMigrated&quot;: true
 }</component>
+  <component name="ProblemsViewState">
+    <option name="selectedTabId" value="CurrentFile" />
+  </component>
   <component name="ProjectColorInfo">{
   &quot;associatedIndex&quot;: 4
 }</component>
@@ -268,16 +43,19 @@
     "ModuleVcsDetector.initialDetectionPerformed": "true",
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "RunOnceActivity.git.unshallow": "true",
-    "git-widget-placeholder": "master",
+    "git-widget-placeholder": "main",
     "last_opened_file_path": "D:/aoneng/digital-platform",
     "node.js.detected.package.eslint": "true",
     "node.js.detected.package.tslint": "true",
     "node.js.selected.package.eslint": "(autodetect)",
     "node.js.selected.package.tslint": "(autodetect)",
     "nodejs_package_manager_path": "npm",
+    "project.structure.last.edited": "项目",
+    "project.structure.proportion": "0.15",
+    "project.structure.side.proportion": "0.0",
     "run.code.analysis.last.selected.profile": "pProject Default",
     "settings.editor.selected.configurable": "preferences.pluginManager",
-    "ts.external.directory.path": "D:\\aoneng\\digital-platform\\frontend\\node_modules\\typescript\\lib",
+    "ts.external.directory.path": "C:\\Program Files\\JetBrains\\IntelliJ IDEA 2025.1.1.1\\plugins\\javascript-plugin\\jsLanguageServicesImpl\\external",
     "vue.rearranger.settings.migration": "true"
   }
 }]]></component>
@@ -315,7 +93,7 @@
       <option name="presentableId" value="Default" />
       <updated>1787986183871</updated>
       <workItem from="1787986185023" duration="28639000" />
-      <workItem from="1788062538038" duration="314000" />
+      <workItem from="1788062538038" duration="8112000" />
     </task>
     <servers />
   </component>
