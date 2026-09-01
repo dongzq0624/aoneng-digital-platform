@@ -5,15 +5,195 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="bbcf13ae-cb9e-43a8-8224-323ad3b04ac0" name="更改" comment="">
-      <change afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/RAG 聊天流式输出 — 企业主流架构方案（可推翻现有实现）.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/claudeCodeTabState.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/claudeCodeTabState.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/ARCHITECTURE.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/rag-biz/pom.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/example/rag/audit/controller/AuditController.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/example/rag/audit/dto/AuditLogListResponse.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/example/rag/audit/dto/AuditLogResponse.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/example/rag/audit/service/AuditService.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/example/rag/audit/service/impl/AuditServiceImpl.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/example/rag/auth/controller/AuthController.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/example/rag/auth/dto/LoginRequest.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/example/rag/auth/dto/LoginResponse.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/example/rag/auth/dto/UserSummary.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/example/rag/auth/service/AuthService.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/example/rag/auth/service/impl/AuthServiceImpl.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/example/rag/chat/controller/RagController.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/example/rag/chat/dto/ChatRequest.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/example/rag/chat/dto/CreateConversationRequest.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/example/rag/chat/dto/CreateEvalCaseRequest.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/example/rag/chat/dto/FeedbackRequest.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/example/rag/chat/dto/UpdateConversationTitleRequest.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/example/rag/chat/service/ConversationService.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/example/rag/chat/service/RagChatService.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/example/rag/chat/service/RagEvalService.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/example/rag/chat/service/impl/ConversationServiceImpl.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/example/rag/chat/service/impl/RagChatServiceImpl.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/example/rag/chat/service/impl/RagEvalServiceImpl.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/example/rag/convert/AuditConvert.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/example/rag/convert/KbConvert.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/example/rag/convert/OrgConvert.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/example/rag/dashboard/controller/DashboardController.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/example/rag/dashboard/dto/DashboardSummaryResponse.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/example/rag/dashboard/service/DashboardService.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/example/rag/dashboard/service/impl/DashboardServiceImpl.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/example/rag/doc/controller/KnowledgeBaseController.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/example/rag/doc/dto/AllowedDepartmentsResponse.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/example/rag/doc/dto/CreateKnowledgeBaseRequest.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/example/rag/doc/dto/DeleteResponse.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/example/rag/doc/dto/KnowledgeBaseDocumentResponse.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/example/rag/doc/dto/KnowledgeBaseResponse.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/example/rag/doc/dto/UpdateAllowedDepartmentsRequest.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/example/rag/doc/dto/UpdateKnowledgeBaseRequest.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/example/rag/doc/service/KnowledgeBaseService.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/example/rag/doc/service/impl/KnowledgeBaseServiceImpl.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/example/rag/mapper/AuditLogMapper.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/example/rag/mapper/KbBaseMapper.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/example/rag/mapper/KbChatMessageCitationMapper.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/example/rag/mapper/KbChatMessageMapper.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/example/rag/mapper/KbChunkMapper.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/example/rag/mapper/KbConversationMapper.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/example/rag/mapper/KbDocumentMapper.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/example/rag/mapper/KbQaRecordMapper.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/example/rag/mapper/KbRetrievalEvalCaseMapper.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/example/rag/mapper/SysDeptMapper.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/example/rag/mapper/SysPermissionMapper.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/example/rag/mapper/SysRoleMapper.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/example/rag/mapper/SysUserMapper.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/example/rag/mapper/SysUserRoleMapper.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/example/rag/po/AuditLogPO.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/example/rag/po/KbBasePO.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/example/rag/po/KbChatMessageCitationPO.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/example/rag/po/KbChatMessagePO.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/example/rag/po/KbChunkPO.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/example/rag/po/KbConversationPO.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/example/rag/po/KbDocumentPO.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/example/rag/po/KbQaRecordPO.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/example/rag/po/KbRetrievalEvalCasePO.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/example/rag/po/SysDeptPO.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/example/rag/po/SysPermissionPO.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/example/rag/po/SysRolePO.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/example/rag/po/SysUserPO.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/example/rag/service/ChunkService.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/example/rag/service/DashScopeService.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/example/rag/service/DocParseService.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/example/rag/service/DocumentProcessingService.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/example/rag/service/OrgRecords.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/example/rag/service/PlatformRepository.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/example/rag/service/PlatformService.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/example/rag/service/QdrantService.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/example/rag/service/RagRetrievalService.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/example/rag/service/impl/PlatformServiceImpl.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/example/rag/system/controller/SystemController.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/example/rag/system/dto/CreateDepartmentRequest.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/example/rag/system/dto/CreateMenuRequest.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/example/rag/system/dto/CreateRoleRequest.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/example/rag/system/dto/CreateUserRequest.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/example/rag/system/dto/DepartmentResponse.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/example/rag/system/dto/MenuResponse.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/example/rag/system/dto/RoleMenuResponse.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/example/rag/system/dto/RoleResponse.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/example/rag/system/dto/UpdateDepartmentRequest.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/example/rag/system/dto/UpdateMenuRequest.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/example/rag/system/dto/UpdateRoleMenusRequest.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/example/rag/system/dto/UpdateRoleRequest.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/example/rag/system/dto/UpdateUserRequest.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/example/rag/system/dto/UserMenuResponse.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/example/rag/system/dto/UserResponse.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/example/rag/system/service/SystemService.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/example/rag/system/service/impl/SystemServiceImpl.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/resources/db/migration/V4__seed_platform_defaults.sql" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/resources/mapper/AuditLogMapper.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/resources/mapper/KbBaseMapper.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/resources/mapper/KbChatMessageCitationMapper.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/resources/mapper/KbChatMessageMapper.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/resources/mapper/KbChunkMapper.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/resources/mapper/KbConversationMapper.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/resources/mapper/KbDocumentMapper.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/resources/mapper/KbQaRecordMapper.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/resources/mapper/KbRetrievalEvalCaseMapper.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/resources/mapper/SysDeptMapper.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/resources/mapper/SysPermissionMapper.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/resources/mapper/SysRoleMapper.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/resources/mapper/SysUserMapper.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/resources/mapper/SysUserRoleMapper.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/rag-common/pom.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/rag-common/src/main/java/com/example/rag/common/exception/ApiErrorResponse.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/rag-common/src/main/java/com/example/rag/common/exception/BusinessValidationException.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/rag-common/src/main/java/com/example/rag/common/exception/ForbiddenException.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/rag-common/src/main/java/com/example/rag/common/exception/ResourceNotFoundException.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/rag-common/src/main/java/com/example/rag/common/exception/UnauthorizedException.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/rag-common/src/main/java/com/example/rag/common/result/PageResult.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/rag-common/src/main/java/com/example/rag/common/result/Result.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/rag-common/src/main/java/com/example/rag/common/result/ResultCode.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/rag-framework/pom.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/rag-framework/src/main/java/com/example/rag/framework/advice/ResultEnvelopeAdvice.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/rag-framework/src/main/java/com/example/rag/framework/client/DashScopeChatClient.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/rag-framework/src/main/java/com/example/rag/framework/client/DashScopeEmbeddingClient.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/rag-framework/src/main/java/com/example/rag/framework/client/DashScopeRerankClient.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/rag-framework/src/main/java/com/example/rag/framework/client/HttpDashScopeChatClient.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/rag-framework/src/main/java/com/example/rag/framework/client/HttpDashScopeEmbeddingClient.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/rag-framework/src/main/java/com/example/rag/framework/client/HttpDashScopeRerankClient.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/rag-framework/src/main/java/com/example/rag/framework/client/MinioStorageClient.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/rag-framework/src/main/java/com/example/rag/framework/client/QdrantVectorClient.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/rag-framework/src/main/java/com/example/rag/framework/client/VectorHit.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/rag-framework/src/main/java/com/example/rag/framework/config/DashScopeProperties.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/rag-framework/src/main/java/com/example/rag/framework/config/JwtProperties.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/rag-framework/src/main/java/com/example/rag/framework/config/MinioConfig.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/rag-framework/src/main/java/com/example/rag/framework/config/MinioProperties.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/rag-framework/src/main/java/com/example/rag/framework/config/OpenApiConfig.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/rag-framework/src/main/java/com/example/rag/framework/config/QdrantProperties.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/rag-framework/src/main/java/com/example/rag/framework/config/RagModelConfig.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/rag-framework/src/main/java/com/example/rag/framework/config/RagRetrievalProperties.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/rag-framework/src/main/java/com/example/rag/framework/config/SecurityConfig.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/rag-framework/src/main/java/com/example/rag/framework/handler/GlobalExceptionHandler.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/rag-framework/src/main/java/com/example/rag/framework/security/JwtAuthentication.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/rag-framework/src/main/java/com/example/rag/framework/security/JwtAuthenticationFilter.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/rag-framework/src/main/java/com/example/rag/framework/security/JwtUtil.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/rag-task/pom.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/runlogs/backend.err.log" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/runlogs/backend.out.log" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/frontend/runlogs/frontend.err.log" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/frontend/runlogs/frontend.out.log" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/claudeCodeTabState.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/vcs.xml" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/CODEX_IMPLEMENTATION_PLAN.md（Codex 实施方案）.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/RAG 聊天流式输出 — 企业主流架构方案（可推翻现有实现）.md" beforeDir="false" afterPath="$PROJECT_DIR$/RAG.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/Dockerfile" beforeDir="false" afterPath="$PROJECT_DIR$/backend/Dockerfile" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/backend/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/backend/pom.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/example/rag/controller/RagController.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/src/main/java/com/example/rag/controller/RagController.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/example/rag/service/DashScopeService.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/src/main/java/com/example/rag/service/DashScopeService.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/src/utils/sse.ts" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/utils/sse.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/src/views/chat/Chat.vue" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/views/chat/Chat.vue" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/example/rag/RagApplication.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/example/rag/RagApplication.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/example/rag/config/DocumentProcessingConfig.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/rag-framework/src/main/java/com/example/rag/framework/config/DocumentProcessingConfig.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/example/rag/config/MinioConfig.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/example/rag/config/RagModelConfig.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/example/rag/config/SecurityConfig.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/example/rag/controller/AuditController.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/example/rag/controller/AuthController.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/example/rag/controller/DashboardController.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/example/rag/controller/KnowledgeBaseController.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/example/rag/controller/RagController.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/example/rag/controller/SystemController.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/example/rag/security/JwtAuthenticationFilter.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/example/rag/security/JwtUtil.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/example/rag/service/ChatHistoryMigration.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/example/rag/service/ChunkService.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/example/rag/service/impl/ChunkServiceImpl.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/example/rag/service/DashScopeService.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/example/rag/service/impl/DashScopeServiceImpl.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/example/rag/service/DepartmentDataInitializer.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/example/rag/service/DocParseService.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/example/rag/service/impl/DocParseServiceImpl.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/example/rag/service/DocumentProcessingService.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/example/rag/service/impl/DocumentProcessingServiceImpl.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/example/rag/service/PlatformRepository.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/example/rag/service/QdrantService.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/example/rag/service/impl/QdrantServiceImpl.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/example/rag/service/RagRetrievalService.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/example/rag/service/impl/RagRetrievalServiceImpl.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/resources/application.yml" beforeDir="false" afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/resources/application.yml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/resources/db/migration/V2__chat_conversations.sql" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/resources/db/migration/V3__retrieval_evaluation.sql" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/docker-compose.yml" beforeDir="false" afterPath="$PROJECT_DIR$/docker-compose.yml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs/init.sql" beforeDir="false" afterPath="$PROJECT_DIR$/sql/rag.sql" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/views/kb/KnowledgeBases.vue" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/views/kb/KnowledgeBases.vue" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/vite.config.ts" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/vite.config.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/init.sql（数据库建表脚本）.sql" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -38,27 +218,29 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "ModuleVcsDetector.initialDetectionPerformed": "true",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "RunOnceActivity.git.unshallow": "true",
-    "git-widget-placeholder": "main",
-    "last_opened_file_path": "D:/aoneng/digital-platform",
-    "node.js.detected.package.eslint": "true",
-    "node.js.detected.package.tslint": "true",
-    "node.js.selected.package.eslint": "(autodetect)",
-    "node.js.selected.package.tslint": "(autodetect)",
-    "nodejs_package_manager_path": "npm",
-    "project.structure.last.edited": "项目",
-    "project.structure.proportion": "0.15",
-    "project.structure.side.proportion": "0.0",
-    "run.code.analysis.last.selected.profile": "pProject Default",
-    "settings.editor.selected.configurable": "preferences.pluginManager",
-    "ts.external.directory.path": "C:\\Program Files\\JetBrains\\IntelliJ IDEA 2025.1.1.1\\plugins\\javascript-plugin\\jsLanguageServicesImpl\\external",
-    "vue.rearranger.settings.migration": "true"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
+    &quot;junie.onboarding.icon.badge.shown&quot;: &quot;true&quot;,
+    &quot;last_opened_file_path&quot;: &quot;C:/Users/Administrator.DESKTOP-VH55UL7/Desktop/AI full-stack/aoneng-digital-platform&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;project.structure.last.edited&quot;: &quot;项目&quot;,
+    &quot;project.structure.proportion&quot;: &quot;0.15&quot;,
+    &quot;project.structure.side.proportion&quot;: &quot;0.0&quot;,
+    &quot;run.code.analysis.last.selected.profile&quot;: &quot;pProject Default&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.pluginManager&quot;,
+    &quot;ts.external.directory.path&quot;: &quot;C:\\Users\\Administrator.DESKTOP-VH55UL7\\Desktop\\AI full-stack\\aoneng-digital-platform\\frontend\\node_modules\\typescript\\lib&quot;,
+    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   }
-}]]></component>
+}</component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
       <recent name="D:\aoneng\digital-platform" />
@@ -94,6 +276,8 @@
       <updated>1787986183871</updated>
       <workItem from="1787986185023" duration="28639000" />
       <workItem from="1788062538038" duration="8112000" />
+      <workItem from="1788139493169" duration="16249000" />
+      <workItem from="1788163307587" duration="8531000" />
     </task>
     <servers />
   </component>

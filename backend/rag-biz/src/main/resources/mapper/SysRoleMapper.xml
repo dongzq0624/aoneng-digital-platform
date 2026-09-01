@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.rag.mapper.SysRoleMapper">
+
+    <resultMap id="RoleOverview" type="java.util.LinkedHashMap">
+        <id column="id" property="id"/>
+        <result column="code" property="code"/>
+        <result column="name" property="name"/>
+        <result column="remark" property="remark"/>
+        <result column="status" property="status"/>
+        <result column="userCount" property="userCount"/>
+        <result column="menuCount" property="menuCount"/>
+    </resultMap>
+
+    <select id="selectRoleOverviews" resultMap="RoleOverview">
+        SELECT r.id, r.code, r.name, r.remark, r.status,
+               (SELECT COUNT(*) FROM sys_user_role ur WHERE ur.role_id = r.id) AS "userCount",
+               (SELECT COUNT(*) FROM sys_role_permission rp WHERE rp.role_id = r.id) AS "menuCount"
+          FROM sys_role r
+         ORDER BY r.id
+    </select>
+
+    <insert id="insertReturningId" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO sys_role(code, name, remark, status)
+        VALUES(#{code}, #{name}, #{remark}, #{status})
+    </insert>
+
+    <update id="updateRole">
+        UPDATE sys_role
+           SET code   = COALESCE(#{code}, code),
+               name   = COALESCE(#{name}, name),
+               remark = COALESCE(#{remark}, remark),
+               status = COALESCE(#{status}, status)
+         WHERE id = #{id}
+    </update>
+
+    <delete id="hardDelete">
+        DELETE FROM sys_role WHERE id = #{id}
+    </delete>
+
+    <select id="countById" resultType="int">
+        SELECT COUNT(*) FROM sys_role WHERE id = #{id}
+    </select>
+
+    <select id="countByCode" resultType="int">
+        SELECT COUNT(*) FROM sys_role WHERE code = #{code}
+    </select>
+
+    <select id="countByCodeExcluding" resultType="int">
+        SELECT COUNT(*) FROM sys_role WHERE code = #{code} AND id &lt;&gt; #{id}
+    </select>
+
+    <select id="selectMenuIds" resultType="long">
+        SELECT permission_id FROM sys_role_permission WHERE role_id = #{roleId} ORDER BY permission_id
+    </select>
+
+    <delete id="deleteRoleMenus">
+        DELETE FROM sys_role_permission WHERE role_id = #{roleId}
+    </delete>
+
+    <insert id="insertRoleMenu">
+        INSERT INTO sys_role_permission(role_id, permission_id) VALUES(#{roleId}, #{menuId})
+    </insert>
+
+    <select id="countRolesWithMenu" resultType="int">
+        SELECT COUNT(*) FROM sys_permission WHERE type = 1 AND id IN
+        <foreach collection="menuIds" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </select>
+
+    <delete id="deleteUserRolesByRole">
+        <!-- placeholder; users are not unassigned from roles via this mapper in legacy contract -->
+        SELECT 1
+    </delete>
+
+    <select id="countUsersWithRole" resultType="int">
+        SELECT COUNT(*) FROM sys_user_role WHERE role_id = #{roleId}
+    </select>
+</mapper>

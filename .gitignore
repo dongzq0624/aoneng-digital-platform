@@ -1,5 +1,49 @@
+# ---------- Node / Frontend ----------
 node_modules/
 dist/
+.vite/
+
+# ---------- Java / Maven ----------
 **/target/
+**/.mvn/wrapper/maven-wrapper.jar
+*.class
+*.jar
+*.war
+*.ear
+hs_err_pid*.log
+
+# ---------- IDE ----------
+.idea/
+*.iml
+*.iws
+*.ipr
+.vscode/
+.settings/
+.classpath
+.project
+nbproject/
+nb-configuration.xml
+
+# ---------- OS ----------
 .DS_Store
+Thumbs.db
+ehthumbs.db
+$RECYCLE.BIN/
+
+# ---------- Local overrides ----------
 *.local
+.env
+.env.local
+backend/runlogs/
+frontend/runlogs/
+logs/
+
+# ---------- Secrets ----------
+secrets/
+**/secret.yaml
+**/secret.yml
+
+# ---------- Docker volumes ----------
+pgdata/
+qdrantdata/
+miniodata/

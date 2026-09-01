@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.rag.mapper.KbChatMessageMapper">
+
+    <insert id="insertReturningId" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO kb_chat_message(conversation_id, sequence_no, role, content, status,
+                                    source_kb_ids, model_name, error_message, qa_record_id, completed_at)
+        VALUES(#{conversationId}, #{sequenceNo}, #{role}, #{content}, #{status},
+               CAST(#{sourceKbIds} AS bigint[]), #{modelName}, #{errorMessage}, #{qaRecordId}, #{completedAt})
+    </insert>
+
+    <select id="nextSequenceNo" resultType="int">
+        SELECT COALESCE(MAX(sequence_no), 0) + 1 FROM kb_chat_message WHERE conversation_id = #{conversationId}
+    </select>
+
+    <update id="updateFailure">
+        UPDATE kb_chat_message
+           SET status = 'FAILED', error_message = #{message}, completed_at = NOW()
+         WHERE id = #{messageId} AND conversation_id = #{conversationId}
+    </update>
+
+    <update id="completeAssistantMessage">
+        UPDATE kb_chat_message
+           SET content = #{content}, status = 'COMPLETED',
+               retrieved_chunk_ids = CAST(#{chunkIds} AS bigint[]),
+               model_name = #{modelName},
+               latency_ms = #{latencyMs},
+               qa_record_id = #{qaRecordId},
+               completed_at = NOW()
+         WHERE id = #{messageId} AND conversation_id = #{conversationId}
+    </update>
+
+    <select id="selectMessages" resultType="java.util.LinkedHashMap">
+        SELECT id, sequence_no AS "sequenceNo", role, content, status,
+               source_kb_ids AS "sourceKbIdsRaw",
+               retrieved_chunk_ids AS "retrievedChunkIdsRaw",
+               model_name AS "modelName", latency_ms AS "latencyMs",
+               error_message AS "errorMessage", qa_record_id AS "qaRecordId",
+               created_at AS "createdAt", completed_at AS "completedAt"
+          FROM kb_chat_message
+         WHERE conversation_id = #{conversationId}
+        <if test="beforeSequence != null">
+           AND sequence_no &lt; #{beforeSequence}
+        </if>
+         ORDER BY sequence_no DESC
+         LIMIT #{limit}
+    </select>
+
+    <select id="selectRecentHistory" resultType="java.util.LinkedHashMap">
+        SELECT role, content
+          FROM kb_chat_message
+         WHERE conversation_id = #{conversationId}
+           AND status = 'COMPLETED'
+           AND role IN ('USER', 'ASSISTANT')
+         ORDER BY sequence_no DESC
+         LIMIT #{limit}
+    </select>
+</mapper>

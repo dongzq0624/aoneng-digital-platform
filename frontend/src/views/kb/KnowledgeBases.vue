@@ -43,6 +43,31 @@
       </div>
     </div>
     <el-empty v-if="!filtered.length" description="暂无匹配知识库"/>
+    <el-dialog v-model="createDialogVisible" title="新建知识库" width="560px" destroy-on-close align-center>
+      <el-form ref="createFormRef" :model="createForm" :rules="createRules" label-width="96px" @submit.prevent>
+        <el-form-item label="知识库名称" prop="name">
+          <el-input v-model="createForm.name" maxlength="128" show-word-limit placeholder="请输入知识库名称" />
+        </el-form-item>
+        <el-form-item label="描述" prop="description">
+          <el-input v-model="createForm.description" type="textarea" :rows="3" maxlength="500" show-word-limit placeholder="请输入知识库用途和内容说明" />
+        </el-form-item>
+        <el-form-item label="分类" prop="category">
+          <el-input v-model="createForm.category" maxlength="64" placeholder="例如：研发、人事行政" />
+        </el-form-item>
+        <el-form-item label="可见范围" prop="visibility">
+          <el-select v-model="createForm.visibility" style="width: 100%" placeholder="请选择可见范围">
+            <el-option label="仅自己" value="PRIVATE" />
+            <el-option label="本部门" value="DEPT" />
+            <el-option label="全公司" value="ORG" />
+            <el-option label="公开" value="PUBLIC" />
+          </el-select>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="createDialogVisible = false">取消</el-button>
+        <el-button type="primary" :loading="createSaving" @click="submitCreate">创建知识库</el-button>
+      </template>
+    </el-dialog>
     <el-dialog v-model="departmentDialogVisible" title="配置允许访问部门" width="480px" destroy-on-close>
       <div class="department-access-intro">
         <b>{{ configuringBase?.name }}</b>
@@ -55,7 +80,7 @@
     </el-dialog>
   </div>
 </template>
-<script setup lang="ts">import {computed, onMounted, ref} from 'vue';
+<script setup lang="ts">import {computed, onMounted, reactive, ref} from 'vue';
 import {Clock, Document, MoreFilled, Plus, Search} from '@element-plus/icons-vue';
 import {ElMessage, ElMessageBox} from 'element-plus';
 import type {KnowledgeBase} from '../../types';
@@ -69,6 +94,24 @@ const departmentDialogVisible = ref(false);
 const departmentSaving = ref(false);
 const configuringBase = ref<KnowledgeBase>();
 const selectedDepartmentIds = ref<number[]>([]);
+const createDialogVisible = ref(false);
+const createSaving = ref(false);
+const createFormRef = ref<any>();
+const createForm = reactive({
+  name: '',
+  description: '',
+  category: '',
+  visibility: 'DEPT' as KnowledgeBase['visibility']
+});
+const createRules = {
+  name: [
+    {required: true, message: '请输入知识库名称', trigger: 'blur'},
+    {min: 2, max: 128, message: '名称长度需为 2-128 个字符', trigger: 'blur'}
+  ],
+  description: [{required: true, message: '请输入知识库描述', trigger: 'blur'}],
+  category: [{required: true, message: '请输入知识库分类', trigger: 'blur'}],
+  visibility: [{required: true, message: '请选择可见范围', trigger: 'change'}]
+};
 const docCountOf = (kb: any) => kb.docCount ?? kb.doccount ?? 0;
 const updatedAtOf = (kb: any) => kb.updatedAt || kb.updatedat || '-';
 const filtered = computed(() => list.value.filter(k => (!keyword.value || k.name.includes(keyword.value)) && (!visibility.value || k.visibility === visibility.value)));
@@ -104,16 +147,52 @@ onMounted(async () => {
   }
 })
 
-async function create() {
+function resetCreateForm() {
+  createForm.name = '';
+  createForm.description = '';
+  createForm.category = '';
+  createForm.visibility = 'DEPT';
+  createFormRef.value?.clearValidate?.();
+}
+
+function create() {
+  resetCreateForm();
+  createDialogVisible.value = true;
+}
+
+async function submitCreate() {
+  const form = createFormRef.value;
+  if (!form) return;
+  const valid = await form.validate().catch(() => false);
+  if (!valid) return;
+
+  createSaving.value = true;
   try {
-    const result = await ElMessageBox.prompt('请输入知识库名称', '新建知识库', {inputPlaceholder: '例如：销售知识库'});
-    const name = result.value?.trim();
-    if (!name) return;
-    const {data} = await knowledgeBaseApi.create({name, visibility: 'DEPT'});
-    list.value.unshift({...data, description: '', category: '✦', docCount: 0, updatedAt: '刚刚'} as KnowledgeBase);
-    ElMessage.success('知识库创建成功')
-  } catch (error: any) {
-    if (error !== 'cancel') ElMessage.error(error instanceof Error ? error.message : '创建失败')
+    const {data} = await knowledgeBaseApi.create({
+      name: createForm.name.trim(),
+      description: createForm.description.trim(),
+      category: createForm.category.trim(),
+      visibility: createForm.visibility
+    });
+    const item: any = data;
+    list.value.unshift({
+      ...item,
+      ownerId: item.ownerId ?? item.ownerid,
+      deptId: item.deptId ?? item.deptid,
+      chunkSize: item.chunkSize ?? item.chunksize,
+      chunkOverlap: item.chunkOverlap ?? item.chunkoverlap,
+      docCount: item.docCount ?? item.doccount ?? 0,
+      updatedAt: item.updatedAt || item.updatedat || new Date().toISOString(),
+      canManage: item.canManage ?? item.canmanage,
+      canConfigureDepartments: item.canConfigureDepartments ?? item.canconfiguredepartments,
+      allowedDeptIds: item.allowedDeptIds ?? item.alloweddeptids ?? []
+    } as KnowledgeBase);
+    createDialogVisible.value = false;
+    ElMessage.success('知识库创建成功');
+  } catch (error) {
+    ElMessage.error(error instanceof Error ? error.message : '创建失败');
+  } finally {
+    createSaving.value = false;
   }
 }
 
