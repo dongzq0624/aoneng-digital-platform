@@ -1,10 +1,10 @@
 package com.aoneng.rag.audit.service.impl;
 
 import com.aoneng.rag.audit.convert.AuditConvert;
+import com.aoneng.rag.audit.service.AuditPersistenceService;
 import com.aoneng.rag.audit.service.AuditService;
 import com.aoneng.rag.audit.vo.AuditLogListVO;
 import com.aoneng.rag.audit.vo.AuditLogVO;
-import com.aoneng.rag.application.repository.PlatformRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.stereotype.Service;
 
@@ -18,17 +18,17 @@ import java.util.List;
 @Service
 public class AuditServiceImpl implements AuditService {
 
-    private final PlatformRepository repository;
+    private final AuditPersistenceService repository;
     private final ObjectMapper objectMapper;
 
-    public AuditServiceImpl(PlatformRepository repository, ObjectMapper objectMapper) {
+    public AuditServiceImpl(AuditPersistenceService repository, ObjectMapper objectMapper) {
         this.repository = repository;
         this.objectMapper = objectMapper;
     }
 
     @Override
     public AuditLogListVO listRecentLogs() {
-        List<PlatformRepository.AuditLogRow> rows = repository.auditLogs();
+        List<AuditPersistenceService.AuditLogRow> rows = repository.findRecentLogs();
         List<AuditLogVO> items = AuditConvert.INSTANCE.toResponses(rows, objectMapper);
         return new AuditLogListVO(items, items.size());
     }

@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>4.1.1</version>
+        <relativePath/>
+    </parent>
+
+    <groupId>com.aoneng.rag</groupId>
+    <artifactId>aoneng-digital-platform-parent</artifactId>
+    <version>1.0.0</version>
+    <packaging>pom</packaging>
+    <name>aoneng-digital-platform</name>
+    <description>企业员工数字化平台 Maven 聚合项目</description>
+
+    <properties>
+        <java.version>21</java.version>
+        <maven.compiler.release>21</maven.compiler.release>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <milvus.version>2.5.10</milvus.version>
+        <langchain4j.version>1.13.1</langchain4j.version>
+        <mybatis-plus.version>3.5.17</mybatis-plus.version>
+        <mapstruct.version>1.6.3</mapstruct.version>
+    </properties>
+
+    <modules>
+        <module>backend</module>
+    </modules>
+</project>

@@ -4,6 +4,7 @@ import com.aoneng.rag.application.repository.PlatformRepository;
 import com.aoneng.rag.infra.chunk.Chunker;
 import com.aoneng.rag.infra.llm.LlmService;
 import com.aoneng.rag.infra.parse.DocParser;
+import com.aoneng.rag.infra.parse.StructuredDocumentParser;
 import com.aoneng.rag.infra.storage.ObjectStorage;
 import com.aoneng.rag.infra.vector.VectorStore;
 import org.slf4j.Logger;
@@ -171,12 +172,30 @@ public class DocumentProcessorImpl implements DocumentProcessor {
     private List<Chunker.PageChunk> parseChunks(Map<String, Object> document, String key) throws Exception {
         String fileType = String.valueOf(document.getOrDefault("fileType", "")).toLowerCase(Locale.ROOT);
         String fileName = String.valueOf(document.getOrDefault("fileName", ""));
+        Map<String, Object> base = repo.base(((Number) document.get("kbId")).longValue());
+        int chunkSize = normalizedChunkSize(base.get("chunkSize"));
+        int chunkOverlap = normalizedChunkOverlap(base.get("chunkOverlap"), chunkSize);
+        if (parser instanceof StructuredDocumentParser structured) {
+            try (InputStream input = storage.download(key)) {
+                StructuredDocumentParser.StructuredDocument parsed = structured.parseStructured(input, fileName, fileType);
+                List<Chunker.PageChunk> sampled = new ArrayList<>();
+                for (StructuredDocumentParser.Block block : parsed.blocks()) {
+                    if (block.text().isBlank()) continue;
+                    if (block.pageNo() == null) {
+                        sampled.addAll(chunker.split(block.text(), chunkSize, chunkOverlap).stream()
+                                .map(content -> new Chunker.PageChunk(content, null)).toList());
+                    } else {
+                        sampled.addAll(chunker.splitPage(block.text(), block.pageNo(), chunkSize, chunkOverlap));
+                    }
+                }
+                if (!sampled.isEmpty()) return sampled;
+            } catch (Exception failure) {
+                log.warn("Docling 结构化采样失败，将使用兼容解析器: docId={}, error={}", document.get("id"), failure.getMessage());
+            }
+        }
         if ("pdf".equals(fileType)) {
             try (InputStream input = storage.download(key)) {
                 List<Chunker.PageChunk> chunks = new ArrayList<>();
-                Map<String, Object> base = repo.base(((Number) document.get("kbId")).longValue());
-                int chunkSize = normalizedChunkSize(base.get("chunkSize"));
-                int chunkOverlap = normalizedChunkOverlap(base.get("chunkOverlap"), chunkSize);
                 for (DocParser.ParsedPage page : parser.parsePdfPages(input)) {
                     chunks.addAll(chunker.splitPage(page.content(), page.pageNo(), chunkSize, chunkOverlap));
                 }
@@ -185,9 +204,6 @@ public class DocumentProcessorImpl implements DocumentProcessor {
         }
         try (InputStream input = storage.download(key)) {
             String text = parser.parse(input, fileName, fileType);
-            Map<String, Object> base = repo.base(((Number) document.get("kbId")).longValue());
-            int chunkSize = normalizedChunkSize(base.get("chunkSize"));
-            int chunkOverlap = normalizedChunkOverlap(base.get("chunkOverlap"), chunkSize);
             return chunker.split(text, chunkSize, chunkOverlap).stream()
                     .map(content -> new Chunker.PageChunk(content, null))
                     .toList();

@@ -75,6 +75,10 @@
     <delete id="deleteAllowedDepts">
         DELETE FROM kb_knowledge_base_dept WHERE kb_id = #{kbId}
     </delete>
+    <delete id="deleteAllowedDeptsByDeptIds">
+        DELETE FROM kb_knowledge_base_dept WHERE dept_id IN
+        <foreach collection="deptIds" item="id" open="(" separator="," close=")">#{id}</foreach>
+    </delete>
 
     <insert id="insertAllowedDept">
         INSERT INTO kb_knowledge_base_dept(kb_id, dept_id) VALUES(#{kbId}, #{deptId})

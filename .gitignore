@@ -37,6 +37,7 @@ $RECYCLE.BIN/
 backend/runlogs/
 frontend/runlogs/
 logs/
+backend/docling/
 
 # ---------- Secrets ----------
 secrets/

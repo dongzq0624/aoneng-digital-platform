@@ -55,11 +55,21 @@ rag:
     candidate-limit: ${RAG_CANDIDATE_LIMIT:40}
     context-limit: ${RAG_CONTEXT_LIMIT:8}
     rrf-constant: ${RAG_RRF_CONSTANT:60}
-qdrant:
-  host: ${QDRANT_HOST:localhost}
-  port: ${QDRANT_PORT:6333}
+docling:
+  enabled: ${DOCLING_ENABLED:false}
+  endpoint: ${DOCLING_ENDPOINT:http://localhost:8090}
+  timeout-seconds: ${DOCLING_TIMEOUT_SECONDS:180}
+  max-bytes: ${DOCLING_MAX_BYTES:52428800}
+  sample-pages: ${DOCLING_SAMPLE_PAGES:8}
+  sample-rows: ${DOCLING_SAMPLE_ROWS:200}
+  fallback-to-tika: ${DOCLING_FALLBACK_TO_TIKA:true}
+milvus:
+  host: ${MILVUS_HOST:localhost}
+  port: ${MILVUS_PORT:19530}
+  token: ${MILVUS_TOKEN:}
   collection: kb_embeddings
-  score-threshold: ${QDRANT_SCORE_THRESHOLD:0.20}
+  dimension: ${MILVUS_DIMENSION:1024}
+  score-threshold: ${MILVUS_SCORE_THRESHOLD:0.20}
 minio:
   endpoint: ${MINIO_ENDPOINT:http://localhost:9000}
   access-key: ${MINIO_ACCESS_KEY:minioadmin}

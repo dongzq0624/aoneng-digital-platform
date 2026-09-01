@@ -12,7 +12,7 @@
 |---|---|---|
 |协议|自定义 `event: chunk` \+ `citations` \+ `done`|非 OpenAI 兼容，前端/第三方接入成本高，生态工具不可复用|
 |后端模型|有界线程池 \+ 阻塞 IO \+ 手动 SSE 解析|并发上限低、线程泄漏风险、无背压、资源利用率差|
-|检索链路|Controller 内同步调用 Qdrant，串行阻塞|检索耗时直接叠加为首字延迟，无法异步化|
+|检索链路|Controller 内同步调用 Milvus，串行阻塞|检索耗时直接叠加为首字延迟，无法异步化|
 |模型接入|硬编码 DashScope，单模型|无多模型路由、无降级、无统一计费、切换模型需改代码|
 |上下文管理|每次请求内组装，无独立存储|多轮对话上下文不可控、无持久化、无法跨会话复用|
 |前端渲染|全量 Markdown 重渲染 \+ 18ms 固定节流|长文本卡顿、无增量解析、无虚拟滚动、断连无恢复|
@@ -44,7 +44,7 @@
        │               │               │
 ┌──────▼──────┐ ┌──────▼──────┐ ┌──────▼──────────┐
 │ 向量检索服务 │ │ 上下文管理   │ │ 模型网关         │
-│ Qdrant      │ │ 会话存储     │ │ 多模型路由/降级  │
+│ Milvus      │ │ 会话存储     │ │ 多模型路由/降级  │
 │ 多路召回    │ │ 历史消息     │ │ 计费/熔断/缓存   │
 │ 结果缓存    │ │ 持久化       │ │ DashScope/其他   │
 └─────────────┘ └─────────────┘ └─────────────────┘
@@ -336,7 +336,7 @@ class StreamRenderer {
 ### 7\.1 OpenTelemetry 全链路追踪
 
 ```
-用户请求 → Gateway(span) → 鉴权(span) → 检索(span: Qdrant查询) → Rerank(span) → 模型调用(span: 首字延迟/总延迟) → 前端渲染(span)
+用户请求 → Gateway(span) → 鉴权(span) → 检索(span: Milvus查询) → Rerank(span) → 模型调用(span: 首字延迟/总延迟) → 前端渲染(span)
 ```
 
 - 每个请求携带 `traceId`，贯穿前后端，日志关联。
@@ -403,7 +403,7 @@ class StreamRenderer {
 |---|---|---|
 |后端框架|Spring Boot 3 \+ WebFlux（Reactor）|企业主流，生态成熟，与现有 Spring 体系兼容|
 |非阻塞 HTTP|Spring WebClient / Reactor Netty|原生支持 SSE 流式响应|
-|向量库|Qdrant（保持现有）|已在用，无需迁移|
+|向量库|Milvus|已迁移，使用 Milvus Java SDK 管理集合、索引、写入与检索|
 |缓存|Redis（会话 \+ 检索结果 \+ 语义缓存）|企业标配|
 |模型网关|自研轻量网关 / 开源 One API / LiteLLM|中小团队推荐 One API，开箱即用多模型管理|
 |前端 SSE|@microsoft/fetch\-event\-source|支持 POST \+ 自定义 header，替代原生 EventSource|

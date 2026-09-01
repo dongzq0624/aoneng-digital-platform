@@ -33,6 +33,7 @@ public interface KbBaseMapper extends BaseMapper<KbBasePO> {
     int countActiveDepts(@Param("deptIds") List<Long> deptIds);
 
     int deleteAllowedDepts(@Param("kbId") long kbId);
+    int deleteAllowedDeptsByDeptIds(@Param("deptIds") List<Long> deptIds);
 
     int insertAllowedDept(@Param("kbId") long kbId, @Param("deptId") long deptId);
 }

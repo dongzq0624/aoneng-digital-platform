@@ -16,7 +16,7 @@ import java.time.OffsetDateTime;
 @TableName("kb_chunk")
 public class KbChunkPO {
 
-    /** 分块主键 ID（输入式，与 Qdrant point id 保持稳定映射）。 */
+    /** 分块主键 ID（输入式，与 Milvus primary key 保持稳定映射）。 */
     @TableId(type = IdType.INPUT)
     private Long id;
 

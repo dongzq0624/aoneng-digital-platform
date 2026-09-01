@@ -4,7 +4,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 
 /**
  * RAG 检索管道配置。包含查询改写、重排、稠密 / 关键词召回、候选集与上下文窗口大小等参数。
- * 修改时需同步复核 Qdrant 性能与上下文窗口对模型回答质量的影响。
+ * 修改时需同步复核 Milvus 性能与上下文窗口对模型回答质量的影响。
  */
 @ConfigurationProperties(prefix = "rag.retrieval")
 public record RagRetrievalProperties(boolean queryRewriteEnabled, boolean rerankEnabled,

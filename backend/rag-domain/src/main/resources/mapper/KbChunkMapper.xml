@@ -23,8 +23,8 @@
            AND d.parse_status = 'SUCCESS'
            AND d.chunk_status IN ('INDEXED', 'PARTIAL')
            AND (
-            <foreach collection="termClauses" item="clause" separator=" OR ">
-                #{clause}
+            <foreach collection="terms" item="term" separator=" OR ">
+                (c.content ILIKE CONCAT('%', #{term}, '%') OR d.file_name ILIKE CONCAT('%', #{term}, '%'))
             </foreach>
            )
          ORDER BY c.id DESC

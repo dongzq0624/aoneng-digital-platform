@@ -20,7 +20,6 @@ public interface KbChunkMapper extends BaseMapper<KbChunkPO> {
      * the caller.
      */
     List<Map<String, Object>> keywordSearch(@Param("kbIds") List<Long> kbIds,
-                                            @Param("termClauses") List<String> termClauses,
-                                            @Param("parameters") Object[] parameters,
+                                            @Param("terms") List<String> terms,
                                             @Param("limit") int limit);
 }

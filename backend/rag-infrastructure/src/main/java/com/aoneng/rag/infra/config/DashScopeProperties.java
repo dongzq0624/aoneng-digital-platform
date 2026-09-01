@@ -4,7 +4,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 
 /**
  * DashScope 模型网关配置。涵盖 API Key、Base URL、嵌入 / 聊天 / 重排模型以及向量维度。
- * 配置错误（例如维度与 Qdrant collection 不一致）应在启动期通过单元测试发现，而不是线上运行时。
+ * 配置错误（例如维度与 Milvus collection 不一致）应在启动期通过单元测试发现，而不是线上运行时。
  */
 @ConfigurationProperties(prefix = "dashscope")
 public record DashScopeProperties(String apiKey, String baseUrl, String rerankBaseUrl,

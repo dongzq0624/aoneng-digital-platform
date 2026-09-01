@@ -5,7 +5,7 @@
 ## 项目结构
 
 ```text
-backend/                         Spring Boot 3.4 / Java 17 服务
+backend/                         Spring Boot 4.1.1 / Java 21 服务
   src/main/java/com/aoneng/rag/
     config/                       MinIO、模型与 Spring Security 配置
     controller/                   HTTP API 和 SSE 入口
@@ -65,7 +65,7 @@ git diff --check
 
 ## Java 与 Spring 编码约定
 
-- 使用 Java 17 语法，四空格缩进，类名/方法名遵循标准 Java 命名；字符串、异常信息和用户可见文本使用清晰中文。
+- 使用 Java 21 语法，四空格缩进，类名/方法名遵循标准 Java 命名；字符串、异常信息和用户可见文本使用清晰中文。
 - 使用构造器注入；不要新增字段注入或静态服务定位器。
 - 控制器只处理 HTTP 协议、请求校验和异常到状态码的映射；业务、外部服务调用和数据库操作放在 `service` 层。
 - 新接口保持 `/api` 下现有资源风格，返回字段采用当前前端约定的 camelCase。变更既有字段、SSE 事件名或状态枚举前，必须同步前端并保留兼容方案。

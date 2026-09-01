@@ -1,28 +1,125 @@
 services:
   postgres:
     image: postgres:16
-    environment: { POSTGRES_DB: rag_platform, POSTGRES_USER: rag, POSTGRES_PASSWORD: rag123456 }
-    volumes: [ pgdata:/var/lib/postgresql/data, ./sql/rag.sql:/docker-entrypoint-initdb.d/init.sql:ro ]
-    ports: [ "5432:5432" ]
-    healthcheck: { test: [ "CMD-SHELL", "pg_isready -U rag" ], interval: 5s, timeout: 3s, retries: 10 }
-  qdrant:
-    image: qdrant/qdrant:latest
-    volumes: [ qdrantdata:/qdrant/storage ]
-    ports: [ "6333:6333", "6334:6334" ]
+    environment:
+      POSTGRES_DB: ${PG_DB:-rag_platform}
+      POSTGRES_USER: ${PG_USER:-rag}
+      POSTGRES_PASSWORD: ${PG_PASSWORD:-rag123456}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./sql/rag.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    ports: ["5432:5432"]
+    networks: [rag-net]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${PG_USER:-rag} -d ${PG_DB:-rag_platform}"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  etcd:
+    image: quay.io/coreos/etcd:v3.5.18
+    command: >-
+      /usr/local/bin/etcd
+      --name etcd0
+      --data-dir /etcd-data
+      --listen-client-urls http://0.0.0.0:2379
+      --advertise-client-urls http://etcd:2379
+    volumes: [etcddata:/etcd-data]
+    networks: [rag-net]
+    healthcheck:
+      test: ["CMD-SHELL", "ETCDCTL_API=3 etcdctl --endpoints=http://localhost:2379 endpoint health"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
   minio:
     image: minio/minio:latest
     command: server /data --console-address ":9001"
-    environment: { MINIO_ROOT_USER: minioadmin, MINIO_ROOT_PASSWORD: minioadmin }
-    volumes: [ miniodata:/data ]
-    ports: [ "9000:9000", "9001:9001" ]
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY:-minioadmin}
+    volumes: [miniodata:/data]
+    ports: ["9000:9000", "9001:9001"]
+    networks: [rag-net]
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:9000/minio/health/live || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  minio-init:
+    image: minio/mc:latest
+    depends_on:
+      minio: {condition: service_healthy}
+    entrypoint: ["/bin/sh", "-c"]
+    command: >-
+      "mc alias set local http://minio:9000 $${MINIO_ACCESS_KEY} $${MINIO_SECRET_KEY}
+      && mc mb --ignore-existing local/$${MINIO_BUCKET}"
+    environment:
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-minioadmin}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-minioadmin}
+      MINIO_BUCKET: ${MINIO_BUCKET:-rag-docs}
+    networks: [rag-net]
+
+  milvus:
+    image: milvusdb/milvus:v2.5.10
+    command: ["milvus", "run", "standalone"]
+    environment:
+      ETCD_ENDPOINTS: etcd:2379
+      MINIO_ADDRESS: minio:9000
+      MINIO_ACCESS_KEY_ID: ${MINIO_ACCESS_KEY:-minioadmin}
+      MINIO_SECRET_ACCESS_KEY: ${MINIO_SECRET_KEY:-minioadmin}
+    depends_on:
+      etcd: {condition: service_healthy}
+      minio: {condition: service_healthy}
+    volumes: [milvusdata:/var/lib/milvus]
+    ports: ["19530:19530", "9091:9091"]
+    networks: [rag-net]
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:9091/healthz || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
+
+  docling:
+    build:
+      context: ./backend/docling-service
+    environment:
+      DOCLING_MAX_BYTES: ${DOCLING_MAX_BYTES:-52428800}
+    ports: ["8090:8090"]
+    networks: [rag-net]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8090/health', timeout=3)"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 60s
+
   backend:
     build: ./backend
     environment:
       PG_HOST: postgres
+      PG_DB: ${PG_DB:-rag_platform}
+      PG_USER: ${PG_USER:-rag}
+      PG_PASSWORD: ${PG_PASSWORD:-rag123456}
       DASHSCOPE_API_KEY: "${DASHSCOPE_API_KEY:-}"
-      QDRANT_HOST: qdrant
-      QDRANT_PORT: 6333
-      QDRANT_SCORE_THRESHOLD: "${QDRANT_SCORE_THRESHOLD:-0.20}"
+      MILVUS_HOST: milvus
+      MILVUS_PORT: 19530
+      MILVUS_TOKEN: "${MILVUS_TOKEN:-}"
+      MILVUS_DIMENSION: "${MILVUS_DIMENSION:-1024}"
+      MILVUS_SCORE_THRESHOLD: "${MILVUS_SCORE_THRESHOLD:-0.20}"
+      MINIO_ENDPOINT: http://minio:9000
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-minioadmin}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-minioadmin}
+      MINIO_BUCKET: ${MINIO_BUCKET:-rag-docs}
+      DOCLING_ENABLED: "${DOCLING_ENABLED:-true}"
+      DOCLING_ENDPOINT: http://docling:8090
+      DOCLING_TIMEOUT_SECONDS: "${DOCLING_TIMEOUT_SECONDS:-180}"
+      DOCLING_MAX_BYTES: "${DOCLING_MAX_BYTES:-52428800}"
+      DOCLING_SAMPLE_PAGES: "${DOCLING_SAMPLE_PAGES:-8}"
+      DOCLING_SAMPLE_ROWS: "${DOCLING_SAMPLE_ROWS:-200}"
+      DOCLING_FALLBACK_TO_TIKA: "${DOCLING_FALLBACK_TO_TIKA:-true}"
       RAG_QUERY_REWRITE_ENABLED: "${RAG_QUERY_REWRITE_ENABLED:-true}"
       RAG_RERANK_ENABLED: "${RAG_RERANK_ENABLED:-true}"
       RAG_MAX_REWRITES: "${RAG_MAX_REWRITES:-3}"
@@ -31,14 +128,33 @@ services:
       RAG_CANDIDATE_LIMIT: "${RAG_CANDIDATE_LIMIT:-40}"
       RAG_CONTEXT_LIMIT: "${RAG_CONTEXT_LIMIT:-8}"
       RAG_RRF_CONSTANT: "${RAG_RRF_CONSTANT:-60}"
-      MINIO_ENDPOINT: "http://minio:9000"
     depends_on:
-      postgres: { condition: service_healthy }
-      qdrant: { condition: service_started }
-      minio: { condition: service_started }
-    ports: [ "8080:8080" ]
+      postgres: {condition: service_healthy}
+      minio-init: {condition: service_completed_successfully}
+      milvus: {condition: service_healthy}
+      docling: {condition: service_healthy}
+    ports: ["8080:8080"]
+    networks: [rag-net]
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8080/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
+
   frontend:
     build: ./frontend
-    depends_on: [ backend ]
-    ports: [ "80:80" ]
-volumes: { pgdata: { }, qdrantdata: { }, miniodata: { } }
+    depends_on:
+      backend: {condition: service_healthy}
+    ports: ["80:80"]
+    networks: [rag-net]
+
+networks:
+  rag-net:
+    driver: bridge
+
+volumes:
+  pgdata:
+  etcddata:
+  milvusdata:
+  miniodata:

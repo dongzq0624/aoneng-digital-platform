@@ -1,7 +1,7 @@
 package com.aoneng.rag.audit.convert;
 
 import com.aoneng.rag.audit.vo.AuditLogVO;
-import com.aoneng.rag.application.repository.PlatformRepository;
+import com.aoneng.rag.audit.service.AuditPersistenceService;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.mapstruct.Mapper;
@@ -25,7 +25,7 @@ public interface AuditConvert {
     AuditConvert INSTANCE = Mappers.getMapper(AuditConvert.class);
 
     /**
-     * 转换但不解析 detail JSON 的版本，由 {@link #toResponse(PlatformRepository.AuditLogRow, ObjectMapper)} 包装。
+     * 转换但不解析 detail JSON 的版本，由 {@link #toResponse(AuditPersistenceService.AuditLogRow, ObjectMapper)} 包装。
      */
     @Mapping(target = "id", source = "id")
     @Mapping(target = "createdAt", source = "createdAt", qualifiedByName = "instantFromOffset")
@@ -34,18 +34,18 @@ public interface AuditConvert {
     @Mapping(target = "module", source = "module")
     @Mapping(target = "detail", ignore = true)
     @Mapping(target = "result", source = "result")
-    AuditLogVO toResponseWithoutDetail(PlatformRepository.AuditLogRow row);
+    AuditLogVO toResponseWithoutDetail(AuditPersistenceService.AuditLogRow row);
 
     /**
      * 完整转换：解析 detail JSON。解析失败时降级为 {@code {raw: 原文本}}，日志侧不抛错。
      */
-    default AuditLogVO toResponse(PlatformRepository.AuditLogRow row, ObjectMapper mapper) {
+    default AuditLogVO toResponse(AuditPersistenceService.AuditLogRow row, ObjectMapper mapper) {
         AuditLogVO response = toResponseWithoutDetail(row);
         return new AuditLogVO(response.id(), response.createdAt(), response.username(),
                 response.action(), response.module(), parseDetail(row.detailJson(), mapper), response.result());
     }
 
-    default List<AuditLogVO> toResponses(List<PlatformRepository.AuditLogRow> rows, ObjectMapper mapper) {
+    default List<AuditLogVO> toResponses(List<AuditPersistenceService.AuditLogRow> rows, ObjectMapper mapper) {
         if (rows == null) return List.of();
         return rows.stream().map(row -> toResponse(row, mapper)).toList();
     }

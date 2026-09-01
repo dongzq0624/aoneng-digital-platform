@@ -8,7 +8,6 @@ import com.aoneng.rag.domain.chat.po.KbChatMessagePO;
 import com.aoneng.rag.domain.chat.po.KbConversationPO;
 import com.aoneng.rag.domain.chat.po.KbQaRecordPO;
 import com.aoneng.rag.domain.chat.repository.ChatRepository;
-import com.aoneng.rag.domain.audit.repository.AuditRepository;
 import com.aoneng.rag.domain.kb.po.KbBasePO;
 import com.aoneng.rag.domain.kb.po.KbChunkPO;
 import com.aoneng.rag.domain.kb.po.KbDocumentPO;
@@ -59,7 +58,6 @@ public class PlatformRepository {
     private final OrgRepository orgRepository;
     private final KbRepository kbRepository;
     private final ChatRepository chatRepository;
-    private final AuditRepository auditRepository;
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final org.springframework.jdbc.core.JdbcTemplate jdbc;
 
@@ -67,13 +65,11 @@ public class PlatformRepository {
                               OrgRepository orgRepository,
                               KbRepository kbRepository,
                               ChatRepository chatRepository,
-                              AuditRepository auditRepository,
                               javax.sql.DataSource dataSource) {
         this.userRepository = userRepository;
         this.orgRepository = orgRepository;
         this.kbRepository = kbRepository;
         this.chatRepository = chatRepository;
-        this.auditRepository = auditRepository;
         this.jdbc = new org.springframework.jdbc.core.JdbcTemplate(dataSource);
     }
 
@@ -533,31 +529,6 @@ public class PlatformRepository {
     // ============================================================
     // Audit / QA / conversation
     // ============================================================
-
-    public List<AuditLogRow> auditLogs() {
-        return auditRepository.findRecentLogs().stream().map(row -> {
-            Object createdAt = row.get("createdAt");
-            OffsetDateTime created = createdAt == null ? null
-                    : (createdAt instanceof OffsetDateTime odt ? odt
-                    : (createdAt instanceof Timestamp ts ? ts.toInstant().atOffset(java.time.ZoneOffset.UTC) : null));
-            return new AuditLogRow(((Number) row.get("id")).longValue(),
-                    created,
-                    (String) row.get("username"),
-                    (String) row.get("action"),
-                    (String) row.get("module"),
-                    (String) row.get("detailJson"),
-                    ((Number) row.get("result")).intValue());
-        }).toList();
-    }
-
-    public record AuditLogRow(long id,
-                              OffsetDateTime createdAt,
-                              String username,
-                              String action,
-                              String module,
-                              String detailJson,
-                              int result) {
-    }
 
     public List<Map<String, Object>> retrievalEvalCases() {
         return chatRepository.findAllEvalCases();
