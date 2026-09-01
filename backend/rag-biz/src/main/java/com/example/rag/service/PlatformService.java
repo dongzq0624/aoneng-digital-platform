@@ -1,5 +1,7 @@
 package com.example.rag.service;
 
+import com.example.rag.domain.KbScope;
+import com.example.rag.domain.auth.OrgRecords;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -67,27 +69,27 @@ public interface PlatformService {
     // Knowledge base
     List<Map<String, Object>> bases();
 
-    PlatformRepository.KbScope kbScope(String username);
+    KbScope kbScope(String username);
 
-    List<Map<String, Object>> accessibleBases(PlatformRepository.KbScope scope);
+    List<Map<String, Object>> accessibleBases(KbScope scope);
 
-    List<Long> accessibleBaseIds(PlatformRepository.KbScope scope);
+    List<Long> accessibleBaseIds(KbScope scope);
 
-    boolean canReadBase(long id, PlatformRepository.KbScope scope);
+    boolean canReadBase(long id, KbScope scope);
 
-    boolean canManageBase(long id, PlatformRepository.KbScope scope);
+    boolean canManageBase(long id, KbScope scope);
 
-    Map<String, Object> baseForScope(long id, PlatformRepository.KbScope scope);
+    Map<String, Object> baseForScope(long id, KbScope scope);
 
-    long createBase(Map<String, Object> r, PlatformRepository.KbScope scope);
+    long createBase(Map<String, Object> r, KbScope scope);
 
     Map<String, Object> base(long id);
 
-    void updateBase(long id, Map<String, Object> r, PlatformRepository.KbScope scope);
+    void updateBase(long id, Map<String, Object> r, KbScope scope);
 
     List<Long> allowedDepartmentIds(long kbId);
 
-    void updateAllowedDepartments(long kbId, List<Long> deptIds, PlatformRepository.KbScope scope);
+    void updateAllowedDepartments(long kbId, List<Long> deptIds, KbScope scope);
 
     void deleteBase(long id);
 

@@ -1,9 +1,9 @@
 package com.example.rag.audit.service.impl;
 
-import com.example.rag.audit.dto.AuditLogListResponse;
-import com.example.rag.audit.dto.AuditLogResponse;
+import com.example.rag.audit.convert.AuditConvert;
 import com.example.rag.audit.service.AuditService;
-import com.example.rag.convert.AuditConvert;
+import com.example.rag.audit.vo.AuditLogListVO;
+import com.example.rag.audit.vo.AuditLogVO;
 import com.example.rag.service.PlatformRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.stereotype.Service;
@@ -13,7 +13,7 @@ import java.util.List;
 /**
  * 审计日志服务默认实现。
  * 从 {@link PlatformRepository} 获取最近的审计日志行，
- * 并通过 {@link AuditConvert} 将其映射为 DTO。
+ * 并通过 {@link AuditConvert} 将其映射为 VO。
  */
 @Service
 public class AuditServiceImpl implements AuditService {
@@ -26,15 +26,10 @@ public class AuditServiceImpl implements AuditService {
         this.objectMapper = objectMapper;
     }
 
-    /**
-     * 获取最近的审计日志列表。
-     *
-     * @return 审计日志列表响应
-     */
     @Override
-    public AuditLogListResponse listRecentLogs() {
+    public AuditLogListVO listRecentLogs() {
         List<PlatformRepository.AuditLogRow> rows = repository.auditLogs();
-        List<AuditLogResponse> items = AuditConvert.INSTANCE.toResponses(rows, objectMapper);
-        return new AuditLogListResponse(items, items.size());
+        List<AuditLogVO> items = AuditConvert.INSTANCE.toResponses(rows, objectMapper);
+        return new AuditLogListVO(items, items.size());
     }
 }

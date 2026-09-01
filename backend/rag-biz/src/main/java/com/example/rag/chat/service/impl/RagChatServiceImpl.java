@@ -1,13 +1,16 @@
 package com.example.rag.chat.service.impl;
 
 import com.example.rag.chat.service.RagChatService;
+import com.example.rag.domain.KbScope;
+import com.example.rag.infra.config.RagSseProperties;
 import com.example.rag.service.DashScopeService;
 import com.example.rag.service.PlatformRepository;
-import com.example.rag.service.RagRetrievalService;
-import org.springframework.http.HttpStatus;
+import com.example.rag.chat.service.RagRetrievalService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.http.MediaType;
 import org.springframework.http.codec.ServerSentEvent;
 import org.springframework.stereotype.Service;
-import org.springframework.web.server.ResponseStatusException;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
@@ -29,40 +32,45 @@ import java.util.TreeSet;
 @Service
 public class RagChatServiceImpl implements RagChatService {
 
-    private static final Duration SSE_TIMEOUT = Duration.ofSeconds(120);
+    private static final Logger log = LoggerFactory.getLogger(RagChatServiceImpl.class);
 
     private final PlatformRepository repo;
     private final RagRetrievalService retrieval;
     private final DashScopeService dash;
+    private final RagSseProperties sseProperties;
+    private final Duration sseTimeout;
 
     public RagChatServiceImpl(PlatformRepository repo,
                               RagRetrievalService retrieval,
-                              DashScopeService dash) {
+                              DashScopeService dash,
+                              RagSseProperties sseProperties) {
         this.repo = repo;
         this.retrieval = retrieval;
         this.dash = dash;
+        this.sseProperties = sseProperties;
+        this.sseTimeout = Duration.ofSeconds(sseProperties.timeoutSeconds());
     }
 
     @Override
-    public PlatformRepository.KbScope requireChatAccess(String username) {
-        PlatformRepository.KbScope scope = repo.kbScope(username);
+    public KbScope requireChatAccess(String username) {
+        KbScope scope = repo.kbScope(username);
         if (!scope.admin() && !scope.kbAccess()) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "当前角色未获知识库访问授权");
+            throw new com.example.rag.common.exception.ForbiddenException("当前角色未获知识库访问授权");
         }
         return scope;
     }
 
     @Override
-    public PlatformRepository.KbScope requireAdmin(String username) {
-        PlatformRepository.KbScope scope = repo.kbScope(username);
+    public KbScope requireAdmin(String username) {
+        KbScope scope = repo.kbScope(username);
         if (!scope.admin()) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "仅系统管理员可以执行检索评测");
+            throw new com.example.rag.common.exception.ForbiddenException("仅系统管理员可以执行检索评测");
         }
         return scope;
     }
 
     @Override
-    public List<Long> permittedKbIds(PlatformRepository.KbScope scope, List<Long> requestedKbIds) {
+    public List<Long> permittedKbIds(KbScope scope, List<Long> requestedKbIds) {
         List<Long> allowed = repo.accessibleBaseIds(scope);
         if (requestedKbIds == null || requestedKbIds.isEmpty()) return allowed;
         Set<Long> requested = new java.util.LinkedHashSet<>(requestedKbIds);
@@ -81,7 +89,7 @@ public class RagChatServiceImpl implements RagChatService {
     }
 
     @Override
-    public Flux<ServerSentEvent<Object>> streamAnswer(PlatformRepository.KbScope scope,
+    public Flux<ServerSentEvent<Object>> streamAnswer(KbScope scope,
                                                        PlatformRepository.ChatTurn turn,
                                                        String question,
                                                        List<Long> permittedKbIds) {
@@ -111,18 +119,22 @@ public class RagChatServiceImpl implements RagChatService {
 
                     return init.concatWith(model).concatWith(done);
                 })
-                .timeout(SSE_TIMEOUT)
-                .onErrorResume(error -> Flux.just(
-                        buildEvent("error", Map.of(
-                                "message", "问答生成失败，请稍后重试",
-                                "conversationId", turn.conversationId(),
-                                "messageId", turn.assistantMessageId()))));
+                .timeout(sseTimeout)
+                .onErrorResume(error -> {
+                    log.warn("SSE 流式问答异常，conversationId={}, messageId={}, error={}",
+                            turn.conversationId(), turn.assistantMessageId(), error.getMessage(), error);
+                    return Flux.just(
+                            buildEvent("error", Map.of(
+                                    "message", "问答生成失败，请稍后重试",
+                                    "conversationId", turn.conversationId(),
+                                    "messageId", turn.assistantMessageId())));
+                });
     }
 
     @Override
     public ChatStreamPayload buildStreamPayload(RagRetrievalService.RetrievalResult result,
                                                  String question,
-                                                 PlatformRepository.KbScope scope,
+                                                 KbScope scope,
                                                  PlatformRepository.ChatTurn turn,
                                                  List<Long> permittedKbIds) {
         StringBuilder context = new StringBuilder();
@@ -149,7 +161,7 @@ public class RagChatServiceImpl implements RagChatService {
 
     @Override
     public Map<String, Object> completeTurn(PlatformRepository.ChatTurn turn,
-                                             PlatformRepository.KbScope scope,
+                                             KbScope scope,
                                              String question,
                                              String answerText,
                                              List<Long> permittedKbIds,
@@ -198,7 +210,7 @@ public class RagChatServiceImpl implements RagChatService {
         if (answer == null || answer.isBlank() || citationsBySource.isEmpty()) return List.of();
         List<Map<String, Object>> citations = new ArrayList<>();
         java.util.regex.Matcher matcher = SOURCE_MARKER.matcher(answer);
-        while (matcher.find() && citations.size() < 3) {
+        while (matcher.find() && citations.size() < sseProperties.maxCitations()) {
             String key = sourceKey(Long.parseLong(matcher.group(1)), Long.parseLong(matcher.group(2)));
             Map<String, Object> citation = citationsBySource.get(key);
             if (citation != null && !citations.contains(citation)) citations.add(citation);
@@ -277,6 +289,7 @@ public class RagChatServiceImpl implements RagChatService {
                     && ("INDEXED".equals(document.get("chunkStatus")) || "PARTIAL".equals(document.get("chunkStatus")));
             return belongs && indexed ? document : null;
         } catch (Exception ignored) {
+            // 文档不存在或状态不完整时返回 null，跳过该引用
             return null;
         }
     }

@@ -1,6 +1,6 @@
 package com.example.rag.audit.service;
 
-import com.example.rag.audit.dto.AuditLogListResponse;
+import com.example.rag.audit.vo.AuditLogListVO;
 
 /**
  * 审计日志服务接口。负责查询和聚合审计日志数据，
@@ -13,5 +13,5 @@ public interface AuditService {
      *
      * @return 审计日志列表响应
      */
-    AuditLogListResponse listRecentLogs();
+    AuditLogListVO listRecentLogs();
 }

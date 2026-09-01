@@ -1,14 +1,14 @@
 package com.example.rag.doc.controller;
 
 import com.example.rag.common.result.Result;
-import com.example.rag.doc.dto.AllowedDepartmentsResponse;
-import com.example.rag.doc.dto.CreateKnowledgeBaseRequest;
-import com.example.rag.doc.dto.DeleteResponse;
-import com.example.rag.doc.dto.KnowledgeBaseDocumentResponse;
-import com.example.rag.doc.dto.KnowledgeBaseResponse;
-import com.example.rag.doc.dto.UpdateAllowedDepartmentsRequest;
-import com.example.rag.doc.dto.UpdateKnowledgeBaseRequest;
+import com.example.rag.doc.dto.CreateKnowledgeBaseDTO;
+import com.example.rag.doc.dto.UpdateAllowedDepartmentsDTO;
+import com.example.rag.doc.dto.UpdateKnowledgeBaseDTO;
 import com.example.rag.doc.service.KnowledgeBaseService;
+import com.example.rag.doc.vo.AllowedDepartmentsVO;
+import com.example.rag.doc.vo.DeleteVO;
+import com.example.rag.doc.vo.KnowledgeBaseDocumentVO;
+import com.example.rag.doc.vo.KnowledgeBaseVO;
 import jakarta.validation.Valid;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -19,9 +19,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.RequestPart;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
@@ -32,7 +31,7 @@ import java.util.List;
  * 所有知识库创建、文档上传、权限管理等业务逻辑委托给 {@link KnowledgeBaseService}。
  */
 @RestController
-@RequestMapping("/api/kb")
+@RequestMapping("/api/v1/kb")
 public class KnowledgeBaseController {
 
     private final KnowledgeBaseService service;
@@ -43,186 +42,98 @@ public class KnowledgeBaseController {
 
     // -------- 知识库管理 --------
 
-    /**
-     * 获取当前用户可访问的知识库列表。
-     *
-     * @param username 当前登录用户名
-     * @return 可访问的知识库列表
-     */
     @GetMapping("/bases")
-    public Result<List<KnowledgeBaseResponse>> bases(@AuthenticationPrincipal String username) {
+    public Result<List<KnowledgeBaseVO>> bases(@AuthenticationPrincipal String username) {
         return Result.ok(service.listAccessibleBases(username));
     }
 
-    /**
-     * 创建新的知识库。
-     *
-     * @param username 当前登录用户名
-     * @param req      知识库创建请求
-     * @return 创建的知识库信息
-     */
     @PostMapping("/bases")
-    public Result<KnowledgeBaseResponse> create(@AuthenticationPrincipal String username,
-                                               @Valid @RequestBody CreateKnowledgeBaseRequest req) {
+    public Result<KnowledgeBaseVO> create(@AuthenticationPrincipal String username,
+                                          @Valid @RequestBody CreateKnowledgeBaseDTO req) {
         return Result.ok(service.createBase(username, req));
     }
 
-    /**
-     * 获取知识库详情。
-     *
-     * @param username 当前登录用户名
-     * @param id       知识库 ID
-     * @return 知识库详细信息
-     */
     @GetMapping("/bases/{id}")
-    public Result<KnowledgeBaseResponse> detail(@AuthenticationPrincipal String username,
-                                                 @PathVariable long id) {
+    public Result<KnowledgeBaseVO> detail(@AuthenticationPrincipal String username,
+                                          @PathVariable long id) {
         return Result.ok(service.getBase(username, id));
     }
 
-    /**
-     * 更新知识库信息。
-     *
-     * @param username 当前登录用户名
-     * @param id       知识库 ID
-     * @param req      更新内容
-     * @return 更新后的知识库信息
-     */
     @PutMapping("/bases/{id}")
-    public Result<KnowledgeBaseResponse> update(@AuthenticationPrincipal String username,
-                                               @PathVariable long id,
-                                               @Valid @RequestBody UpdateKnowledgeBaseRequest req) {
+    public Result<KnowledgeBaseVO> update(@AuthenticationPrincipal String username,
+                                          @PathVariable long id,
+                                          @Valid @RequestBody UpdateKnowledgeBaseDTO req) {
         return Result.ok(service.updateBase(username, id, req));
     }
 
-    /**
-     * 删除知识库（同时删除关联文档和向量）。
-     *
-     * @param username 当前登录用户名
-     * @param id       知识库 ID
-     * @return 删除结果
-     */
     @DeleteMapping("/bases/{id}")
-    public Result<DeleteResponse> delete(@AuthenticationPrincipal String username,
-                                        @PathVariable long id) {
+    public Result<DeleteVO> delete(@AuthenticationPrincipal String username,
+                                   @PathVariable long id) {
         service.deleteBase(username, id);
-        return Result.ok(new DeleteResponse(id, true));
+        return Result.ok(new DeleteVO(id, true));
     }
 
-    /**
-     * 获取知识库允许访问的部门列表。
-     *
-     * @param username 当前登录用户名
-     * @param id       知识库 ID
-     * @return 允许访问的部门 ID 列表
-     */
     @GetMapping("/bases/{id}/departments")
-    public Result<AllowedDepartmentsResponse> allowedDepartments(
+    public Result<AllowedDepartmentsVO> allowedDepartments(
             @AuthenticationPrincipal String username,
             @PathVariable long id) {
         return Result.ok(service.listAllowedDepartments(username, id));
     }
 
-    /**
-     * 更新知识库允许访问的部门列表。
-     *
-     * @param username 当前登录用户名
-     * @param id       知识库 ID
-     * @param req      新的部门 ID 列表
-     * @return 更新后的知识库信息
-     */
     @PutMapping("/bases/{id}/departments")
-    public Result<KnowledgeBaseResponse> updateAllowedDepartments(
+    public Result<KnowledgeBaseVO> updateAllowedDepartments(
             @AuthenticationPrincipal String username,
             @PathVariable long id,
-            @Valid @RequestBody UpdateAllowedDepartmentsRequest req) {
+            @Valid @RequestBody UpdateAllowedDepartmentsDTO req) {
         return Result.ok(service.updateAllowedDepartments(username, id, req));
     }
 
     // -------- 文档管理 --------
 
-    /**
-     * 获取知识库下的文档列表。
-     *
-     * @param username 当前登录用户名
-     * @param id       知识库 ID
-     * @return 文档列表
-     */
     @GetMapping("/bases/{id}/docs")
-    public Result<List<KnowledgeBaseDocumentResponse>> docs(
+    public Result<List<KnowledgeBaseDocumentVO>> docs(
             @AuthenticationPrincipal String username,
             @PathVariable long id) {
         return Result.ok(service.listDocuments(username, id));
     }
 
-    /**
-     * 上传文档到知识库。上传后自动触发解析、分块和向量化流程。
-     *
-     * @param username 当前登录用户名
-     * @param id       知识库 ID
-     * @param file     待上传的文件
-     * @return 上传结果（包含文档 ID）
-     */
     @PostMapping(value = "/bases/{id}/docs", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public Result<KnowledgeBaseDocumentResponse> upload(
+    public Result<KnowledgeBaseDocumentVO> upload(
             @AuthenticationPrincipal String username,
             @PathVariable long id,
             @RequestPart MultipartFile file) {
         return Result.ok(service.uploadDocument(username, id, file));
     }
 
-    /**
-     * 获取文档详情。
-     *
-     * @param username 当前登录用户名
-     * @param id       文档 ID
-     * @return 文档详细信息
-     */
     @GetMapping("/docs/{id}")
-    public Result<KnowledgeBaseDocumentResponse> doc(
+    public Result<KnowledgeBaseDocumentVO> doc(
             @AuthenticationPrincipal String username,
             @PathVariable long id) {
         return Result.ok(service.getDocument(username, id));
     }
 
-    /**
-     * 删除文档（同时删除关联向量）。
-     *
-     * @param username 当前登录用户名
-     * @param id       文档 ID
-     * @return 删除结果
-     */
     @DeleteMapping("/docs/{id}")
-    public Result<DeleteResponse> deleteDoc(@AuthenticationPrincipal String username,
-                                            @PathVariable long id) {
+    public Result<DeleteVO> deleteDoc(@AuthenticationPrincipal String username,
+                                       @PathVariable long id) {
         service.deleteDocument(username, id);
-        return Result.ok(new DeleteResponse(id, true));
+        return Result.ok(new DeleteVO(id, true));
     }
 
-    /**
-     * 重新索引文档。用于文档解析失败或需要重新生成向量时。
-     *
-     * @param username 当前登录用户名
-     * @param id       文档 ID
-     * @return 更新后的文档信息
-     */
     @PostMapping("/docs/{id}/reindex")
-    public Result<KnowledgeBaseDocumentResponse> reindex(
-            @AuthenticationPrincipal String username,
-            @PathVariable long id) {
+    public Result<KnowledgeBaseDocumentVO> reindex(@AuthenticationPrincipal String username,
+                                                    @PathVariable long id) {
         return Result.ok(service.reindexDocument(username, id));
     }
 
     /**
-     * 订阅文档处理进度事件（SSE）。
+     * 文档解析/索引过程的事件流。该实现重新发出 {@link SseEmitter}，
+     * 业务侧的事件载荷与 SSE 字段定义保持向后兼容。
      *
-     * @param username 当前登录用户名
-     * @param id       文档 ID
-     * @return SSE 事件发射器
+     * @param id 文档 ID
+     * @return SSE 发射器
      */
-    @GetMapping(value = "/docs/{id}/processing-events", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    public SseEmitter processingEvents(@AuthenticationPrincipal String username,
-                                       @PathVariable long id) {
-        return service.subscribeProcessingEvents(username, id);
+    @GetMapping(value = "/docs/{id}/events", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public SseEmitter documentEvents(@PathVariable long id) {
+        return service.streamDocumentEvents(id);
     }
 }

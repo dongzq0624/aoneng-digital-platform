@@ -1,6 +1,6 @@
 package com.example.rag.dashboard.service;
 
-import com.example.rag.dashboard.dto.DashboardSummaryResponse;
+import com.example.rag.dashboard.vo.DashboardSummaryVO;
 
 /**
  * 仪表盘数据聚合服务接口。负责计算并返回仪表盘统计数据，
@@ -13,5 +13,5 @@ public interface DashboardService {
      *
      * @return 仪表盘摘要响应
      */
-    DashboardSummaryResponse summary();
+    DashboardSummaryVO summary();
 }

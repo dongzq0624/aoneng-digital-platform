@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.rag.domain.auth.mapper.SysDeptMapper">
+
+    <resultMap id="DeptOverview" type="java.util.LinkedHashMap">
+        <id column="id" property="id"/>
+        <result column="parentId" property="parentId"/>
+        <result column="name" property="name"/>
+        <result column="ancestors" property="ancestors"/>
+        <result column="sort" property="sort"/>
+        <result column="status" property="status"/>
+        <result column="userCount" property="userCount"/>
+        <result column="childCount" property="childCount"/>
+    </resultMap>
+
+    <select id="selectDepartmentOverviews" resultMap="DeptOverview">
+        SELECT d.id, d.parent_id AS "parentId", d.name, d.ancestors, d.sort, d.status,
+               (SELECT COUNT(*) FROM sys_user u WHERE u.dept_id = d.id AND u.deleted = FALSE) AS "userCount",
+               (SELECT COUNT(*) FROM sys_dept c WHERE c.parent_id = d.id) AS "childCount"
+          FROM sys_dept d
+         ORDER BY d.sort, d.id
+    </select>
+
+    <select id="selectAncestors" resultType="java.lang.String">
+        SELECT ancestors FROM sys_dept WHERE id = #{id}
+    </select>
+
+    <select id="isDescendant" resultType="int">
+        WITH RECURSIVE tree AS (
+            SELECT id FROM sys_dept WHERE id = #{ancestor}
+            UNION ALL
+            SELECT d.id FROM sys_dept d JOIN tree t ON d.parent_id = t.id
+        )
+        SELECT COUNT(*) FROM tree WHERE id = #{candidate}
+    </select>
+
+    <insert id="insertReturningId" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO sys_dept(parent_id, name, ancestors, sort, status)
+        VALUES(#{parentId}, #{name}, #{ancestors}, #{sort}, #{status})
+    </insert>
+
+    <update id="updateDept">
+        UPDATE sys_dept
+           SET name      = COALESCE(#{name}, name),
+               parent_id = #{parentId},
+               ancestors = #{ancestors},
+               sort      = COALESCE(#{sort}, sort),
+               status    = COALESCE(#{status}, status)
+         WHERE id = #{id}
+    </update>
+
+    <delete id="hardDelete">
+        DELETE FROM sys_dept WHERE id = #{id}
+    </delete>
+
+    <select id="countActiveById" resultType="int">
+        SELECT COUNT(*) FROM sys_dept WHERE id = #{id} AND status = 1
+    </select>
+</mapper>

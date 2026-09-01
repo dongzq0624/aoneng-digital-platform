@@ -1,8 +1,8 @@
 package com.example.rag.dashboard.controller;
 
 import com.example.rag.common.result.Result;
-import com.example.rag.dashboard.dto.DashboardSummaryResponse;
 import com.example.rag.dashboard.service.DashboardService;
+import com.example.rag.dashboard.vo.DashboardSummaryVO;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
  * 仪表盘统计数据由 {@link DashboardService} 计算并返回。
  */
 @RestController
-@RequestMapping("/api/dashboard")
+@RequestMapping("/api/v1/dashboard")
 public class DashboardController {
 
     private final DashboardService dashboardService;
@@ -27,7 +27,7 @@ public class DashboardController {
      * @return 仪表盘摘要（知识库数量、文档数量、今日问答数、命中率等）
      */
     @GetMapping("/summary")
-    public Result<DashboardSummaryResponse> summary() {
+    public Result<DashboardSummaryVO> summary() {
         return Result.ok(dashboardService.summary());
     }
 }

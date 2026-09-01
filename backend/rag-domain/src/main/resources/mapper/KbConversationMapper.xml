@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.rag.domain.chat.mapper.KbConversationMapper">
+
+    <select id="selectConversations" resultType="java.util.LinkedHashMap">
+        SELECT id, title,
+               selected_kb_ids AS "selectedKbIdsRaw",
+               last_message_at AS "lastMessageAt",
+               created_at AS "createdAt",
+               updated_at AS "updatedAt"
+          FROM kb_conversation
+         WHERE deleted_at IS NULL
+           AND user_id = #{userId}
+        <if test="cursorTime != null">
+           AND (last_message_at, id) &lt; (#{cursorTime}, #{cursorId})
+        </if>
+         ORDER BY last_message_at DESC, id DESC
+         LIMIT #{limit}
+    </select>
+
+    <select id="selectConversation" resultType="java.util.LinkedHashMap">
+        SELECT id, title,
+               selected_kb_ids AS "selectedKbIdsRaw",
+               last_message_at AS "lastMessageAt",
+               created_at AS "createdAt",
+               updated_at AS "updatedAt"
+          FROM kb_conversation
+         WHERE id = #{id} AND user_id = #{userId} AND deleted_at IS NULL
+    </select>
+
+    <insert id="insertReturningId" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO kb_conversation(user_id, title, selected_kb_ids)
+        VALUES(#{userId}, #{title}, CAST(#{selectedKbIds} AS bigint[]))
+    </insert>
+
+    <update id="updateTitle">
+        UPDATE kb_conversation
+           SET title = #{title}, updated_at = NOW()
+         WHERE id = #{id} AND user_id = #{userId} AND deleted_at IS NULL
+    </update>
+
+    <update id="softDelete">
+        UPDATE kb_conversation
+           SET deleted_at = NOW(), updated_at = NOW()
+         WHERE id = #{id} AND user_id = #{userId} AND deleted_at IS NULL
+    </update>
+
+    <select id="lockConversation" resultType="long">
+        SELECT id FROM kb_conversation WHERE id = #{id} AND user_id = #{userId} AND deleted_at IS NULL FOR UPDATE
+    </select>
+
+    <update id="updateSelectedKbIds">
+        UPDATE kb_conversation
+           SET selected_kb_ids = CAST(#{selectedKbIds} AS bigint[]),
+               last_message_at = NOW(),
+               updated_at = NOW()
+         WHERE id = #{id}
+    </update>
+
+    <update id="touchLastMessage">
+        UPDATE kb_conversation
+           SET last_message_at = NOW(), updated_at = NOW()
+         WHERE id = #{id}
+    </update>
+</mapper>

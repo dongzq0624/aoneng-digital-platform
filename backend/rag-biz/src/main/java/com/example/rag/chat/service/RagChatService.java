@@ -1,7 +1,8 @@
 package com.example.rag.chat.service;
 
+import com.example.rag.domain.KbScope;
 import com.example.rag.service.PlatformRepository;
-import com.example.rag.service.RagRetrievalService;
+import com.example.rag.chat.service.RagRetrievalService;
 import org.springframework.http.codec.ServerSentEvent;
 import reactor.core.publisher.Flux;
 
@@ -21,7 +22,7 @@ public interface RagChatService {
      * @return 用户可访问的知识库范围
      * @throws org.springframework.web.server.ResponseStatusException 无权限时返回 403
      */
-    PlatformRepository.KbScope requireChatAccess(String username);
+    KbScope requireChatAccess(String username);
 
     /**
      * 校验用户是否为管理员。
@@ -30,7 +31,7 @@ public interface RagChatService {
      * @return 用户可访问的知识库范围
      * @throws org.springframework.web.server.ResponseStatusException 非管理员时返回 403
      */
-    PlatformRepository.KbScope requireAdmin(String username);
+    KbScope requireAdmin(String username);
 
     /**
      * 计算用户在指定知识库列表中的有效权限。
@@ -39,7 +40,7 @@ public interface RagChatService {
      * @param requestedKbIds 前端请求的知识库 ID 列表（可为空或空列表表示全部）
      * @return 过滤后的有效知识库 ID 列表
      */
-    List<Long> permittedKbIds(PlatformRepository.KbScope scope, List<Long> requestedKbIds);
+    List<Long> permittedKbIds(KbScope scope, List<Long> requestedKbIds);
 
     /**
      * 准备对话轮次。创建新会话或关联到已有会话。
@@ -71,7 +72,7 @@ public interface RagChatService {
      * @param permittedKbIds 用户可访问的知识库 ID 列表
      * @return SSE 事件流
      */
-    Flux<ServerSentEvent<Object>> streamAnswer(PlatformRepository.KbScope scope,
+    Flux<ServerSentEvent<Object>> streamAnswer(KbScope scope,
                                                PlatformRepository.ChatTurn turn,
                                                String question,
                                                List<Long> permittedKbIds);
@@ -88,7 +89,7 @@ public interface RagChatService {
      */
     ChatStreamPayload buildStreamPayload(RagRetrievalService.RetrievalResult result,
                                         String question,
-                                        PlatformRepository.KbScope scope,
+                                        KbScope scope,
                                         PlatformRepository.ChatTurn turn,
                                         List<Long> permittedKbIds);
 
@@ -106,7 +107,7 @@ public interface RagChatService {
      * @return 完成后的轮次信息
      */
     Map<String, Object> completeTurn(PlatformRepository.ChatTurn turn,
-                                     PlatformRepository.KbScope scope,
+                                     KbScope scope,
                                      String question,
                                      String answerText,
                                      List<Long> permittedKbIds,

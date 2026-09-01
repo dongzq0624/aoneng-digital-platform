@@ -1,13 +1,13 @@
 package com.example.rag.auth.service.impl;
 
-import com.example.rag.auth.dto.LoginRequest;
-import com.example.rag.auth.dto.LoginResponse;
-import com.example.rag.auth.dto.UserSummary;
+import com.example.rag.auth.dto.LoginDTO;
 import com.example.rag.auth.service.AuthService;
+import com.example.rag.auth.vo.LoginVO;
+import com.example.rag.auth.vo.UserSummaryVO;
 import com.example.rag.common.exception.ForbiddenException;
 import com.example.rag.common.exception.UnauthorizedException;
-import com.example.rag.framework.security.JwtUtil;
-import com.example.rag.service.OrgRecords;
+import com.example.rag.infra.security.JwtUtil;
+import com.example.rag.domain.auth.OrgRecords;
 import com.example.rag.service.PlatformRepository;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -37,7 +37,7 @@ public class AuthServiceImpl implements AuthService {
      * @throws ForbiddenException  用户已停用时抛出
      */
     @Override
-    public LoginResponse login(LoginRequest request) {
+    public LoginVO login(LoginDTO request) {
         String username = request.username().trim();
         OrgRecords.UserRow user = repository.userByUsername(username)
                 .orElseThrow(() -> new UnauthorizedException("用户名或密码错误"));
@@ -48,7 +48,7 @@ public class AuthServiceImpl implements AuthService {
         if (user.status() != null && user.status() == 0) {
             throw new ForbiddenException("用户已停用");
         }
-        return new LoginResponse(jwtUtil.issue(user.id(), username), summary(user));
+        return new LoginVO(jwtUtil.issue(user.id(), username), summary(user));
     }
 
     /**
@@ -59,16 +59,16 @@ public class AuthServiceImpl implements AuthService {
      * @throws UnauthorizedException 登录已失效时抛出
      */
     @Override
-    public UserSummary currentUser(String username) {
+    public UserSummaryVO currentUser(String username) {
         OrgRecords.UserRow user = repository.userByUsername(username)
                 .orElseThrow(() -> new UnauthorizedException("登录已失效"));
         return summary(user);
     }
 
     /**
-     * 将用户行转换为用户摘要 DTO。
+     * 将用户行转换为用户摘要 VO。
      */
-    private UserSummary summary(OrgRecords.UserRow user) {
-        return new UserSummary(user.id(), user.username(), user.realName(), user.deptId());
+    private UserSummaryVO summary(OrgRecords.UserRow user) {
+        return new UserSummaryVO(user.id(), user.username(), user.realName(), user.deptId());
     }
 }

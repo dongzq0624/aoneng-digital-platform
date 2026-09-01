@@ -2,12 +2,13 @@ package com.example.rag.chat.service.impl;
 
 import com.example.rag.chat.service.RagChatService;
 import com.example.rag.chat.service.RagEvalService;
+import com.example.rag.chat.service.RagRetrievalService;
+import com.example.rag.chat.vo.EvalRunResultVO;
+import com.example.rag.domain.KbScope;
 import com.example.rag.service.PlatformRepository;
-import com.example.rag.service.RagRetrievalService;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -33,7 +34,7 @@ public class RagEvalServiceImpl implements RagEvalService {
     }
 
     @Override
-    public Map<String, Object> evaluate(long caseId, PlatformRepository.KbScope scope) {
+    public EvalRunResultVO evaluate(long caseId, KbScope scope) {
         Map<String, Object> evalCase = repo.retrievalEvalCase(caseId);
         String question = String.valueOf(evalCase.getOrDefault("question", ""));
         RagRetrievalService.RetrievalResult retrievalResult = retrieval.retrieve(question, repo.accessibleBaseIds(scope));
@@ -50,12 +51,6 @@ public class RagEvalServiceImpl implements RagEvalService {
         Set<Long> matched = new LinkedHashSet<>(returned);
         matched.retainAll(expected);
 
-        Map<String, Object> result = new LinkedHashMap<>();
-        result.put("caseId", caseId);
-        result.put("question", question);
-        result.put("expectedChunkIds", expected);
-        result.put("returnedChunkIds", returned);
-        result.put("recallAtK", expected.isEmpty() ? null : (double) matched.size() / expected.size());
         int firstRelevant = -1;
         for (int index = 0; index < returnedOrdered.size(); index++) {
             if (expected.contains(returnedOrdered.get(index))) {
@@ -63,7 +58,9 @@ public class RagEvalServiceImpl implements RagEvalService {
                 break;
             }
         }
-        result.put("mrrAtK", firstRelevant < 0 ? 0D : 1D / firstRelevant);
+        double recall = expected.isEmpty() ? 0D : (double) matched.size() / expected.size();
+        double mrr = firstRelevant < 0 ? 0D : 1D / firstRelevant;
+
         double dcg = 0D;
         for (int index = 0; index < returnedOrdered.size(); index++) {
             if (expected.contains(returnedOrdered.get(index))) dcg += 1D / (Math.log(index + 2) / Math.log(2));
@@ -71,10 +68,18 @@ public class RagEvalServiceImpl implements RagEvalService {
         double ideal = 0D;
         for (int index = 0; index < Math.min(expected.size(), returnedOrdered.size()); index++)
             ideal += 1D / (Math.log(index + 2) / Math.log(2));
-        result.put("nDcgAtK", ideal == 0D ? 0D : dcg / ideal);
-        result.put("hit", !matched.isEmpty());
-        result.put("retrieval", retrievalResult.trace());
-        return result;
+        double ndcg = ideal == 0D ? 0D : dcg / ideal;
+
+        return new EvalRunResultVO(
+                caseId,
+                question,
+                expected,
+                returned,
+                recall,
+                mrr,
+                ndcg,
+                !matched.isEmpty(),
+                retrievalResult.trace());
     }
 
     private Set<Long> toLongSet(Object raw) {

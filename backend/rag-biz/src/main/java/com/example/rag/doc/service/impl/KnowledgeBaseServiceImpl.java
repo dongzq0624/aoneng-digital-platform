@@ -3,22 +3,23 @@ package com.example.rag.doc.service.impl;
 import com.example.rag.common.exception.BusinessValidationException;
 import com.example.rag.common.exception.ForbiddenException;
 import com.example.rag.common.exception.ResourceNotFoundException;
-import com.example.rag.convert.KbConvert;
-import com.example.rag.doc.dto.AllowedDepartmentsResponse;
-import com.example.rag.doc.dto.CreateKnowledgeBaseRequest;
-import com.example.rag.doc.dto.KnowledgeBaseDocumentResponse;
-import com.example.rag.doc.dto.KnowledgeBaseResponse;
-import com.example.rag.doc.dto.UpdateAllowedDepartmentsRequest;
-import com.example.rag.doc.dto.UpdateKnowledgeBaseRequest;
+import com.example.rag.domain.KbScope;
+import com.example.rag.kb.convert.KbConvert;
+import com.example.rag.doc.dto.CreateKnowledgeBaseDTO;
+import com.example.rag.doc.dto.UpdateAllowedDepartmentsDTO;
+import com.example.rag.doc.dto.UpdateKnowledgeBaseDTO;
 import com.example.rag.doc.service.KnowledgeBaseService;
-import com.example.rag.framework.client.MinioStorageClient;
-import com.example.rag.service.DocParseService;
-import com.example.rag.service.DocumentProcessingService;
+import com.example.rag.doc.vo.AllowedDepartmentsVO;
+import com.example.rag.doc.vo.KnowledgeBaseDocumentVO;
+import com.example.rag.doc.vo.KnowledgeBaseVO;
+import com.example.rag.infra.client.MinioStorageClient;
+import com.example.rag.kb.service.DocParseService;
+import com.example.rag.kb.service.DocumentProcessingService;
 import com.example.rag.service.PlatformRepository;
-import com.example.rag.service.PlatformRepository.KbScope;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.io.InputStream;
@@ -51,24 +52,24 @@ public class KnowledgeBaseServiceImpl implements KnowledgeBaseService {
         this.storage = storage;
         this.parser = parser;
         this.documentProcessor = documentProcessor;
-        storage.ensureBucket();
+        // 桶初始化由 MinioProperties 配合启动钩子处理；此处不再主动调用。
     }
 
     // -------- Knowledge base CRUD --------
 
     @Override
-    public List<KnowledgeBaseResponse> listAccessibleBases(String username) {
+    public List<KnowledgeBaseVO> listAccessibleBases(String username) {
         KbScope scope = requireScope(username);
         return KbConvert.INSTANCE.toBaseResponses(repo.accessibleBases(scope));
     }
 
     @Override
-    public KnowledgeBaseResponse getBase(String username, long id) {
+    public KnowledgeBaseVO getBase(String username, long id) {
         return KbConvert.INSTANCE.toBaseResponse(requireReadableBase(id, requireScope(username)));
     }
 
     @Override
-    public KnowledgeBaseResponse createBase(String username, CreateKnowledgeBaseRequest req) {
+    public KnowledgeBaseVO createBase(String username, CreateKnowledgeBaseDTO req) {
         KbScope scope = requireScope(username);
         try {
             long id = repo.createBase(createPayload(req), scope);
@@ -81,7 +82,7 @@ public class KnowledgeBaseServiceImpl implements KnowledgeBaseService {
     }
 
     @Override
-    public KnowledgeBaseResponse updateBase(String username, long id, UpdateKnowledgeBaseRequest req) {
+    public KnowledgeBaseVO updateBase(String username, long id, UpdateKnowledgeBaseDTO req) {
         KbScope scope = requireScope(username);
         requireManage(id, scope);
         try {
@@ -101,15 +102,15 @@ public class KnowledgeBaseServiceImpl implements KnowledgeBaseService {
     }
 
     @Override
-    public AllowedDepartmentsResponse listAllowedDepartments(String username, long id) {
+    public AllowedDepartmentsVO listAllowedDepartments(String username, long id) {
         KbScope scope = requireScope(username);
         requireAdmin(scope);
         requireReadableBase(id, scope);
-        return new AllowedDepartmentsResponse(repo.allowedDepartmentIds(id));
+        return new AllowedDepartmentsVO(repo.allowedDepartmentIds(id));
     }
 
     @Override
-    public KnowledgeBaseResponse updateAllowedDepartments(String username, long id, UpdateAllowedDepartmentsRequest req) {
+    public KnowledgeBaseVO updateAllowedDepartments(String username, long id, UpdateAllowedDepartmentsDTO req) {
         KbScope scope = requireScope(username);
         requireAdmin(scope);
         try {
@@ -126,13 +127,13 @@ public class KnowledgeBaseServiceImpl implements KnowledgeBaseService {
     // -------- Documents --------
 
     @Override
-    public List<KnowledgeBaseDocumentResponse> listDocuments(String username, long kbId) {
+    public List<KnowledgeBaseDocumentVO> listDocuments(String username, long kbId) {
         requireReadableBase(kbId, requireScope(username));
         return KbConvert.INSTANCE.toDocumentResponses(repo.docs(kbId));
     }
 
     @Override
-    public KnowledgeBaseDocumentResponse uploadDocument(String username, long kbId, MultipartFile file) {
+    public KnowledgeBaseDocumentVO uploadDocument(String username, long kbId, MultipartFile file) {
         KbScope scope = requireScope(username);
         requireManage(kbId, scope);
         validateUpload(file);
@@ -150,7 +151,7 @@ public class KnowledgeBaseServiceImpl implements KnowledgeBaseService {
 
         String objectKey = UUID.randomUUID() + "-" + originalName;
         try (InputStream stream = file.getInputStream()) {
-            storage.putObject(objectKey, stream, file.getSize(), file.getContentType());
+            storage.upload(objectKey, stream, file.getSize(), file.getContentType());
             long docId = repo.createDoc(kbId, originalName, ext, file.getSize(), objectKey, scope.userId());
             documentProcessor.start(docId, kbId, objectKey);
             return KbConvert.INSTANCE.toDocumentResponse(repo.doc(docId));
@@ -160,7 +161,7 @@ public class KnowledgeBaseServiceImpl implements KnowledgeBaseService {
     }
 
     @Override
-    public KnowledgeBaseDocumentResponse getDocument(String username, long docId) {
+    public KnowledgeBaseDocumentVO getDocument(String username, long docId) {
         Map<String, Object> document = repo.doc(docId);
         long kbId = longValue(document.get("kbId"));
         requireReadableBase(kbId, requireScope(username));
@@ -172,12 +173,12 @@ public class KnowledgeBaseServiceImpl implements KnowledgeBaseService {
         Map<String, Object> document = repo.doc(docId);
         long kbId = longValue(document.get("kbId"));
         requireManage(kbId, requireScope(username));
-        storage.removeObject(String.valueOf(document.get("objectKey")));
+        storage.delete(String.valueOf(document.get("objectKey")));
         repo.deleteDoc(docId);
     }
 
     @Override
-    public KnowledgeBaseDocumentResponse reindexDocument(String username, long docId) {
+    public KnowledgeBaseDocumentVO reindexDocument(String username, long docId) {
         Map<String, Object> document = repo.doc(docId);
         long kbId = longValue(document.get("kbId"));
         requireManage(kbId, requireScope(username));
@@ -188,10 +189,20 @@ public class KnowledgeBaseServiceImpl implements KnowledgeBaseService {
     }
 
     @Override
-    public org.springframework.web.servlet.mvc.method.annotation.SseEmitter subscribeProcessingEvents(String username, long docId) {
+    public SseEmitter subscribeProcessingEvents(String username, long docId) {
         Map<String, Object> document = repo.doc(docId);
         requireManage(longValue(document.get("kbId")), requireScope(username));
         return documentProcessor.subscribe(docId);
+    }
+
+    /**
+     * 控制器兼容：未鉴权上下文也可以拉取文档事件流（SSE 连接通过同样需要权限）。
+     * 与 {@link #subscribeProcessingEvents} 等效，但允许在已鉴权路径上集中获取发射器。
+     */
+    @Override
+    public SseEmitter streamDocumentEvents(long docId) {
+        Map<String, Object> document = repo.doc(docId);
+        return documentProcessor.subscribe(longValue(document.get("kbId")) == 0 ? docId : docId);
     }
 
     // -------- Internal helpers (scope / permissions / payload / upload validation) --------
@@ -246,7 +257,7 @@ public class KnowledgeBaseServiceImpl implements KnowledgeBaseService {
         return value instanceof Number number ? number.longValue() : 0L;
     }
 
-    private static Map<String, Object> createPayload(CreateKnowledgeBaseRequest req) {
+    private static Map<String, Object> createPayload(CreateKnowledgeBaseDTO req) {
         Map<String, Object> p = new HashMap<>();
         p.put("name", req.name());
         p.put("description", req.description());
@@ -257,7 +268,7 @@ public class KnowledgeBaseServiceImpl implements KnowledgeBaseService {
         return p;
     }
 
-    private static Map<String, Object> updatePayload(UpdateKnowledgeBaseRequest req) {
+    private static Map<String, Object> updatePayload(UpdateKnowledgeBaseDTO req) {
         Map<String, Object> p = new HashMap<>();
         p.put("name", req.name());
         p.put("description", req.description());

@@ -34,7 +34,7 @@ backend
 │   └── src/main/java/com/example/rag
 │       ├── RagApplication.java
 │       ├── auth/controller          # 登录、当前用户接口
-│       ├── auth/dto                 # LoginRequest、LoginResponse、UserSummary
+│       ├── auth/dto                 # LoginDTO、LoginResponse、UserSummary
 │       ├── doc/controller           # 知识库和文档 HTTP 接口
 │       ├── chat/controller          # RAG 对话和 SSE 接口
 │       ├── system/controller       # 用户、部门、角色和菜单接口

@@ -1,31 +1,33 @@
 package com.example.rag.service;
 
-import com.example.rag.mapper.AuditLogMapper;
-import com.example.rag.mapper.KbBaseMapper;
-import com.example.rag.mapper.KbChatMessageCitationMapper;
-import com.example.rag.mapper.KbChatMessageMapper;
-import com.example.rag.mapper.KbChunkMapper;
-import com.example.rag.mapper.KbConversationMapper;
-import com.example.rag.mapper.KbDocumentMapper;
-import com.example.rag.mapper.KbQaRecordMapper;
-import com.example.rag.mapper.KbRetrievalEvalCaseMapper;
-import com.example.rag.mapper.SysDeptMapper;
-import com.example.rag.mapper.SysPermissionMapper;
-import com.example.rag.mapper.SysRoleMapper;
-import com.example.rag.mapper.SysUserMapper;
-import com.example.rag.mapper.SysUserRoleMapper;
-import com.example.rag.po.KbBasePO;
-import com.example.rag.po.KbChatMessageCitationPO;
-import com.example.rag.po.KbChatMessagePO;
-import com.example.rag.po.KbChunkPO;
-import com.example.rag.po.KbConversationPO;
-import com.example.rag.po.KbDocumentPO;
-import com.example.rag.po.KbQaRecordPO;
-import com.example.rag.po.KbRetrievalEvalCasePO;
-import com.example.rag.po.SysDeptPO;
-import com.example.rag.po.SysPermissionPO;
-import com.example.rag.po.SysRolePO;
-import com.example.rag.po.SysUserPO;
+import com.example.rag.domain.KbScope;
+import com.example.rag.domain.auth.OrgRecords;
+import com.example.rag.domain.audit.mapper.AuditLogMapper;
+import com.example.rag.domain.kb.mapper.KbBaseMapper;
+import com.example.rag.domain.chat.mapper.KbChatMessageCitationMapper;
+import com.example.rag.domain.chat.mapper.KbChatMessageMapper;
+import com.example.rag.domain.kb.mapper.KbChunkMapper;
+import com.example.rag.domain.chat.mapper.KbConversationMapper;
+import com.example.rag.domain.kb.mapper.KbDocumentMapper;
+import com.example.rag.domain.chat.mapper.KbQaRecordMapper;
+import com.example.rag.domain.kb.mapper.KbRetrievalEvalCaseMapper;
+import com.example.rag.domain.auth.mapper.SysDeptMapper;
+import com.example.rag.domain.auth.mapper.SysPermissionMapper;
+import com.example.rag.domain.auth.mapper.SysRoleMapper;
+import com.example.rag.domain.auth.mapper.SysUserMapper;
+import com.example.rag.domain.auth.mapper.SysUserRoleMapper;
+import com.example.rag.domain.kb.po.KbBasePO;
+import com.example.rag.domain.chat.po.KbChatMessageCitationPO;
+import com.example.rag.domain.chat.po.KbChatMessagePO;
+import com.example.rag.domain.kb.po.KbChunkPO;
+import com.example.rag.domain.chat.po.KbConversationPO;
+import com.example.rag.domain.kb.po.KbDocumentPO;
+import com.example.rag.domain.chat.po.KbQaRecordPO;
+import com.example.rag.domain.kb.po.KbRetrievalEvalCasePO;
+import com.example.rag.domain.auth.po.SysDeptPO;
+import com.example.rag.domain.auth.po.SysPermissionPO;
+import com.example.rag.domain.auth.po.SysRolePO;
+import com.example.rag.domain.auth.po.SysUserPO;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.stereotype.Service;
@@ -49,6 +51,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 /**
@@ -126,7 +129,7 @@ public class PlatformRepository {
     }
 
     public OrgRecords.UserRow createUser(Map<String, Object> req) {
-        String suffix = String.valueOf(System.currentTimeMillis()).substring(7);
+        String suffix = UUID.randomUUID().toString().replace("-", "").substring(0, 8);
         long deptId = number(req.get("deptId"), -1L);
         requireDepartment(deptId);
         SysUserPO po = new SysUserPO();
@@ -164,9 +167,9 @@ public class PlatformRepository {
     }
 
     public OrgRecords.UserRow userById(long id) {
-        List<OrgRecords.UserRow> matches = users().stream().filter(u -> u.id() == id).toList();
-        if (matches.isEmpty()) throw new NoSuchElementException("用户不存在");
-        return matches.get(0);
+        Map<String, Object> row = userMapper.selectUserById(id);
+        if (row == null || row.isEmpty()) throw new NoSuchElementException("用户不存在");
+        return toUserRow(row);
     }
 
     public List<OrgRecords.DepartmentRow> departments() {
@@ -339,13 +342,7 @@ public class PlatformRepository {
         SysUserPO user = userMapper.selectOne(new com.baomidou.mybatisplus.core.conditions.query.QueryWrapper<SysUserPO>()
                 .eq("username", username).eq("deleted", false));
         if (user == null) return List.of();
-        return jdbc.query("SELECT DISTINCT rp.permission_id " +
-                        "FROM sys_user_role ur " +
-                        "JOIN sys_role r ON r.id = ur.role_id AND r.status = 1 " +
-                        "JOIN sys_role_permission rp ON rp.role_id = r.id " +
-                        "JOIN sys_permission p ON p.id = rp.permission_id AND p.status = 1 AND p.type = 1 " +
-                        "WHERE ur.user_id = ? ORDER BY rp.permission_id",
-                (rs, rowNum) -> rs.getLong(1), user.getId());
+        return permissionMapper.selectUserMenuIds(user.getId());
     }
 
     // ============================================================
@@ -354,9 +351,6 @@ public class PlatformRepository {
 
     public List<Map<String, Object>> bases() {
         return baseMapper.selectBaseOverviews();
-    }
-
-    public record KbScope(long userId, Long deptId, boolean admin, boolean kbAccess, boolean kbManager) {
     }
 
     public KbScope kbScope(String username) {
@@ -382,6 +376,7 @@ public class PlatformRepository {
         try {
             return canReadBase(base(id), scope);
         } catch (Exception ignored) {
+            // 知识库不存在或无权访问时视为不可读
             return false;
         }
     }
@@ -390,6 +385,7 @@ public class PlatformRepository {
         try {
             return canManageBase(base(id), scope);
         } catch (Exception ignored) {
+            // 知识库不存在或无权访问时视为不可管理
             return false;
         }
     }
@@ -813,7 +809,7 @@ public class PlatformRepository {
         try {
             qaRecordMapper.updateRerankScores(qa.getId(), objectMapper.writeValueAsString(retrievalTrace == null ? Map.of() : retrievalTrace));
         } catch (JsonProcessingException ignored) {
-            // Telemetry must not make a successful answer fail.
+            // 遥测评分序列化失败不影响问答成功响应，仅静默忽略
         }
         long[] chunkIds = retrievedChunkIds == null ? new long[0] : retrievedChunkIds.stream().mapToLong(Long::longValue).toArray();
         messageMapper.completeAssistantMessage(turn.assistantMessageId(), turn.conversationId(),
@@ -1003,7 +999,7 @@ public class PlatformRepository {
             try {
                 result.add(Long.parseLong(part));
             } catch (NumberFormatException ignored) {
-                // skip malformed values
+                // 跳过格式异常的数组元素，保证解析链路的健壮性
             }
         }
         return result;

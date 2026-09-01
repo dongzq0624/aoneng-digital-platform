@@ -1,7 +1,7 @@
 package com.example.rag.audit.controller;
 
-import com.example.rag.audit.dto.AuditLogListResponse;
 import com.example.rag.audit.service.AuditService;
+import com.example.rag.audit.vo.AuditLogListVO;
 import com.example.rag.common.result.Result;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
  * 所有日志查询和列表组装业务逻辑委托给 {@link AuditService}。
  */
 @RestController
-@RequestMapping("/api/audit")
+@RequestMapping("/api/v1/audit")
 public class AuditController {
 
     private final AuditService auditService;
@@ -27,7 +27,7 @@ public class AuditController {
      * @return 最近的审计日志
      */
     @GetMapping("/logs")
-    public Result<AuditLogListResponse> logs() {
+    public Result<AuditLogListVO> logs() {
         return Result.ok(auditService.listRecentLogs());
     }
 }

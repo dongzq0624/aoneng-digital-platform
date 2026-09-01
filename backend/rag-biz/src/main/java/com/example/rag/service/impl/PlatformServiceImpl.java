@@ -1,6 +1,7 @@
 package com.example.rag.service.impl;
 
-import com.example.rag.service.OrgRecords;
+import com.example.rag.domain.KbScope;
+import com.example.rag.domain.auth.OrgRecords;
 import com.example.rag.service.PlatformRepository;
 import com.example.rag.service.PlatformService;
 import org.springframework.stereotype.Service;
@@ -158,37 +159,37 @@ public class PlatformServiceImpl implements PlatformService {
     }
 
     @Override
-    public PlatformRepository.KbScope kbScope(String username) {
+    public KbScope kbScope(String username) {
         return delegate.kbScope(username);
     }
 
     @Override
-    public List<Map<String, Object>> accessibleBases(PlatformRepository.KbScope scope) {
+    public List<Map<String, Object>> accessibleBases(KbScope scope) {
         return delegate.accessibleBases(scope);
     }
 
     @Override
-    public List<Long> accessibleBaseIds(PlatformRepository.KbScope scope) {
+    public List<Long> accessibleBaseIds(KbScope scope) {
         return delegate.accessibleBaseIds(scope);
     }
 
     @Override
-    public boolean canReadBase(long id, PlatformRepository.KbScope scope) {
+    public boolean canReadBase(long id, KbScope scope) {
         return delegate.canReadBase(id, scope);
     }
 
     @Override
-    public boolean canManageBase(long id, PlatformRepository.KbScope scope) {
+    public boolean canManageBase(long id, KbScope scope) {
         return delegate.canManageBase(id, scope);
     }
 
     @Override
-    public Map<String, Object> baseForScope(long id, PlatformRepository.KbScope scope) {
+    public Map<String, Object> baseForScope(long id, KbScope scope) {
         return delegate.baseForScope(id, scope);
     }
 
     @Override
-    public long createBase(Map<String, Object> r, PlatformRepository.KbScope scope) {
+    public long createBase(Map<String, Object> r, KbScope scope) {
         return delegate.createBase(r, scope);
     }
 
@@ -198,7 +199,7 @@ public class PlatformServiceImpl implements PlatformService {
     }
 
     @Override
-    public void updateBase(long id, Map<String, Object> r, PlatformRepository.KbScope scope) {
+    public void updateBase(long id, Map<String, Object> r, KbScope scope) {
         delegate.updateBase(id, r, scope);
     }
 
@@ -208,7 +209,7 @@ public class PlatformServiceImpl implements PlatformService {
     }
 
     @Override
-    public void updateAllowedDepartments(long kbId, List<Long> deptIds, PlatformRepository.KbScope scope) {
+    public void updateAllowedDepartments(long kbId, List<Long> deptIds, KbScope scope) {
         delegate.updateAllowedDepartments(kbId, deptIds, scope);
     }
 

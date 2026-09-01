@@ -1,9 +1,9 @@
 package com.example.rag.auth.controller;
 
-import com.example.rag.auth.dto.LoginRequest;
-import com.example.rag.auth.dto.LoginResponse;
-import com.example.rag.auth.dto.UserSummary;
 import com.example.rag.auth.service.AuthService;
+import com.example.rag.auth.vo.LoginVO;
+import com.example.rag.auth.vo.UserSummaryVO;
+import com.example.rag.auth.dto.LoginDTO;
 import com.example.rag.common.result.Result;
 import jakarta.validation.Valid;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
  * 所有登录、用户信息等业务逻辑委托给 {@link AuthService}。
  */
 @RestController
-@RequestMapping("/api/auth")
+@RequestMapping("/api/v1/auth")
 public class AuthController {
     private final AuthService authService;
 
@@ -33,7 +33,7 @@ public class AuthController {
      * @return 登录成功返回 JWT 令牌和用户摘要信息
      */
     @PostMapping("/login")
-    public Result<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
+    public Result<LoginVO> login(@Valid @RequestBody LoginDTO request) {
         return Result.ok(authService.login(request));
     }
 
@@ -44,7 +44,7 @@ public class AuthController {
      * @return 当前用户详细信息
      */
     @GetMapping("/me")
-    public Result<UserSummary> me(@AuthenticationPrincipal String username) {
+    public Result<UserSummaryVO> me(@AuthenticationPrincipal String username) {
         return Result.ok(authService.currentUser(username));
     }
 }

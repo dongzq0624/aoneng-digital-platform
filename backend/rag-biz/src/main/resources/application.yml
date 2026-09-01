@@ -42,6 +42,10 @@ dashscope:
   rerank-model: qwen3-rerank
   rerank-base-url: ${DASHSCOPE_RERANK_BASE_URL:https://dashscope.aliyuncs.com}
 rag:
+  sse:
+    timeout-seconds: ${RAG_SSE_TIMEOUT:120}
+    history-message-count: ${RAG_HISTORY_MESSAGES:8}
+    max-citations: ${RAG_MAX_CITATIONS:3}
   retrieval:
     query-rewrite-enabled: ${RAG_QUERY_REWRITE_ENABLED:true}
     rerank-enabled: ${RAG_RERANK_ENABLED:true}

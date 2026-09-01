@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.rag.domain.kb.mapper.KbDocumentMapper">
+
+    <resultMap id="DocumentRow" type="java.util.LinkedHashMap">
+        <id column="id" property="id"/>
+        <result column="kbId" property="kbId"/>
+        <result column="fileName" property="fileName"/>
+        <result column="fileType" property="fileType"/>
+        <result column="fileSize" property="fileSize"/>
+        <result column="objectKey" property="objectKey"/>
+        <result column="version" property="version"/>
+        <result column="parseStatus" property="parseStatus"/>
+        <result column="chunkStatus" property="chunkStatus"/>
+        <result column="chunkCount" property="chunkCount"/>
+        <result column="errorMsg" property="errorMsg"/>
+        <result column="createdAt" property="createdAt"/>
+        <result column="updatedAt" property="updatedAt"/>
+    </resultMap>
+
+    <select id="selectDocument" resultMap="DocumentRow">
+        SELECT id, kb_id AS "kbId", file_name AS "fileName", file_type AS "fileType",
+               file_size AS "fileSize", object_key AS "objectKey", version,
+               parse_status AS "parseStatus", chunk_status AS "chunkStatus",
+               chunk_count AS "chunkCount", error_msg AS "errorMsg",
+               created_at AS "createdAt", updated_at AS "updatedAt"
+          FROM kb_document WHERE id = #{id} AND deleted = FALSE
+    </select>
+
+    <select id="selectDocumentsByKb" resultMap="DocumentRow">
+        SELECT id, kb_id AS "kbId", file_name AS "fileName", file_type AS "fileType",
+               file_size AS "fileSize", version,
+               parse_status AS "parseStatus", chunk_status AS "chunkStatus",
+               chunk_count AS "chunkCount", error_msg AS "errorMsg",
+               created_at AS "createdAt", updated_at AS "updatedAt"
+          FROM kb_document WHERE kb_id = #{kbId} AND deleted = FALSE
+         ORDER BY id DESC
+    </select>
+
+    <insert id="insertReturningId" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO kb_document(kb_id, file_name, file_type, file_size, object_key, uploader_id)
+        VALUES(#{kbId}, #{fileName}, #{fileType}, #{fileSize}, #{objectKey}, #{uploaderId})
+    </insert>
+
+    <update id="updateStatus">
+        UPDATE kb_document
+           SET parse_status = #{parseStatus},
+               chunk_status = #{chunkStatus},
+               chunk_count  = #{chunkCount},
+               error_msg    = #{errorMsg},
+               updated_at   = NOW()
+         WHERE id = #{id}
+    </update>
+
+    <update id="softDelete">
+        UPDATE kb_document SET deleted = TRUE, updated_at = NOW() WHERE id = #{id}
+    </update>
+</mapper>

@@ -20,9 +20,9 @@
 
     <modules>
         <module>rag-common</module>
-        <module>rag-framework</module>
+        <module>rag-domain</module>
+        <module>rag-infrastructure</module>
         <module>rag-biz</module>
-        <module>rag-task</module>
     </modules>
 
     <properties>
@@ -45,7 +45,12 @@
             </dependency>
             <dependency>
                 <groupId>com.example.rag</groupId>
-                <artifactId>rag-framework</artifactId>
+                <artifactId>rag-domain</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.example.rag</groupId>
+                <artifactId>rag-infrastructure</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
