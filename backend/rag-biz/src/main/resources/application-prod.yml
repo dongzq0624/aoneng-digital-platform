@@ -6,7 +6,7 @@ spring:
 logging:
   level:
     root: WARN
-    com.example.rag: INFO
+    com.aoneng.rag: INFO
 
 management:
   endpoints:

@@ -6,7 +6,7 @@
 
 ```text
 backend/                         Spring Boot 3.4 / Java 17 服务
-  src/main/java/com/example/rag/
+  src/main/java/com/aoneng/rag/
     config/                       MinIO、模型与 Spring Security 配置
     controller/                   HTTP API 和 SSE 入口
     security/                     JWT 解析与认证过滤器

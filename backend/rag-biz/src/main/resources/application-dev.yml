@@ -8,7 +8,7 @@ spring:
 logging:
   level:
     root: INFO
-    com.example.rag: DEBUG
+    com.aoneng.rag: DEBUG
     org.springframework.security: DEBUG
 
 management:

@@ -11,7 +11,7 @@
         <relativePath/>
     </parent>
 
-    <groupId>com.example.rag</groupId>
+    <groupId>com.aoneng.rag</groupId>
     <artifactId>rag-parent</artifactId>
     <version>1.0.0</version>
     <packaging>pom</packaging>
@@ -39,22 +39,22 @@
     <dependencyManagement>
         <dependencies>
             <dependency>
-                <groupId>com.example.rag</groupId>
+                <groupId>com.aoneng.rag</groupId>
                 <artifactId>rag-common</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.example.rag</groupId>
+                <groupId>com.aoneng.rag</groupId>
                 <artifactId>rag-domain</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.example.rag</groupId>
+                <groupId>com.aoneng.rag</groupId>
                 <artifactId>rag-infrastructure</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.example.rag</groupId>
+                <groupId>com.aoneng.rag</groupId>
                 <artifactId>rag-biz</artifactId>
                 <version>${project.version}</version>
             </dependency>
