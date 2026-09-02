@@ -42,6 +42,9 @@ dashscope:
   rerank-model: qwen3-rerank
   rerank-base-url: ${DASHSCOPE_RERANK_BASE_URL:https://dashscope.aliyuncs.com}
 rag:
+  tokenizer:
+    # Offline tokenizer.json shipped with the BGE-M3 embedding model.
+    path: ${RAG_TOKENIZER_PATH:/models/bge‑m3‑tokenizer/tokenizer.json}
   sse:
     timeout-seconds: ${RAG_SSE_TIMEOUT:120}
     history-message-count: ${RAG_HISTORY_MESSAGES:8}
@@ -63,11 +66,15 @@ docling:
   sample-pages: ${DOCLING_SAMPLE_PAGES:8}
   sample-rows: ${DOCLING_SAMPLE_ROWS:200}
   fallback-to-tika: ${DOCLING_FALLBACK_TO_TIKA:true}
+paddleocr:
+  enabled: ${PADDLEOCR_ENABLED:true}
+  endpoint: ${PADDLEOCR_ENDPOINT:http://localhost:8091}
+  timeout-seconds: ${PADDLEOCR_TIMEOUT_SECONDS:180}
 milvus:
   host: ${MILVUS_HOST:localhost}
   port: ${MILVUS_PORT:19530}
   token: ${MILVUS_TOKEN:}
-  collection: kb_embeddings
+  collection: ${MILVUS_COLLECTION:kb_embeddings_hybrid}
   dimension: ${MILVUS_DIMENSION:1024}
   score-threshold: ${MILVUS_SCORE_THRESHOLD:0.20}
 minio:

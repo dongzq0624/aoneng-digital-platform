@@ -161,7 +161,9 @@ public class RagController {
     }
 
     @GetMapping("/chunks/{id}")
-    public Result<ChunkVO> chunk(@PathVariable long id) {
+    public Result<ChunkVO> chunk(@AuthenticationPrincipal String username,
+                                 @PathVariable long id) {
+        chatService.requireChatAccess(username);
         return Result.ok(new ChunkVO(id, 0L, 0L, "向量库中的文档片段"));
     }
 

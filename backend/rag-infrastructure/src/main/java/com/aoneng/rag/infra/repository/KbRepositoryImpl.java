@@ -50,8 +50,9 @@ public class KbRepositoryImpl implements KbRepository {
     }
 
     @Override
-    public void updateBase(long id, String name, String description, String visibility, Long deptId) {
-        baseMapper.updateBase(id, name, description, visibility, deptId);
+    public void updateBase(long id, String name, String description, String visibility, Long deptId,
+                           Integer chunkSize, Integer chunkOverlap) {
+        baseMapper.updateBase(id, name, description, visibility, deptId, chunkSize, chunkOverlap);
     }
 
     @Override
@@ -119,20 +120,70 @@ public class KbRepositoryImpl implements KbRepository {
     }
 
     @Override
-    public long saveChunk(long docId, long kbId, int seq, String content, Integer pageNo) {
+    public long saveBaseChunk(long docId, long kbId, int seq, String content, Integer pageNo,
+                              int tokenCount, String blockType, String metadata) {
+        Long id = chunkMapper.insertBase(docId, kbId, seq, content, pageNo, tokenCount,
+                blockType, metadata == null || metadata.isBlank() ? "{}" : metadata);
+        if (id == null) throw new IllegalStateException("基础分块保存失败");
+        return id;
+    }
+
+    @Override
+    public void updateParentEmbeddingId(long parentId, String embeddingId) {
+        if (parentId <= 0 || embeddingId == null || embeddingId.isBlank()
+                || chunkMapper.updateParentEmbeddingId(parentId, embeddingId) != 1) {
+            throw new IllegalStateException("父块向量标识写入失败");
+        }
+    }
+
+    @Override
+    public long saveParentChunk(long docId, long kbId, int seq, String content, Integer pageNo, int tokenCount) {
+        Long id = chunkMapper.insertParent(docId, kbId, seq, content, pageNo, tokenCount);
+        if (id == null) throw new IllegalStateException("父块保存失败");
+        return id;
+    }
+
+    @Override
+    public long saveChunk(long docId, long kbId, long parentId, int seq, String content, Integer pageNo, int tokenCount) {
         KbChunkPO p = new KbChunkPO();
         p.setDocId(docId);
         p.setKbId(kbId);
+        p.setParentId(parentId);
         p.setSeq(seq);
         p.setContent(content);
         p.setPageNo(pageNo);
+        p.setTokenCount(tokenCount);
         chunkMapper.insertReturningId(p);
         return p.getId();
     }
 
     @Override
+    public void updateChunkEmbeddingId(long chunkId, String embeddingId) {
+        if (chunkId <= 0 || embeddingId == null || embeddingId.isBlank()) {
+            throw new IllegalArgumentException("分块向量标识不能为空");
+        }
+        int updated = chunkMapper.updateEmbeddingId(chunkId, embeddingId);
+        if (updated != 1) {
+            throw new IllegalStateException("分块向量标识写入失败");
+        }
+    }
+
+    @Override
+    public void updateChunkMetadata(long chunkId, String metadata) {
+        if (chunkId <= 0 || metadata == null || metadata.isBlank()) throw new IllegalArgumentException("分块布局元数据不能为空");
+        if (chunkMapper.updateMetadata(chunkId, metadata) != 1) throw new IllegalStateException("分块布局元数据写入失败");
+    }
+
+    @Override
+    public Map<String, Object> findParentChunk(long parentId) {
+        return chunkMapper.selectParent(parentId);
+    }
+
+    @Override
     public void deleteChunksByDoc(long docId) {
         chunkMapper.deleteByDoc(docId);
+        chunkMapper.deleteParentsByDoc(docId);
+        chunkMapper.deleteBaseByDoc(docId);
     }
 
     @Override

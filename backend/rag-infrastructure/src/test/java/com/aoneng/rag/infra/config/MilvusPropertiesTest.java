@@ -12,7 +12,7 @@ class MilvusPropertiesTest {
 
         assertEquals("localhost", properties.host());
         assertEquals(19530, properties.port());
-        assertEquals("kb_embeddings", properties.collection());
+        assertEquals("kb_embeddings_hybrid", properties.collection());
         assertEquals(1024, properties.dimension());
         assertEquals(1.0, properties.scoreThreshold());
     }

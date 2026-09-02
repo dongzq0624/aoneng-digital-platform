@@ -5,57 +5,54 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="bbcf13ae-cb9e-43a8-8224-323ad3b04ac0" name="更改" comment="">
-      <change afterPath="$PROJECT_DIR$/backend/docling-service/README.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/backend/docling-service/app.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/backend/docling-service/requirements.txt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/aoneng/rag/audit/service/AuditPersistenceService.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/backend/rag-infrastructure/src/main/java/com/aoneng/rag/infra/config/DoclingSamplingProperties.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/backend/rag-infrastructure/src/main/java/com/aoneng/rag/infra/config/MilvusProperties.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/backend/rag-infrastructure/src/main/java/com/aoneng/rag/infra/parse/DoclingDocParser.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/backend/rag-infrastructure/src/main/java/com/aoneng/rag/infra/parse/StructuredDocumentParser.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/backend/rag-infrastructure/src/main/java/com/aoneng/rag/infra/repository/AuditRepositoryImpl.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/backend/rag-infrastructure/src/main/java/com/aoneng/rag/infra/repository/ChatRepositoryImpl.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/backend/rag-infrastructure/src/main/java/com/aoneng/rag/infra/repository/KbRepositoryImpl.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/backend/rag-infrastructure/src/main/java/com/aoneng/rag/infra/repository/OrgRepositoryImpl.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/backend/rag-infrastructure/src/main/java/com/aoneng/rag/infra/repository/UserRepositoryImpl.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/backend/rag-infrastructure/src/main/java/com/aoneng/rag/infra/vector/MilvusVectorStore.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/backend/rag-infrastructure/src/test/java/com/aoneng/rag/infra/config/MilvusPropertiesTest.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/backend/rag-infrastructure/src/test/java/com/aoneng/rag/infra/parse/DoclingDocParserIntegrationTest.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.env" beforeDir="false" afterPath="$PROJECT_DIR$/.env" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.env.example" beforeDir="false" afterPath="$PROJECT_DIR$/.env.example" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/AGENTS.md" beforeDir="false" afterPath="$PROJECT_DIR$/AGENTS.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/RAG.md" beforeDir="false" afterPath="$PROJECT_DIR$/RAG.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/ARCHITECTURE.md" beforeDir="false" afterPath="$PROJECT_DIR$/backend/ARCHITECTURE.md" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/backend/Dockerfile" beforeDir="false" afterPath="$PROJECT_DIR$/backend/Dockerfile" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/backend/README.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/backend/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/docling-service/app.py" beforeDir="false" afterPath="$PROJECT_DIR$/backend/docling-service/app.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/docling-service/requirements.txt" beforeDir="false" afterPath="$PROJECT_DIR$/backend/docling-service/requirements.txt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/backend/rag-biz/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/backend/rag-biz/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/aoneng/rag/application/chat/ChatServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/aoneng/rag/application/chat/ChatServiceImpl.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/aoneng/rag/application/processing/DocumentProcessor.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/aoneng/rag/application/processing/DocumentProcessor.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/aoneng/rag/application/processing/DocumentProcessorImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/aoneng/rag/application/processing/DocumentProcessorImpl.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/aoneng/rag/application/repository/PlatformRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/aoneng/rag/application/repository/PlatformRepository.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/aoneng/rag/audit/convert/AuditConvert.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/aoneng/rag/audit/convert/AuditConvert.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/aoneng/rag/audit/service/impl/AuditServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/aoneng/rag/audit/service/impl/AuditServiceImpl.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/aoneng/rag/application/retrieval/RetrievalServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/aoneng/rag/application/retrieval/RetrievalServiceImpl.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/aoneng/rag/chat/controller/RagController.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/aoneng/rag/chat/controller/RagController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/aoneng/rag/chat/service/impl/RagChatServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/aoneng/rag/chat/service/impl/RagChatServiceImpl.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/aoneng/rag/doc/controller/KnowledgeBaseController.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/aoneng/rag/doc/controller/KnowledgeBaseController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/aoneng/rag/doc/dto/CreateKnowledgeBaseDTO.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/aoneng/rag/doc/dto/CreateKnowledgeBaseDTO.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/aoneng/rag/doc/dto/UpdateKnowledgeBaseDTO.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/aoneng/rag/doc/dto/UpdateKnowledgeBaseDTO.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/aoneng/rag/doc/service/KnowledgeBaseService.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/aoneng/rag/doc/service/KnowledgeBaseService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/aoneng/rag/doc/service/impl/KnowledgeBaseServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/aoneng/rag/doc/service/impl/KnowledgeBaseServiceImpl.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/backend/rag-biz/src/main/resources/application.yml" beforeDir="false" afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/resources/application.yml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/rag-biz/src/main/resources/db/migration/V4__seed_platform_defaults.sql" beforeDir="false" afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/resources/db/migration/V4__seed_platform_defaults.sql" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/rag-domain/src/main/java/com/aoneng/rag/domain/auth/repository/UserRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/rag-domain/src/main/java/com/aoneng/rag/domain/auth/repository/UserRepository.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/backend/rag-domain/src/main/java/com/aoneng/rag/domain/kb/mapper/KbBaseMapper.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/rag-domain/src/main/java/com/aoneng/rag/domain/kb/mapper/KbBaseMapper.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/backend/rag-domain/src/main/java/com/aoneng/rag/domain/kb/mapper/KbChunkMapper.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/rag-domain/src/main/java/com/aoneng/rag/domain/kb/mapper/KbChunkMapper.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/rag-domain/src/main/java/com/aoneng/rag/domain/kb/po/KbBasePO.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/rag-domain/src/main/java/com/aoneng/rag/domain/kb/po/KbBasePO.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/backend/rag-domain/src/main/java/com/aoneng/rag/domain/kb/po/KbChunkPO.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/rag-domain/src/main/java/com/aoneng/rag/domain/kb/po/KbChunkPO.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/rag-domain/src/main/java/com/aoneng/rag/domain/kb/repository/KbRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/rag-domain/src/main/java/com/aoneng/rag/domain/kb/repository/KbRepository.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/backend/rag-domain/src/main/resources/mapper/KbBaseMapper.xml" beforeDir="false" afterPath="$PROJECT_DIR$/backend/rag-domain/src/main/resources/mapper/KbBaseMapper.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/backend/rag-domain/src/main/resources/mapper/KbChunkMapper.xml" beforeDir="false" afterPath="$PROJECT_DIR$/backend/rag-domain/src/main/resources/mapper/KbChunkMapper.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/backend/rag-infrastructure/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/backend/rag-infrastructure/pom.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/rag-infrastructure/src/main/java/com/aoneng/rag/infra/client/DashScopeChatClient.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/rag-infrastructure/src/main/java/com/aoneng/rag/infra/client/DashScopeEmbeddingClient.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/rag-infrastructure/src/main/java/com/aoneng/rag/infra/client/DashScopeRerankClient.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/rag-infrastructure/src/main/java/com/aoneng/rag/infra/client/HttpDashScopeChatClient.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/rag-infrastructure/src/main/java/com/aoneng/rag/infra/client/HttpDashScopeEmbeddingClient.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/rag-infrastructure/src/main/java/com/aoneng/rag/infra/client/HttpDashScopeRerankClient.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/rag-infrastructure/src/main/java/com/aoneng/rag/infra/client/QdrantVectorClient.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/rag-infrastructure/src/main/java/com/aoneng/rag/infra/config/DashScopeProperties.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/rag-infrastructure/src/main/java/com/aoneng/rag/infra/config/DashScopeProperties.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/rag-infrastructure/src/main/java/com/aoneng/rag/infra/config/QdrantProperties.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/rag-infrastructure/src/main/java/com/aoneng/rag/infra/config/RagRetrievalProperties.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/rag-infrastructure/src/main/java/com/aoneng/rag/infra/config/RagRetrievalProperties.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/rag-infrastructure/src/main/java/com/aoneng/rag/infra/vector/QdrantVectorStore.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/rag-infrastructure/src/main/java/com/aoneng/rag/infra/chunk/Chunker.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/rag-infrastructure/src/main/java/com/aoneng/rag/infra/chunk/Chunker.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/rag-infrastructure/src/main/java/com/aoneng/rag/infra/chunk/TextChunker.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/rag-infrastructure/src/main/java/com/aoneng/rag/infra/chunk/TextChunker.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/rag-infrastructure/src/main/java/com/aoneng/rag/infra/config/MilvusProperties.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/rag-infrastructure/src/main/java/com/aoneng/rag/infra/config/MilvusProperties.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/rag-infrastructure/src/main/java/com/aoneng/rag/infra/llm/DashScopeLlmService.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/rag-infrastructure/src/main/java/com/aoneng/rag/infra/llm/DashScopeLlmService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/rag-infrastructure/src/main/java/com/aoneng/rag/infra/parse/DoclingDocParser.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/rag-infrastructure/src/main/java/com/aoneng/rag/infra/parse/DoclingDocParser.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/rag-infrastructure/src/main/java/com/aoneng/rag/infra/parse/StructuredDocumentParser.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/rag-infrastructure/src/main/java/com/aoneng/rag/infra/parse/StructuredDocumentParser.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/rag-infrastructure/src/main/java/com/aoneng/rag/infra/repository/KbRepositoryImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/rag-infrastructure/src/main/java/com/aoneng/rag/infra/repository/KbRepositoryImpl.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/rag-infrastructure/src/main/java/com/aoneng/rag/infra/repository/UserRepositoryImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/rag-infrastructure/src/main/java/com/aoneng/rag/infra/repository/UserRepositoryImpl.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/rag-infrastructure/src/main/java/com/aoneng/rag/infra/vector/MilvusVectorStore.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/rag-infrastructure/src/main/java/com/aoneng/rag/infra/vector/MilvusVectorStore.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/rag-infrastructure/src/main/java/com/aoneng/rag/infra/vector/VectorStore.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/rag-infrastructure/src/main/java/com/aoneng/rag/infra/vector/VectorStore.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/rag-infrastructure/src/test/java/com/aoneng/rag/infra/config/MilvusPropertiesTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/rag-infrastructure/src/test/java/com/aoneng/rag/infra/config/MilvusPropertiesTest.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/docker-compose.yml" beforeDir="false" afterPath="$PROJECT_DIR$/docker-compose.yml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/api.ts" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/api.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/types.ts" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/types.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/utils/sse.ts" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/utils/sse.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/views/kb/KnowledgeBaseDetail.vue" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/views/kb/KnowledgeBaseDetail.vue" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/views/login/Login.vue" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/views/login/Login.vue" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/sql/rag.sql" beforeDir="false" afterPath="$PROJECT_DIR$/sql/rag.sql" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -83,31 +80,31 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;Maven.rag-parent [clean].executor&quot;: &quot;Run&quot;,
-    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
-    &quot;SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
-    &quot;Spring Boot.RagApplication.executor&quot;: &quot;Run&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
-    &quot;junie.onboarding.icon.badge.shown&quot;: &quot;true&quot;,
-    &quot;last_opened_file_path&quot;: &quot;C:/Users/Administrator.DESKTOP-VH55UL7/Desktop/AI full-stack/aoneng-digital-platform&quot;,
-    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
-    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
-    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
-    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
-    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
-    &quot;project.structure.last.edited&quot;: &quot;模块&quot;,
-    &quot;project.structure.proportion&quot;: &quot;0.15&quot;,
-    &quot;project.structure.side.proportion&quot;: &quot;0.2&quot;,
-    &quot;run.code.analysis.last.selected.profile&quot;: &quot;pProject Default&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;advanced.settings&quot;,
-    &quot;ts.external.directory.path&quot;: &quot;C:\\Users\\Administrator.DESKTOP-VH55UL7\\Desktop\\AI full-stack\\aoneng-digital-platform\\frontend\\node_modules\\typescript\\lib&quot;,
-    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "Maven.rag-parent [clean].executor": "Run",
+    "ModuleVcsDetector.initialDetectionPerformed": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "SHARE_PROJECT_CONFIGURATION_FILES": "true",
+    "Spring Boot.RagApplication.executor": "Run",
+    "git-widget-placeholder": "main",
+    "junie.onboarding.icon.badge.shown": "true",
+    "last_opened_file_path": "C:/Users/Administrator.DESKTOP-VH55UL7/Desktop/AI full-stack/aoneng-digital-platform",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "project.structure.last.edited": "项目",
+    "project.structure.proportion": "0.15",
+    "project.structure.side.proportion": "0.2",
+    "run.code.analysis.last.selected.profile": "pProject Default",
+    "settings.editor.selected.configurable": "preferences.pluginManager",
+    "ts.external.directory.path": "D:\\aoneng\\aoneng-digital-platform\\frontend\\node_modules\\typescript\\lib",
+    "vue.rearranger.settings.migration": "true"
   }
-}</component>
+}]]></component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
       <recent name="D:\aoneng\digital-platform" />
@@ -131,6 +128,12 @@
       <method v="2">
         <option name="Make" enabled="true" />
       </method>
+    </configuration>
+    <configuration default="true" type="docker-deploy" factoryName="docker-compose.yml" temporary="true">
+      <deployment type="docker-compose.yml">
+        <settings />
+      </deployment>
+      <method v="2" />
     </configuration>
   </component>
   <component name="SharedIndexes">
@@ -156,6 +159,9 @@
       <workItem from="1788245930056" duration="3129000" />
       <workItem from="1788250277454" duration="68000" />
       <workItem from="1788250732277" duration="6348000" />
+      <workItem from="1788263394582" duration="9856000" />
+      <workItem from="1788310233790" duration="28496000" />
+      <workItem from="1788344328763" duration="1505000" />
     </task>
     <servers />
   </component>

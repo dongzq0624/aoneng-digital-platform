@@ -7,6 +7,8 @@ export interface KnowledgeBase {
     category?: string;
     visibility: Visibility;
     docCount: number;
+    chunkSize?: number;
+    chunkOverlap?: number;
     updatedAt: string;
     canManage?: boolean;
     canConfigureDepartments?: boolean;
@@ -14,6 +16,7 @@ export interface KnowledgeBase {
 }
 
 export interface Citation {
+    parentId?: number;
     fileName: string;
     pageNo?: number;
     pageNos: number[]

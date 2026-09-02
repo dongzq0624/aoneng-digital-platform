@@ -30,6 +30,11 @@ public class UserRepositoryImpl implements UserRepository {
     }
 
     @Override
+    public Map<String, Object> findKbScope(String username) {
+        return mapper.selectKbScope(username);
+    }
+
+    @Override
     public Optional<SysUserPO> findById(long id) {
         return Optional.ofNullable(mapper.selectUserById(id)).map(this::toUser);
     }

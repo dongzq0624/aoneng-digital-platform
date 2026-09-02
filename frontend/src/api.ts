@@ -1,8 +1,9 @@
 import axios, {AxiosError, type AxiosInstance, type AxiosResponse, type InternalAxiosRequestConfig} from 'axios'
 import type {ChatConversation, ChatHistoryMessage, Citation, CursorPage, DocumentItem, KnowledgeBase, RagRequest, RagResponse} from './types'
 
-/** API base URL can be overridden at build time; nginx/dev proxy uses /api by default. */
-export const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || '/api').replace(/\/$/, '')
+/** API base URL can be overridden at build time; the backend version prefix is added when omitted. */
+const configuredApiBase = (import.meta.env.VITE_API_BASE_URL || '/api').replace(/\/$/, '')
+export const API_BASE_URL = configuredApiBase.endsWith('/v1') ? configuredApiBase : `${configuredApiBase}/v1`
 
 export interface ApiErrorPayload {
     code?: string;
@@ -190,7 +191,16 @@ export const request: AxiosInstance = axios.create({
 
 request.interceptors.request.use(setAuthHeader, (error) => Promise.reject(toApiError(error)))
 request.interceptors.response.use(
-    (response) => response,
+    (response) => {
+        // 后端成功响应统一包装为 {code, message, data}；对调用方暴露实际业务载荷。
+        const payload = response.data
+        if (payload && typeof payload === 'object'
+            && typeof payload.code === 'string'
+            && Object.prototype.hasOwnProperty.call(payload, 'data')) {
+            response.data = payload.data
+        }
+        return response
+    },
     (error: unknown) => {
         const apiError = toApiError(error)
         if (apiError.status === 401) {
@@ -244,7 +254,7 @@ export const ragApi = {
     record: (id: number) => request.get<RagRecord>(`/rag/records/${id}`),
     feedback: (payload: FeedbackRequest) => request.post<{ success: boolean }>('/rag/feedback', payload),
     chunk: (id: number) => request.get<Citation>(`/rag/chunks/${id}`),
-    chat: (payload: RagRequest) => request.post<RagResponse>('/rag/chat', payload),
+    chat: (payload: RagRequest) => request.post<RagResponse>('/rag/chat/stream', payload),
     conversations: (params?: {cursor?: string; pageSize?: number}) => request.get<CursorPage<ChatConversation>>('/rag/conversations', {params}),
     createConversation: (payload: {title: string; kbIds?: number[]}) => request.post<ChatConversation>('/rag/conversations', payload),
     conversation: (id: number) => request.get<ChatConversation>(`/rag/conversations/${id}`),

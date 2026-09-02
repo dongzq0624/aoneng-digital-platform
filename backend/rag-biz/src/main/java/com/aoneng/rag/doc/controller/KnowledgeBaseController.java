@@ -25,6 +25,7 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * 知识库和文档管理入口。负责 HTTP 协议层面的请求校验和响应封装，
@@ -125,6 +126,11 @@ public class KnowledgeBaseController {
         return Result.ok(service.reindexDocument(username, id));
     }
 
+    @PostMapping("/docs/reindex-all")
+    public Result<Map<String, Integer>> reindexAll(@AuthenticationPrincipal String username) {
+        return Result.ok(Map.of("started", service.reindexAll(username)));
+    }
+
     /**
      * 文档解析/索引过程的事件流。该实现重新发出 {@link SseEmitter}，
      * 业务侧的事件载荷与 SSE 字段定义保持向后兼容。
@@ -133,7 +139,8 @@ public class KnowledgeBaseController {
      * @return SSE 发射器
      */
     @GetMapping(value = "/docs/{id}/events", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    public SseEmitter documentEvents(@PathVariable long id) {
-        return service.streamDocumentEvents(id);
+    public SseEmitter documentEvents(@AuthenticationPrincipal String username,
+                                     @PathVariable long id) {
+        return service.subscribeProcessingEvents(username, id);
     }
 }

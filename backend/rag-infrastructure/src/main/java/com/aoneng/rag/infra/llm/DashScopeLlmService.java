@@ -60,6 +60,20 @@ public class DashScopeLlmService implements LlmService {
         }
     }
 
+    /** Avoid Spring 7 tools.jackson conversion of com.fasterxml JsonNode responses. */
+    private JsonNode postJson(RestClient target, String uri, Object body) {
+        byte[] bytes = target.post().uri(uri)
+                .header("Authorization", "Bearer " + key)
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(body).retrieve().body(byte[].class);
+        if (bytes == null || bytes.length == 0) throw new IllegalStateException("模型服务返回空响应");
+        try {
+            return mapper.readTree(new String(bytes, StandardCharsets.UTF_8));
+        } catch (Exception failure) {
+            throw new IllegalStateException("模型服务返回无效 JSON", failure);
+        }
+    }
+
     @Override
     public List<Float> embed(String text) {
         requireKey();
@@ -71,12 +85,7 @@ public class DashScopeLlmService implements LlmService {
                 "input", List.of(text),
                 "dimensions", 1024,
                 "encoding_format", "float");
-        JsonNode root = client.post().uri("/embeddings")
-                .header("Authorization", "Bearer " + key)
-                .contentType(MediaType.APPLICATION_JSON)
-                .body(body)
-                .retrieve()
-                .body(JsonNode.class);
+        JsonNode root = postJson(client, "/embeddings", body);
         JsonNode vector = root.path("output").path("embeddings").path(0).path("embedding");
         if (!vector.isArray()) vector = root.path("data").path(0).path("embedding");
         List<Float> result = new ArrayList<>();
@@ -97,12 +106,7 @@ public class DashScopeLlmService implements LlmService {
                             java.util.Map.of("role", "system", "content", "You generate enterprise search queries."),
                             java.util.Map.of("role", "user", "content", instruction)),
                     "temperature", 0);
-            JsonNode root = client.post().uri("/chat/completions")
-                    .header("Authorization", "Bearer " + key)
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .body(body)
-                    .retrieve()
-                    .body(JsonNode.class);
+            JsonNode root = postJson(client, "/chat/completions", body);
             String content = root.path("choices").path(0).path("message").path("content").asText("").trim();
             if (content.startsWith("```")) {
                 int firstNewline = content.indexOf('\n');
@@ -137,12 +141,7 @@ public class DashScopeLlmService implements LlmService {
         java.util.Map<String, Object> body = java.util.Map.of("model", rerankModel,
                 "input", java.util.Map.of("query", query, "documents", documents),
                 "parameters", java.util.Map.of("return_documents", false, "top_n", topN));
-        JsonNode results = rerankClient.post().uri("/api/v1/services/rerank/text-rerank")
-                .header("Authorization", "Bearer " + key)
-                .contentType(MediaType.APPLICATION_JSON)
-                .body(body)
-                .retrieve()
-                .body(JsonNode.class)
+        JsonNode results = postJson(rerankClient, "/api/v1/services/rerank/text-rerank", body)
                 .path("output").path("results");
         if (!results.isArray()) return List.of();
         List<RerankResult> ranked = new ArrayList<>();
@@ -167,12 +166,7 @@ public class DashScopeLlmService implements LlmService {
                         java.util.Map.of("role", "system", "content", "你是企业知识助手，禁止编造信息。"),
                         java.util.Map.of("role", "user", "content", prompt)),
                 "temperature", 0.2);
-        JsonNode root = client.post().uri("/chat/completions")
-                .header("Authorization", "Bearer " + key)
-                .contentType(MediaType.APPLICATION_JSON)
-                .body(body)
-                .retrieve()
-                .body(JsonNode.class);
+        JsonNode root = postJson(client, "/chat/completions", body);
         return root.path("choices").path(0).path("message").path("content").asText("未找到相关答案");
     }
 

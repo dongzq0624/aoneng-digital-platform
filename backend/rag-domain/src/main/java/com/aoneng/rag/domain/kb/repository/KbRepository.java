@@ -18,11 +18,14 @@ public interface KbRepository {
     Map<String, Object> findBaseById(long id);
 
     /** 创建知识库。 */
+    /** Create a knowledge base with parent chunk token limit and overlap. */
     long createBase(String name, String description, String category, String visibility,
                     long ownerId, Long deptId, int chunkSize, int chunkOverlap);
 
     /** 更新知识库。 */
-    void updateBase(long id, String name, String description, String visibility, Long deptId);
+    /** Update metadata and optional parent chunk token settings. */
+    void updateBase(long id, String name, String description, String visibility, Long deptId,
+                    Integer chunkSize, Integer chunkOverlap);
 
     /** 软删除知识库。 */
     void softDeleteBase(long id);
@@ -61,8 +64,22 @@ public interface KbRepository {
 
     // -------- Chunk --------
 
+    long saveBaseChunk(long docId, long kbId, int seq, String content, Integer pageNo,
+                       int tokenCount, String blockType, String metadata);
+
+    void updateParentEmbeddingId(long parentId, String embeddingId);
+
     /** 保存分块。 */
-    long saveChunk(long docId, long kbId, int seq, String content, Integer pageNo);
+    long saveParentChunk(long docId, long kbId, int seq, String content, Integer pageNo, int tokenCount);
+
+    long saveChunk(long docId, long kbId, long parentId, int seq, String content, Integer pageNo, int tokenCount);
+
+    /** Persist the external vector-store point identifier after the chunk row has an ID. */
+    void updateChunkEmbeddingId(long chunkId, String embeddingId);
+
+    void updateChunkMetadata(long chunkId, String metadata);
+
+    Map<String, Object> findParentChunk(long parentId);
 
     /** 删除文档的分块。 */
     void deleteChunksByDoc(long docId);

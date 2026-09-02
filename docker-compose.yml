@@ -27,7 +27,7 @@ services:
     volumes: [etcddata:/etcd-data]
     networks: [rag-net]
     healthcheck:
-      test: ["CMD-SHELL", "ETCDCTL_API=3 etcdctl --endpoints=http://localhost:2379 endpoint health"]
+      test: ["CMD", "etcdctl", "--endpoints=http://localhost:2379", "endpoint", "health"]
       interval: 5s
       timeout: 3s
       retries: 20
@@ -87,6 +87,8 @@ services:
       context: ./backend/docling-service
     environment:
       DOCLING_MAX_BYTES: ${DOCLING_MAX_BYTES:-52428800}
+      DOCLING_LAYOUT_PIPELINE: ${DOCLING_LAYOUT_PIPELINE:-docling-default}
+      DOCLING_LAYOUT_MODEL_VERSION: ${DOCLING_LAYOUT_MODEL_VERSION:-docling-default}
     ports: ["8090:8090"]
     networks: [rag-net]
     healthcheck:
@@ -96,17 +98,37 @@ services:
       retries: 30
       start_period: 60s
 
+  paddleocr:
+    build:
+      context: ./backend/paddleocr-service
+    environment:
+      PADDLEOCR_MAX_BYTES: ${PADDLEOCR_MAX_BYTES:-52428800}
+      PADDLEOCR_LANG: ${PADDLEOCR_LANG:-ch}
+      PADDLEOCR_MODEL_VERSION: ${PADDLEOCR_MODEL_VERSION:-PP-OCRv4}
+    ports: ["8091:8091"]
+    networks: [rag-net]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8091/health', timeout=3)"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 60s
+
   backend:
-    build: ./backend
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
     environment:
       PG_HOST: postgres
       PG_DB: ${PG_DB:-rag_platform}
       PG_USER: ${PG_USER:-rag}
       PG_PASSWORD: ${PG_PASSWORD:-rag123456}
+      JWT_SECRET: "${JWT_SECRET:?JWT_SECRET must be set}"
       DASHSCOPE_API_KEY: "${DASHSCOPE_API_KEY:-}"
       MILVUS_HOST: milvus
       MILVUS_PORT: 19530
       MILVUS_TOKEN: "${MILVUS_TOKEN:-}"
+      MILVUS_COLLECTION: "${MILVUS_COLLECTION:-kb_embeddings_hybrid}"
       MILVUS_DIMENSION: "${MILVUS_DIMENSION:-1024}"
       MILVUS_SCORE_THRESHOLD: "${MILVUS_SCORE_THRESHOLD:-0.20}"
       MINIO_ENDPOINT: http://minio:9000
@@ -128,11 +150,17 @@ services:
       RAG_CANDIDATE_LIMIT: "${RAG_CANDIDATE_LIMIT:-40}"
       RAG_CONTEXT_LIMIT: "${RAG_CONTEXT_LIMIT:-8}"
       RAG_RRF_CONSTANT: "${RAG_RRF_CONSTANT:-60}"
+      RAG_TOKENIZER_PATH: "${RAG_TOKENIZER_PATH:-/models/bge‑m3‑tokenizer/tokenizer.json}"
+      RAG_TOKENIZER_MODEL: "${RAG_TOKENIZER_MODEL:-Qwen/Qwen3-Embedding-0.6B}"
+      PADDLEOCR_ENDPOINT: http://paddleocr:8091
+    volumes:
+      - ./backend/models/bge‑m3‑tokenizer:/models/bge‑m3‑tokenizer:ro
     depends_on:
       postgres: {condition: service_healthy}
       minio-init: {condition: service_completed_successfully}
       milvus: {condition: service_healthy}
       docling: {condition: service_healthy}
+      paddleocr: {condition: service_healthy}
     ports: ["8080:8080"]
     networks: [rag-net]
     healthcheck:

@@ -53,6 +53,8 @@
                description = COALESCE(#{description}, description),
                visibility  = #{visibility},
                dept_id     = #{deptId},
+               chunk_size  = COALESCE(#{chunkSize}, chunk_size),
+               chunk_overlap = COALESCE(#{chunkOverlap}, chunk_overlap),
                updated_at  = NOW()
          WHERE id = #{id}
     </update>

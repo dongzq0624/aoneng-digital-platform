@@ -3,6 +3,7 @@ package com.aoneng.rag.domain.auth.repository;
 import com.aoneng.rag.domain.auth.po.SysUserPO;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -20,6 +21,8 @@ public interface UserRepository {
      * 按用户名查询。
      */
     Optional<SysUserPO> findByUsername(String username);
+
+    Map<String, Object> findKbScope(String username);
 
     /**
      * 按 ID 查询。

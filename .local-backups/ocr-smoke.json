@@ -1,0 +1,1 @@
+{"text":"...OCR","blocks":[{"type":"paragraph","text":"...OCR","pageNo":1,"order":0,"bbox":{"l":146.0,"t":186.0,"r":236.0,"b":221.0},"metadata":{"source":"paddleocr","confidence":0.8702189326286316}}],"metadata":{"parser":"paddleocr","engine":"PaddleOCR","engineVersion":"2.10.0","language":"ch","packageVersion":"2.10.0","modelVersion":"PP-OCRv4","blockCount":1}}

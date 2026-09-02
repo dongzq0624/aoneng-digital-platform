@@ -135,8 +135,8 @@ CREATE TABLE IF NOT EXISTS kb_knowledge_base (
     visibility      VARCHAR(16)  NOT NULL DEFAULT 'DEPT', -- PRIVATE/DEPT/ORG/PUBLIC
     owner_id        BIGINT       NOT NULL REFERENCES sys_user(id), -- 创建人/负责人
     dept_id         BIGINT,                      -- visibility=DEPT 时可见部门
-    chunk_size      INT          NOT NULL DEFAULT 512,   -- 默认分块大小(token)
-    chunk_overlap   INT          NOT NULL DEFAULT 64,    -- 默认分块重叠(token)
+    chunk_size      INT          NOT NULL DEFAULT 2000,  -- 父块 token 上限
+    chunk_overlap   INT          NOT NULL DEFAULT 64,    -- 父块重叠 token 数
     embedding_model VARCHAR(64)  NOT NULL DEFAULT 'bge-m3',
     status          SMALLINT     NOT NULL DEFAULT 1,     -- 1 启用 0 停用
     created_at      TIMESTAMPTZ  NOT NULL DEFAULT now(),

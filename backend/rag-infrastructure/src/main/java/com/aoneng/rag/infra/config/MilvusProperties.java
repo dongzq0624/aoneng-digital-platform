@@ -10,7 +10,7 @@ public record MilvusProperties(String host, int port, String token, String colle
         host = host == null || host.isBlank() ? "localhost" : host;
         if (port <= 0) port = 19530;
         token = token == null ? "" : token;
-        collection = collection == null || collection.isBlank() ? "kb_embeddings" : collection;
+        collection = collection == null || collection.isBlank() ? "kb_embeddings_hybrid" : collection;
         if (dimension <= 0) dimension = 1024;
         scoreThreshold = Math.max(0D, Math.min(1D, scoreThreshold));
     }

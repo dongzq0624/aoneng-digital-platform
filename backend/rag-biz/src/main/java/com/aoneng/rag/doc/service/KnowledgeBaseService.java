@@ -52,6 +52,9 @@ public interface KnowledgeBaseService {
 
     KnowledgeBaseDocumentVO reindexDocument(String username, long docId);
 
+    /** Start a controlled reindex for all documents visible to an administrator. */
+    int reindexAll(String username);
+
     /**
      * 订阅文档处理进度事件。
      *

@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * RAG 对话应用服务实现。
@@ -90,10 +91,12 @@ public class ChatServiceImpl implements ChatService {
                                                        PlatformRepository.ChatTurn turn,
                                                        String question,
                                                        List<Long> permittedKbIds) {
+        AtomicBoolean completed = new AtomicBoolean(false);
         return Mono.fromCallable(() -> retrieve(question, permittedKbIds))
                 .subscribeOn(Schedulers.boundedElastic())
                 .flatMapMany(result -> {
                     ChatStreamPayload p = buildStreamPayload(result, question, scope, turn, permittedKbIds);
+                    StringBuilder answer = new StringBuilder();
 
                     Flux<ServerSentEvent<Object>> init = Flux.just(
                             buildEvent("message", Map.of("choices",
@@ -101,15 +104,17 @@ public class ChatServiceImpl implements ChatService {
                             buildEvent("sources", p.sources()));
 
                     Flux<ServerSentEvent<Object>> model = llm.streamChatFlux(question, p.modelContext())
+                            .doOnNext(answer::append)
                             .map(delta -> buildEvent("message",
                                     Map.of("choices",
                                             List.of(Map.of("index", 0, "delta",
                                                     Map.of("content", delta))))));
 
                     Mono<ServerSentEvent<Object>> done = Mono.fromCallable(() -> {
-                                String answer = removeSourceMarkers(p.modelContext());
-                                Map<String, Object> donePayload = completeTurn(turn, scope, question, answer,
+                                String answerText = removeSourceMarkers(answer.toString());
+                                Map<String, Object> donePayload = completeTurn(turn, scope, question, answerText,
                                         permittedKbIds, p.chunkIds(), p.citationsBySource(), result.trace());
+                                completed.set(true);
                                 return buildEvent("done", donePayload);
                             })
                             .subscribeOn(Schedulers.boundedElastic());
@@ -118,6 +123,9 @@ public class ChatServiceImpl implements ChatService {
                 })
                 .timeout(sseTimeout)
                 .onErrorResume(error -> {
+                    if (completed.compareAndSet(false, true)) {
+                        failTurn(turn, "闂瓟鐢熸垚澶辫触锛岃绋嶅悗閲嶈瘯");
+                    }
                     log.warn("SSE 流式问答异常，conversationId={}, messageId={}, error={}",
                             turn.conversationId(), turn.assistantMessageId(), error.getMessage(), error);
                     return Flux.just(
@@ -137,10 +145,12 @@ public class ChatServiceImpl implements ChatService {
         StringBuilder context = new StringBuilder();
         Map<String, Map<String, Object>> citations = new LinkedHashMap<>();
         List<Long> chunkIds = new ArrayList<>();
+        Set<Long> expandedParents = new java.util.LinkedHashSet<>();
         for (Map<String, Object> hit : result.hits()) {
             Map<String, Object> payload = payload(hit.get("payload"));
             String content = text(payload, "content", "text", "snippet");
             long docId = number(payload.get("doc_id"), 0L), kbId = number(payload.get("kb_id"), 0L);
+            long parentId = number(payload.get("parent_id"), number(payload.get("parentId"), 0L));
             Map<String, Object> document = indexedDocument(docId, kbId);
             if (content.isBlank() || document == null) continue;
             if (isCiteablePdf(document, payload)) {
@@ -148,9 +158,15 @@ public class ChatServiceImpl implements ChatService {
                 citations.putIfAbsent(sourceKey(docId, pageNo), citation(hit, payload, content, document));
                 context.append("[source:").append(docId).append('-').append(pageNo).append("]\n");
             }
-            context.append(content).append('\n');
+            if (parentId <= 0) context.append(content).append('\n');
             long chunkId = number(payload.get("chunk_id"), number(hit.get("id"), 0L));
             if (chunkId > 0 && !chunkIds.contains(chunkId)) chunkIds.add(chunkId);
+            if (parentId > 0 && expandedParents.add(parentId)) {
+                Map<String, Object> parent = repo.parentChunk(parentId);
+                String parentContent = parent == null ? "" : text(parent, "content");
+                if (!parentContent.isBlank()) context.append(parentContent).append('\n');
+                else context.append(content).append('\n');
+            }
         }
         List<Map<String, Object>> sources = publicCitations(groupCitations(new ArrayList<>(citations.values())));
         return new ChatStreamPayload(context.toString(), sources, citations, chunkIds);
@@ -190,6 +206,8 @@ public class ChatServiceImpl implements ChatService {
     private Map<String, Object> citation(Map<String, Object> hit, Map<String, Object> payload, String content, Map<String, Object> document) {
         Map<String, Object> citation = new LinkedHashMap<>();
         citation.put("chunkId", number(payload.get("chunk_id"), number(hit.get("id"), 0L)));
+        long parentId = number(payload.get("parent_id"), number(payload.get("parentId"), 0L));
+        if (parentId > 0) citation.put("parentId", parentId);
         citation.put("docId", number(payload.get("doc_id"), 0L));
         citation.put("kbId", number(payload.get("kb_id"), 0L));
         citation.put("fileName", fileName(payload, document));

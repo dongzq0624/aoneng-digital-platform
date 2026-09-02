@@ -15,7 +15,7 @@
       <div><small>可见范围</small><b>{{ visibilityLabel(detail?.visibility) }}</b></div>
       <div><small>文档数量</small><b>{{ docs.length }}</b></div>
       <div><small>索引状态</small><b class="ok">{{ indexStatus }}</b></div>
-      <div><small>分块参数</small><b>{{ detail?.chunkSize || 512 }} / {{ detail?.chunkOverlap || 64 }}</b></div>
+      <div><small>父块 token / 重叠 token</small><b>{{ detail?.chunkSize ?? 2000 }} / {{ detail?.chunkOverlap ?? 64 }}</b></div>
     </div>
     <el-alert v-if="processing" class="processing-status" type="info" :closable="false" show-icon>
       <template #title>

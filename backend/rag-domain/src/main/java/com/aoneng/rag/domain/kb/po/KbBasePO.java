@@ -40,11 +40,11 @@ public class KbBasePO {
     @TableField("dept_id")
     private Long deptId;
 
-    /** 文本分块大小（字符数）。 */
+    /** 父块 token 上限。 */
     @TableField("chunk_size")
     private Integer chunkSize;
 
-    /** 分块重叠字符数。 */
+    /** 父块重叠 token 数。 */
     @TableField("chunk_overlap")
     private Integer chunkOverlap;
 

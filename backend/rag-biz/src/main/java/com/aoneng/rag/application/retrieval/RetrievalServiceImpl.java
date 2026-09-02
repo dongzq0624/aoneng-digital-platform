@@ -1,18 +1,18 @@
 package com.aoneng.rag.application.retrieval;
 
-import com.aoneng.rag.domain.kb.repository.KbRepository;
 import com.aoneng.rag.infra.llm.LlmService;
+import com.aoneng.rag.infra.vector.Bm25SparseVectorizer;
 import com.aoneng.rag.infra.vector.VectorStore;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.SortedMap;
 
 /**
  * 检索应用服务实现。
@@ -23,7 +23,7 @@ public class RetrievalServiceImpl implements RetrievalService {
 
     private final LlmService llm;
     private final VectorStore vectorStore;
-    private final KbRepository kbRepository;
+    private final Bm25SparseVectorizer sparseVectorizer;
     private final boolean queryRewriteEnabled;
     private final boolean rerankEnabled;
     private final int maxRewrites;
@@ -35,7 +35,7 @@ public class RetrievalServiceImpl implements RetrievalService {
 
     public RetrievalServiceImpl(LlmService llm,
                                 VectorStore vectorStore,
-                                KbRepository kbRepository,
+                                Bm25SparseVectorizer sparseVectorizer,
                                 @Value("${rag.retrieval.query-rewrite-enabled:true}") boolean queryRewriteEnabled,
                                 @Value("${rag.retrieval.rerank-enabled:true}") boolean rerankEnabled,
                                 @Value("${rag.retrieval.max-rewrites:3}") int maxRewrites,
@@ -46,7 +46,7 @@ public class RetrievalServiceImpl implements RetrievalService {
                                 @Value("${rag.retrieval.rrf-constant:60}") int rrfConstant) {
         this.llm = llm;
         this.vectorStore = vectorStore;
-        this.kbRepository = kbRepository;
+        this.sparseVectorizer = sparseVectorizer;
         this.queryRewriteEnabled = queryRewriteEnabled;
         this.rerankEnabled = rerankEnabled;
         this.maxRewrites = Math.max(0, Math.min(maxRewrites, 5));
@@ -63,13 +63,28 @@ public class RetrievalServiceImpl implements RetrievalService {
         Map<Long, Candidate> candidates = new LinkedHashMap<>();
         int denseCount = 0;
         int keywordCount = 0;
+        int hybridFallbackCount = 0;
         for (String query : queries) {
-            List<Map<String, Object>> dense = vectorStore.searchAdaptive(llm.embed(query), denseLimit, permittedKbIds);
+            List<Float> denseVector = llm.embed(query);
+            SortedMap<Long, Float> sparseVector = sparseVectorizer.vectorize(query);
+            List<Map<String, Object>> dense;
+            try {
+                dense = vectorStore.searchAdaptive(denseVector, denseLimit, permittedKbIds);
+            } catch (RuntimeException denseFailure) {
+                dense = List.of();
+                hybridFallbackCount++;
+            }
+            List<Map<String, Object>> sparse;
+            try {
+                sparse = vectorStore.sparseSearch(sparseVector, keywordLimit, permittedKbIds);
+            } catch (RuntimeException sparseFailure) {
+                sparse = List.of();
+                hybridFallbackCount++;
+            }
             denseCount += dense.size();
+            keywordCount += sparse.size();
             mergeRanked(candidates, dense, "dense");
-            List<Map<String, Object>> keywords = kbRepository.keywordSearch(keywordTerms(query), permittedKbIds, keywordLimit);
-            keywordCount += keywords.size();
-            mergeRanked(candidates, keywords, "keyword");
+            mergeRanked(candidates, sparse, "sparse");
         }
         List<Candidate> fused = candidates.values().stream()
                 .sorted(Comparator.comparingDouble(Candidate::rrfScore).reversed())
@@ -84,6 +99,7 @@ public class RetrievalServiceImpl implements RetrievalService {
         trace.put("queryCount", queries.size());
         trace.put("denseCandidateCount", denseCount);
         trace.put("keywordCandidateCount", keywordCount);
+        trace.put("hybridFallbackCount", hybridFallbackCount);
         trace.put("fusedCandidateCount", fused.size());
         trace.put("reranked", reranked);
         trace.put("contextChunkCount", hits.size());
@@ -127,24 +143,6 @@ public class RetrievalServiceImpl implements RetrievalService {
         } catch (Exception ignored) {
             return false;
         }
-    }
-
-    private List<String> keywordTerms(String query) {
-        String compact = query == null ? "" : query.replaceAll("[^\\p{IsHan}A-Za-z0-9_\\-]", "").trim();
-        LinkedHashSet<String> terms = new LinkedHashSet<>();
-        if (compact.length() >= 2) terms.add(compact.substring(0, Math.min(compact.length(), 60)));
-        for (String token : (query == null ? "" : query).split("[^\\p{IsHan}A-Za-z0-9_\\-]+")) {
-            if (token.length() >= 2) terms.add(token.substring(0, Math.min(token.length(), 40)));
-            if (terms.size() >= 6) break;
-        }
-        if (terms.size() < 6 && compact.length() > 2) {
-            for (int index = 0; index + 1 < compact.length() && terms.size() < 6; index++) {
-                String pair = compact.substring(index, index + 2);
-                if (pair.codePoints().allMatch(Character::isIdeographic)) terms.add(pair);
-            }
-        }
-        if (terms.isEmpty() && !compact.isBlank()) terms.add(compact);
-        return new ArrayList<>(terms).subList(0, Math.min(terms.size(), 6));
     }
 
     @SuppressWarnings("unchecked")

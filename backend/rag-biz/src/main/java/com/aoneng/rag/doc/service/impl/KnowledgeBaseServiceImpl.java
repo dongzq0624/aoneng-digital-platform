@@ -17,6 +17,8 @@ import com.aoneng.rag.infra.parse.DocParser;
 import com.aoneng.rag.infra.storage.ObjectStorage;
 import com.aoneng.rag.application.convert.KbConvert;
 import com.aoneng.rag.application.repository.PlatformRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -39,6 +41,8 @@ import java.util.UUID;
  */
 @Service
 public class KnowledgeBaseServiceImpl implements KnowledgeBaseService {
+
+    private static final Logger log = LoggerFactory.getLogger(KnowledgeBaseServiceImpl.class);
 
     private final PlatformRepository repo;
     private final ObjectStorage storage;
@@ -151,12 +155,27 @@ public class KnowledgeBaseServiceImpl implements KnowledgeBaseService {
         }
 
         String objectKey = UUID.randomUUID() + "-" + originalName;
+        long docId = 0L;
         try (InputStream stream = file.getInputStream()) {
             storage.upload(objectKey, stream, file.getSize(), file.getContentType());
-            long docId = repo.createDoc(kbId, originalName, ext, file.getSize(), objectKey, scope.userId());
-            documentProcessor.start(docId, kbId, objectKey);
+            docId = repo.createDoc(kbId, originalName, ext, file.getSize(), objectKey, scope.userId());
+            if (!documentProcessor.start(docId, kbId, objectKey)) {
+                throw new IllegalStateException("文档处理任务已存在");
+            }
             return KbConvert.INSTANCE.toDocumentResponse(repo.doc(docId));
         } catch (Exception e) {
+            if (docId > 0) {
+                try {
+                    repo.deleteDoc(docId);
+                } catch (Exception cleanupFailure) {
+                    log.error("Failed to rollback uploaded document: docId={}", docId, cleanupFailure);
+                }
+            }
+            try {
+                storage.delete(objectKey);
+            } catch (Exception cleanupFailure) {
+                log.error("Failed to rollback uploaded object: objectKey={}", objectKey, cleanupFailure);
+            }
             throw new BusinessValidationException("文件存储失败");
         }
     }
@@ -174,6 +193,7 @@ public class KnowledgeBaseServiceImpl implements KnowledgeBaseService {
         Map<String, Object> document = repo.doc(docId);
         long kbId = longValue(document.get("kbId"));
         requireManage(kbId, requireScope(username));
+        documentProcessor.deleteIndex(docId);
         storage.delete(String.valueOf(document.get("objectKey")));
         repo.deleteDoc(docId);
     }
@@ -187,6 +207,22 @@ public class KnowledgeBaseServiceImpl implements KnowledgeBaseService {
             throw new BusinessValidationException("该文档正在处理中，请勿重复提交");
         }
         return KbConvert.INSTANCE.toDocumentResponse(repo.doc(docId));
+    }
+
+    @Override
+    public int reindexAll(String username) {
+        KbScope scope = requireScope(username);
+        if (!scope.admin()) throw new SecurityException("仅管理员可以批量重建文档索引");
+        int started = 0;
+        for (Map<String, Object> base : repo.bases()) {
+            long kbId = longValue(base.get("id"));
+            for (Map<String, Object> document : repo.docs(kbId)) {
+                long docId = longValue(document.get("id"));
+                String key = String.valueOf(document.get("objectKey"));
+                if (documentProcessor.start(docId, kbId, key)) started++;
+            }
+        }
+        return started;
     }
 
     @Override
@@ -264,7 +300,7 @@ public class KnowledgeBaseServiceImpl implements KnowledgeBaseService {
         p.put("description", req.description());
         p.put("category", req.category());
         p.put("visibility", req.visibility());
-        p.put("chunkSize", req.chunkSize() == null ? 512 : req.chunkSize());
+        p.put("chunkSize", req.chunkSize() == null ? 2_000 : req.chunkSize());
         p.put("chunkOverlap", req.chunkOverlap() == null ? 64 : req.chunkOverlap());
         return p;
     }
@@ -275,6 +311,8 @@ public class KnowledgeBaseServiceImpl implements KnowledgeBaseService {
         p.put("description", req.description());
         p.put("category", req.category());
         p.put("visibility", req.visibility());
+        if (req.chunkSize() != null) p.put("chunkSize", req.chunkSize());
+        if (req.chunkOverlap() != null) p.put("chunkOverlap", req.chunkOverlap());
         return p;
     }
 

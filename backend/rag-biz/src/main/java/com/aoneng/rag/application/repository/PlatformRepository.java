@@ -315,14 +315,10 @@ public class PlatformRepository {
     }
 
     public KbScope kbScope(String username) {
-        Map<String, Object> row = userRepository.findByUsername(username)
-                .map(u -> Map.<String, Object>of(
-                        "id", u.getId(),
-                        "deptId", u.getDeptId() == null ? "" : u.getDeptId(),
-                        "admin", false,
-                        "kbAccess", true,
-                        "kbManager", true))
-                .orElseThrow(() -> new IllegalArgumentException("当前用户不存在或已停用"));
+        Map<String, Object> row = userRepository.findKbScope(username);
+        if (row == null || row.isEmpty()) {
+            throw new IllegalArgumentException("Current user does not exist or is disabled");
+        }
         long userId = ((Number) row.get("id")).longValue();
         Object deptIdRaw = row.get("deptId");
         Long deptId = deptIdRaw instanceof Number ? ((Number) deptIdRaw).longValue() : null;
@@ -382,10 +378,12 @@ public class PlatformRepository {
         po.setVisibility(visibility);
         po.setOwnerId(scope.userId());
         po.setDeptId(deptId);
-        po.setChunkSize(valueOr(r.get("chunkSize"), 512));
-        po.setChunkOverlap(valueOr(r.get("chunkOverlap"), 64));
+        int chunkSize = normalizedParentChunkTokens(r.get("chunkSize"), 2_000);
+        int chunkOverlap = normalizedParentOverlapTokens(r.get("chunkOverlap"), chunkSize, 64);
+        po.setChunkSize(chunkSize);
+        po.setChunkOverlap(chunkOverlap);
         long id = kbRepository.createBase(po.getName(), po.getDescription(), po.getCategory(),
-                po.getVisibility(), po.getOwnerId(), po.getDeptId(), po.getChunkSize(), po.getChunkOverlap());
+                po.getVisibility(), po.getOwnerId(), po.getDeptId(), chunkSize, chunkOverlap);
         if (deptId != null) kbRepository.insertAllowedDept(id, deptId);
         return id;
     }
@@ -415,14 +413,42 @@ public class PlatformRepository {
         if ("DEPT".equals(visibility) && deptId == null) {
             throw new IllegalArgumentException("部门知识库必须归属有效部门");
         }
+        Integer chunkSize = null;
+        Integer chunkOverlap = null;
+        if (r.containsKey("chunkSize") || r.containsKey("chunkOverlap")) {
+            int effectiveSize = r.containsKey("chunkSize")
+                    ? normalizedParentChunkTokens(r.get("chunkSize"), 2_000)
+                    : normalizedParentChunkTokens(existing.get("chunkSize"), 2_000);
+            int effectiveOverlap = r.containsKey("chunkOverlap")
+                    ? normalizedParentOverlapTokens(r.get("chunkOverlap"), effectiveSize, 64)
+                    : normalizedParentOverlapTokens(existing.get("chunkOverlap"), effectiveSize, 64);
+            chunkSize = effectiveSize;
+            chunkOverlap = effectiveOverlap;
+        }
         kbRepository.updateBase(id,
                 stringOrNull(r.get("name")),
                 stringOrNull(r.get("description")),
                 visibility,
-                deptId);
+                deptId, chunkSize, chunkOverlap);
         if ("DEPT".equals(visibility) && allowedDepartmentIds(id).isEmpty()) {
             kbRepository.insertAllowedDept(id, deptId);
         }
+    }
+
+    private int normalizedParentChunkTokens(Object value, int fallback) {
+        int size = value instanceof Number number ? number.intValue() : fallback;
+        if (size < 128 || size > 10_000) {
+            throw new IllegalArgumentException("父块 token 数必须在 128 到 10000 之间");
+        }
+        return size;
+    }
+
+    private int normalizedParentOverlapTokens(Object value, int chunkSize, int fallback) {
+        int overlap = value instanceof Number number ? number.intValue() : fallback;
+        if (overlap < 0 || overlap > chunkSize / 2) {
+            throw new IllegalArgumentException("父块重叠 token 数必须在 0 到父块大小一半之间");
+        }
+        return overlap;
     }
 
     public List<Long> allowedDepartmentIds(long kbId) {
@@ -482,14 +508,41 @@ public class PlatformRepository {
         kbRepository.deleteChunksByDoc(docId);
     }
 
-    public long saveChunk(long docId, long kbId, int seq, String content, Integer pageNo, List<Float> vector) {
+    public long saveBaseChunk(long docId, long kbId, int seq, String content, Integer pageNo,
+                              int tokenCount, String blockType, String metadata) {
+        return kbRepository.saveBaseChunk(docId, kbId, seq, content, pageNo, tokenCount, blockType, metadata);
+    }
+
+    public void updateParentEmbeddingId(long parentId, String embeddingId) {
+        kbRepository.updateParentEmbeddingId(parentId, embeddingId);
+    }
+
+    public long saveParentChunk(long docId, long kbId, int seq, String content, Integer pageNo, int tokenCount) {
+        return kbRepository.saveParentChunk(docId, kbId, seq, content, pageNo, tokenCount);
+    }
+
+    public long saveChunk(long docId, long kbId, long parentId, int seq, String content, Integer pageNo,
+                          int tokenCount) {
         KbChunkPO po = new KbChunkPO();
         po.setDocId(docId);
         po.setKbId(kbId);
+        po.setParentId(parentId);
         po.setSeq(seq);
         po.setContent(content);
         po.setPageNo(pageNo);
-        return kbRepository.saveChunk(docId, kbId, seq, content, pageNo);
+        return kbRepository.saveChunk(docId, kbId, parentId, seq, content, pageNo, tokenCount);
+    }
+
+    public void updateChunkEmbeddingId(long chunkId, String embeddingId) {
+        kbRepository.updateChunkEmbeddingId(chunkId, embeddingId);
+    }
+
+    public void updateChunkMetadata(long chunkId, String metadata) {
+        kbRepository.updateChunkMetadata(chunkId, metadata);
+    }
+
+    public Map<String, Object> parentChunk(long parentId) {
+        return kbRepository.findParentChunk(parentId);
     }
 
     public List<Map<String, Object>> keywordChunks(List<String> terms, List<Long> allowedKbIds, int limit) {
@@ -517,6 +570,7 @@ public class PlatformRepository {
         result.put("keywordScore", score);
         Map<String, Object> payload = new LinkedHashMap<>();
         payload.put("chunk_id", row.get("id"));
+        if (row.get("parentId") != null) payload.put("parent_id", row.get("parentId"));
         payload.put("doc_id", row.get("docId"));
         payload.put("kb_id", row.get("kbId"));
         payload.put("content", row.get("content"));

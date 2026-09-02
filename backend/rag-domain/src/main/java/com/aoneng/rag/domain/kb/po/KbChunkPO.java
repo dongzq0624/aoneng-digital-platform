@@ -28,6 +28,10 @@ public class KbChunkPO {
     @TableField("kb_id")
     private Long kbId;
 
+    /** 父块 ID；旧数据为空，新索引的子块必须关联父块。 */
+    @TableField("parent_id")
+    private Long parentId;
+
     /** 在所属文档中的分块序号（从 0 开始）。 */
     private Integer seq;
 

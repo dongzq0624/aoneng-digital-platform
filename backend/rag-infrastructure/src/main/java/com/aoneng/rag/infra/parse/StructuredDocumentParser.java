@@ -18,10 +18,14 @@ public interface StructuredDocumentParser extends DocParser {
         }
     }
 
-    record Block(String type, String text, Integer pageNo, Map<String, Object> metadata) {
+    record Block(String type, String text, Integer pageNo, Integer level, Integer order,
+                 Map<String, Object> bbox, Map<String, Object> metadata) {
         public Block {
             type = type == null || type.isBlank() ? "paragraph" : type;
             text = text == null ? "" : text;
+            level = level == null ? 0 : Math.max(0, level);
+            order = order == null ? 0 : Math.max(0, order);
+            bbox = bbox == null ? Map.of() : Map.copyOf(bbox);
             metadata = metadata == null ? Map.of() : Map.copyOf(metadata);
         }
     }

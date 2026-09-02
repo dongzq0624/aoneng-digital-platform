@@ -3,17 +3,58 @@
 <mapper namespace="com.aoneng.rag.domain.kb.mapper.KbChunkMapper">
 
     <insert id="insertReturningId" useGeneratedKeys="true" keyProperty="id">
-        INSERT INTO kb_chunk(doc_id, kb_id, seq, content, page_no, token_count, embedding_id)
-        VALUES(#{docId}, #{kbId}, #{seq}, #{content}, #{pageNo}, #{tokenCount}, #{embeddingId})
+        INSERT INTO kb_chunk(doc_id, kb_id, parent_id, seq, content, page_no, token_count, embedding_id)
+        VALUES(#{docId}, #{kbId}, #{parentId}, #{seq}, #{content}, #{pageNo}, #{tokenCount}, #{embeddingId})
     </insert>
+
+    <update id="updateEmbeddingId">
+        UPDATE kb_chunk
+           SET embedding_id = #{embeddingId}
+         WHERE id = #{chunkId}
+    </update>
+
+    <update id="updateMetadata">
+        UPDATE kb_chunk SET metadata = CAST(#{metadata} AS jsonb) WHERE id = #{chunkId}
+    </update>
+
+    <select id="insertParent" resultType="long">
+        INSERT INTO kb_parent_chunk(doc_id, kb_id, seq, content, page_no, token_count)
+        VALUES(#{docId}, #{kbId}, #{seq}, #{content}, #{pageNo}, #{tokenCount})
+        RETURNING id
+    </select>
+
+    <select id="insertBase" resultType="long">
+        INSERT INTO kb_base_chunk(doc_id, kb_id, seq, content, page_no, token_count, block_type, layout_metadata)
+        VALUES(#{docId}, #{kbId}, #{seq}, #{content}, #{pageNo}, #{tokenCount}, #{blockType}, CAST(#{metadata} AS jsonb))
+        RETURNING id
+    </select>
+
+    <update id="updateParentEmbeddingId">
+        UPDATE kb_parent_chunk SET embedding_id = #{embeddingId} WHERE id = #{parentId}
+    </update>
+
+    <select id="selectParent" resultType="java.util.LinkedHashMap">
+        SELECT id, doc_id AS "docId", kb_id AS "kbId", seq, content, page_no AS "pageNo",
+               token_count AS "tokenCount"
+          FROM kb_parent_chunk
+         WHERE id = #{id}
+    </select>
 
     <delete id="deleteByDoc">
         DELETE FROM kb_chunk WHERE doc_id = #{docId}
     </delete>
 
+    <delete id="deleteParentsByDoc">
+        DELETE FROM kb_parent_chunk WHERE doc_id = #{docId}
+    </delete>
+
+    <delete id="deleteBaseByDoc">
+        DELETE FROM kb_base_chunk WHERE doc_id = #{docId}
+    </delete>
+
     <select id="keywordSearch" resultType="java.util.LinkedHashMap">
-        SELECT c.id, c.doc_id AS "docId", c.kb_id AS "kbId", c.content, c.page_no AS "pageNo",
-               d.file_name AS "fileName"
+        SELECT c.id, c.parent_id AS "parentId", c.doc_id AS "docId", c.kb_id AS "kbId", c.content,
+               c.page_no AS "pageNo", d.file_name AS "fileName"
           FROM kb_chunk c JOIN kb_document d ON d.id = c.doc_id
          WHERE c.kb_id IN
         <foreach collection="kbIds" item="id" open="(" separator="," close=")">

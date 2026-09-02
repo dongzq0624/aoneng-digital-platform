@@ -106,10 +106,10 @@ ON CONFLICT DO NOTHING;
 -- 7) 默认知识库
 INSERT INTO kb_knowledge_base (id, name, description, category, visibility, owner_id, dept_id, chunk_size, chunk_overlap)
 VALUES
-    (1, E'产品与设计',     E'产品方法论、设计规范与研发协作流程', E'产品', 'DEPT',    1, 4, 512, 64),
-    (2, E'员工制度与福利', E'入职、考勤、福利与员工服务制度',     E'人事', 'ORG',     1, NULL, 512, 64),
-    (3, E'客户成功案例库', E'客户案例、解决方案与行业最佳实践',   E'案例', 'PRIVATE', 1, 3, 512, 64),
-    (4, E'品牌内容资产',   E'品牌视觉、内容模板与对外传播资料',   E'品牌', 'PUBLIC',  1, NULL, 512, 64)
+    (1, E'产品与设计',     E'产品方法论、设计规范与研发协作流程', E'产品', 'DEPT',    1, 4, 2000, 64),
+    (2, E'员工制度与福利', E'入职、考勤、福利与员工服务制度',     E'人事', 'ORG',     1, NULL, 2000, 64),
+    (3, E'客户成功案例库', E'客户案例、解决方案与行业最佳实践',   E'案例', 'PRIVATE', 1, 3, 2000, 64),
+    (4, E'品牌内容资产',   E'品牌视觉、内容模板与对外传播资料',   E'品牌', 'PUBLIC',  1, NULL, 2000, 64)
 ON CONFLICT (id) DO NOTHING;
 
 SELECT setval(

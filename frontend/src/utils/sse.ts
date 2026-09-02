@@ -135,7 +135,7 @@ function dispatchSseEvent(block: string, handlers: StreamHandlers, state: {stand
 export async function streamChat(payload: Record<string, unknown>, handlers: StreamHandlers, signal?: AbortSignal) {
     try {
         const token = typeof localStorage !== 'undefined' ? localStorage.getItem('rag_token') : null
-        const res = await fetch(`${API_BASE_URL}/rag/chat`, {
+        const res = await fetch(`${API_BASE_URL}/rag/chat/stream`, {
             method: 'POST',
             headers: {'Content-Type': 'application/json', ...(token ? {Authorization: `Bearer ${token}`} : {})},
             body: JSON.stringify(payload),
@@ -216,7 +216,7 @@ function documentEvent(data: unknown): DocumentProcessingEvent {
 export async function streamDocumentProcessing(docId: number, handlers: DocumentProcessingHandlers, signal?: AbortSignal) {
     try {
         const token = typeof localStorage !== 'undefined' ? localStorage.getItem('rag_token') : null
-        const res = await fetch(`${API_BASE_URL}/kb/docs/${docId}/processing-events`, {
+        const res = await fetch(`${API_BASE_URL}/kb/docs/${docId}/events`, {
             headers: {Accept: 'text/event-stream', ...(token ? {Authorization: `Bearer ${token}`} : {})},
             signal,
         })

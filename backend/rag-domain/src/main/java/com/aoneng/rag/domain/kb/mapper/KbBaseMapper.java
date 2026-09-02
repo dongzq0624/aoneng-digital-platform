@@ -24,7 +24,9 @@ public interface KbBaseMapper extends BaseMapper<KbBasePO> {
                    @Param("name") String name,
                    @Param("description") String description,
                    @Param("visibility") String visibility,
-                   @Param("deptId") Long deptId);
+                   @Param("deptId") Long deptId,
+                   @Param("chunkSize") Integer chunkSize,
+                   @Param("chunkOverlap") Integer chunkOverlap);
 
     int softDelete(@Param("id") long id);
 

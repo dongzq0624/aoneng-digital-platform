@@ -12,6 +12,12 @@ import java.util.List;
 @Component
 public class TextChunker implements Chunker {
 
+    private final ModelTokenizer tokenizer;
+
+    public TextChunker(ModelTokenizer tokenizer) {
+        this.tokenizer = tokenizer;
+    }
+
     @Override
     public List<String> split(String text, int maxChars, int overlap) {
         if (text == null || text.isBlank()) return List.of();
@@ -32,6 +38,62 @@ public class TextChunker implements Chunker {
             start = Math.max(end - safeOverlap, start + 1);
         }
         return chunks;
+    }
+
+    @Override
+    public List<String> splitTokens(String text, int maxTokens, int overlapTokens) {
+        if (text == null || text.isBlank()) return List.of();
+        int budget = Math.max(1, maxTokens);
+        int overlap = Math.max(0, Math.min(overlapTokens, budget / 2));
+        String normalized = text.replace("\r\n", "\n").trim();
+        List<String> chunks = new ArrayList<>();
+        int start = 0;
+        while (start < normalized.length()) {
+            int end = endForTokens(normalized, start, budget);
+            if (end < normalized.length()) {
+                int boundary = preferredBoundary(normalized, start, end);
+                if (countTokens(normalized.substring(start, boundary)) <= budget) end = boundary;
+            }
+            if (end <= start) end = Math.min(normalized.length(), start + 1);
+            String chunk = normalized.substring(start, end).trim();
+            if (!chunk.isBlank()) chunks.add(chunk);
+            if (end >= normalized.length()) break;
+            if (overlap == 0) {
+                start = end;
+                continue;
+            }
+            int next = end;
+            while (next > start) {
+                int previous = normalized.offsetByCodePoints(next, -1);
+                if (countTokens(normalized.substring(previous, end)) > overlap) break;
+                next = previous;
+            }
+            start = Math.max(end - 1, next);
+        }
+        return chunks;
+    }
+
+    @Override
+    public int countTokens(String text) {
+        return tokenizer.count(text);
+    }
+
+    private int endForTokens(String text, int start, int budget) {
+        int low = start + 1;
+        int high = text.length();
+        int best = low;
+        while (low <= high) {
+            int middle = low + (high - low) / 2;
+            int boundary = middle;
+            if (middle < text.length() && Character.isLowSurrogate(text.charAt(middle))) boundary--;
+            if (countTokens(text.substring(start, boundary)) <= budget) {
+                best = boundary;
+                low = boundary + 1;
+            } else {
+                high = boundary - 1;
+            }
+        }
+        return best;
     }
 
     @Override

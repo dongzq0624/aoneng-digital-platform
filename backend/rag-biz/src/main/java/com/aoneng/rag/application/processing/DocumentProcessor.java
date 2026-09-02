@@ -18,6 +18,9 @@ public interface DocumentProcessor {
      */
     boolean start(long docId, long kbId, String objectKey);
 
+    /** Remove all persisted chunks and vector points for a document before deletion. */
+    void deleteIndex(long docId);
+
     /**
      * 订阅文档处理进度事件。
      *

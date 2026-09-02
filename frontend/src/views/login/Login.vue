@@ -41,6 +41,7 @@ async function login() {
   loading.value = true;
   try {
     const {data} = await authApi.login({username: username.value, password: password.value});
+    if (!data?.token) throw new Error('登录响应缺少令牌');
     localStorage.setItem('rag_token', data.token)
   } catch {
     ElMessage.error('登录失败，请检查账号和密码');
