@@ -63,6 +63,12 @@ public class DoclingServeClient implements StructuredDocumentParser {
         } finally { Files.deleteIfExists(source); }
     }
 
+    /** Parse directly with Tika after the Docling attempt has already timed out. */
+    public String parseWithTika(InputStream input, String fileName, String extension)
+            throws IOException, TikaException, SAXException {
+        return tika.parse(input, fileName, extension);
+    }
+
     @Override public List<ParsedPage> parsePdfPages(InputStream input) throws IOException {
         Path source = Files.createTempFile("docling-pdf-", ".pdf");
         try {
@@ -111,7 +117,17 @@ public class DoclingServeClient implements StructuredDocumentParser {
             body.add("file", new FileSystemResource(temp)); body.add("extension", extension);
             body.add("samplePages", properties.samplePages()); body.add("sampleRows", properties.sampleRows());
             byte[] responseBytes = client.post().uri("/v1/parse").contentType(MediaType.MULTIPART_FORM_DATA)
-                    .body(body).retrieve().body(byte[].class);
+                    .body(body)
+                    // Docling-Serve may label JSON as application/octet-stream. Read the
+                    // response stream directly instead of relying on an HTTP message converter.
+                    .exchange((request, response) -> {
+                        if (!response.getStatusCode().is2xxSuccessful()) {
+                            throw new IOException("Docling-Serve returned HTTP " + response.getStatusCode().value());
+                        }
+                        try (InputStream responseBody = response.getBody()) {
+                            return responseBody.readAllBytes();
+                        }
+                    });
             String responseBody = responseBytes == null ? null : new String(responseBytes, java.nio.charset.StandardCharsets.UTF_8);
             JsonNode response = responseBody == null ? null : objectMapper.readTree(responseBody);
             if (response == null || !response.has("text") || !response.has("blocks")) throw new IOException("Invalid Docling-Serve response");

@@ -153,6 +153,16 @@ services:
       RAG_TOKENIZER_PATH: "${RAG_TOKENIZER_PATH:-/models/bge‑m3‑tokenizer/tokenizer.json}"
       RAG_TOKENIZER_MODEL: "${RAG_TOKENIZER_MODEL:-Qwen/Qwen3-Embedding-0.6B}"
       PADDLEOCR_ENDPOINT: http://paddleocr:8091
+      LANGFUSE_ENABLED: "${LANGFUSE_ENABLED:-false}"
+      LANGFUSE_HOST: "${LANGFUSE_HOST:-https://cloud.langfuse.com}"
+      LANGFUSE_PUBLIC_KEY: "${LANGFUSE_PUBLIC_KEY:-}"
+      LANGFUSE_SECRET_KEY: "${LANGFUSE_SECRET_KEY:-}"
+      RAG_OBSERVABILITY_ENVIRONMENT: "${RAG_OBSERVABILITY_ENVIRONMENT:-docker}"
+      RAG_EVALUATION_ENABLED: "${RAG_EVALUATION_ENABLED:-false}"
+      RAGAS_ENDPOINT: "${RAGAS_ENDPOINT:-http://ragas:8095}"
+      GEPA_ENABLED: "${GEPA_ENABLED:-false}"
+      GEPA_ENDPOINT: "${GEPA_ENDPOINT:-http://gepa:8096}"
+      RAG_EVALUATION_POLL_MS: "${RAG_EVALUATION_POLL_MS:-60000}"
     volumes:
       - ./backend/models/bge‑m3‑tokenizer:/models/bge‑m3‑tokenizer:ro
     depends_on:

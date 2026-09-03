@@ -3,6 +3,7 @@ package com.aoneng.rag.application.retrieval;
 import com.aoneng.rag.infra.llm.LlmService;
 import com.aoneng.rag.infra.vector.Bm25SparseVectorizer;
 import com.aoneng.rag.infra.vector.VectorStore;
+import com.aoneng.rag.observability.RagObservability;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -13,6 +14,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.SortedMap;
+import java.util.UUID;
 
 /**
  * 检索应用服务实现。
@@ -32,6 +34,7 @@ public class RetrievalServiceImpl implements RetrievalService {
     private final int candidateLimit;
     private final int contextLimit;
     private final int rrfConstant;
+    private final RagObservability observability;
 
     public RetrievalServiceImpl(LlmService llm,
                                 VectorStore vectorStore,
@@ -43,7 +46,8 @@ public class RetrievalServiceImpl implements RetrievalService {
                                 @Value("${rag.retrieval.keyword-limit:40}") int keywordLimit,
                                 @Value("${rag.retrieval.candidate-limit:40}") int candidateLimit,
                                 @Value("${rag.retrieval.context-limit:8}") int contextLimit,
-                                @Value("${rag.retrieval.rrf-constant:60}") int rrfConstant) {
+                                @Value("${rag.retrieval.rrf-constant:60}") int rrfConstant,
+                                RagObservability observability) {
         this.llm = llm;
         this.vectorStore = vectorStore;
         this.sparseVectorizer = sparseVectorizer;
@@ -55,15 +59,18 @@ public class RetrievalServiceImpl implements RetrievalService {
         this.candidateLimit = Math.max(5, Math.min(candidateLimit, 100));
         this.contextLimit = Math.max(1, Math.min(contextLimit, 12));
         this.rrfConstant = Math.max(1, Math.min(rrfConstant, 200));
+        this.observability = observability;
     }
 
     @Override
     public RetrievalResult retrieve(String question, List<Long> permittedKbIds) {
+        long started = System.nanoTime();
         List<String> queries = queryVariants(question);
         Map<Long, Candidate> candidates = new LinkedHashMap<>();
         int denseCount = 0;
         int keywordCount = 0;
         int hybridFallbackCount = 0;
+        String traceId = UUID.randomUUID().toString();
         for (String query : queries) {
             List<Float> denseVector = llm.embed(query);
             SortedMap<Long, Float> sparseVector = sparseVectorizer.vectorize(query);
@@ -89,13 +96,17 @@ public class RetrievalServiceImpl implements RetrievalService {
         List<Candidate> fused = candidates.values().stream()
                 .sorted(Comparator.comparingDouble(Candidate::rrfScore).reversed())
                 .limit(candidateLimit).toList();
+        long rerankStarted = System.nanoTime();
         boolean reranked = rerank(question, fused);
+        observability.record("llm.rerank", System.nanoTime() - rerankStarted, reranked || !rerankEnabled || fused.isEmpty(),
+                Map.of("candidate_count", fused.size(), "enabled", rerankEnabled, "applied", reranked, "trace_id", traceId));
         Comparator<Candidate> order = reranked
                 ? Comparator.comparingDouble(Candidate::rerankScore).reversed()
                         .thenComparing(Comparator.comparingDouble(Candidate::rrfScore).reversed())
                 : Comparator.comparingDouble(Candidate::rrfScore).reversed();
         List<Map<String, Object>> hits = fused.stream().sorted(order).limit(contextLimit).map(Candidate::toHit).toList();
         Map<String, Object> trace = new LinkedHashMap<>();
+        trace.put("trace_id", traceId);
         trace.put("queryCount", queries.size());
         trace.put("denseCandidateCount", denseCount);
         trace.put("keywordCandidateCount", keywordCount);
@@ -103,6 +114,7 @@ public class RetrievalServiceImpl implements RetrievalService {
         trace.put("fusedCandidateCount", fused.size());
         trace.put("reranked", reranked);
         trace.put("contextChunkCount", hits.size());
+        observability.record("retrieval.hybrid_rrf", System.nanoTime() - started, true, trace);
         return new RetrievalResult(hits, trace);
     }
 
@@ -125,6 +137,10 @@ public class RetrievalServiceImpl implements RetrievalService {
         for (int index = 0; index < hits.size(); index++) {
             Map<String, Object> hit = hits.get(index);
             Map<String, Object> payload = payload(hit.get("payload"));
+            // Hybrid candidates are fused at parent granularity. Legacy points without
+            // chunk_level remain compatible; explicit CHILD points are ignored.
+            String level = String.valueOf(payload.getOrDefault("chunk_level", "PARENT"));
+            if ("CHILD".equalsIgnoreCase(level)) continue;
             long chunkId = number(payload.get("chunk_id"), number(hit.get("id"), 0L));
             if (chunkId <= 0 || String.valueOf(payload.getOrDefault("content", "")).isBlank()) continue;
             Candidate candidate = candidates.computeIfAbsent(chunkId, ignored -> new Candidate(hit, payload));

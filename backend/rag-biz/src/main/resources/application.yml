@@ -17,7 +17,7 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info
+        include: health,info,metrics
 mybatis-plus:
   mapper-locations: classpath:mapper/*.xml
   configuration:
@@ -58,6 +58,28 @@ rag:
     candidate-limit: ${RAG_CANDIDATE_LIMIT:40}
     context-limit: ${RAG_CONTEXT_LIMIT:8}
     rrf-constant: ${RAG_RRF_CONSTANT:60}
+  index-task:
+    initial-delay-ms: ${RAG_INDEX_TASK_INITIAL_DELAY_MS:15000}
+    poll-ms: ${RAG_INDEX_TASK_POLL_MS:30000}
+  document-scan:
+    initial-delay-ms: ${RAG_DOCUMENT_SCAN_INITIAL_DELAY_MS:30000}
+    poll-ms: ${RAG_DOCUMENT_SCAN_POLL_MS:60000}
+  quality-monitor:
+    initial-delay-ms: ${RAG_QUALITY_MONITOR_INITIAL_DELAY_MS:60000}
+    poll-ms: ${RAG_QUALITY_MONITOR_POLL_MS:300000}
+  observability:
+    environment: ${RAG_OBSERVABILITY_ENVIRONMENT:local}
+    langfuse:
+      enabled: ${LANGFUSE_ENABLED:false}
+      host: ${LANGFUSE_HOST:https://cloud.langfuse.com}
+      public-key: ${LANGFUSE_PUBLIC_KEY:}
+      secret-key: ${LANGFUSE_SECRET_KEY:}
+  evaluation:
+    enabled: ${RAG_EVALUATION_ENABLED:false}
+    endpoint: ${RAGAS_ENDPOINT:http://ragas:8095}
+    optimizer-enabled: ${GEPA_ENABLED:false}
+    optimizer-endpoint: ${GEPA_ENDPOINT:http://gepa:8096}
+    poll-ms: ${RAG_EVALUATION_POLL_MS:60000}
 docling:
   enabled: ${DOCLING_ENABLED:false}
   endpoint: ${DOCLING_ENDPOINT:http://localhost:8090}

@@ -11,6 +11,8 @@ import KnowledgeBaseDetail from './views/kb/KnowledgeBaseDetail.vue';
 import Roles from './views/system/Roles.vue';
 import Menus from './views/system/Menus.vue';
 import Profile from './views/profile/Profile.vue';
+import Monitoring from './views/monitoring/Monitoring.vue';
+import FileProcessing from './views/monitoring/FileProcessing.vue';
 import { systemApi } from './api';
 
 const router = createRouter({
@@ -30,6 +32,8 @@ const router = createRouter({
         },
         { path: '/chat', component: Chat },
         { path: '/audit', component: Audit },
+        { path: '/monitoring', component: Monitoring },
+        { path: '/monitoring/file-processing', component: FileProcessing },
         { path: '/system/users', component: Users },
         { path: '/system/depts', component: Departments },
         { path: '/system/roles', component: Roles },
@@ -48,6 +52,8 @@ const routePermission: Record<string, number> = {
   '/system/roles': 7,
   '/system/menus': 8,
   '/audit': 9,
+  '/monitoring': 10,
+  '/monitoring/file-processing': 10,
 };
 
 router.beforeEach(async (to) => {

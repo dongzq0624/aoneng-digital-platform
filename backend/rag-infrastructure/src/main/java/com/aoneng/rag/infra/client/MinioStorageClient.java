@@ -107,4 +107,16 @@ public class MinioStorageClient implements ObjectStorage {
             return false;
         }
     }
+
+    @Override
+    public ObjectInfo stat(String objectName) {
+        try {
+            StatObjectResponse response = minioClient.statObject(StatObjectArgs.builder()
+                    .bucket(properties.bucket()).object(objectName).build());
+            return new ObjectInfo(response.etag(), response.size());
+        } catch (Exception e) {
+            log.warn("无法读取对象指纹: bucket={} object={}", properties.bucket(), objectName, e);
+            return null;
+        }
+    }
 }

@@ -7,6 +7,7 @@ export interface StreamDone {
     conversationId?: number
     userMessageId?: number
     messageId?: number
+    citations?: StreamCitation[]
 }
 
 export interface StreamHandlers {
@@ -125,6 +126,7 @@ function dispatchSseEvent(block: string, handlers: StreamHandlers, state: {stand
             conversationId: numberValue(data, 'conversationId'),
             userMessageId: numberValue(data, 'userMessageId'),
             messageId: numberValue(data, 'messageId'),
+            citations: citationItems(data),
         })
     } else if (sseEvent.event === 'error') {
         handlers.onError?.(new Error(textValue(data, ['message', 'error']) || '问答服务返回错误'))
@@ -237,6 +239,7 @@ export async function streamDocumentProcessing(docId: number, handlers: Document
         const reader = res.body.getReader()
         const decoder = new TextDecoder()
         let buffer = ''
+        let terminal = false
         try {
             while (true) {
                 const {done, value} = await reader.read()
@@ -252,16 +255,19 @@ export async function streamDocumentProcessing(docId: number, handlers: Document
                         if (event.event === 'segment') handlers.onSegment?.(data)
                         if (event.event === 'done') {
                             handlers.onDone?.(data)
+                            terminal = true
                             return
                         }
                         if (event.event === 'error') {
                             handlers.onError?.(new Error(data.message || '文档处理失败'))
+                            terminal = true
                             return
                         }
                     }
                 }
                 if (done) break
             }
+            if (!terminal) handlers.onError?.(new Error('文档处理连接意外关闭'))
         } finally {
             reader.releaseLock()
         }

@@ -3,8 +3,8 @@
 <mapper namespace="com.aoneng.rag.domain.kb.mapper.KbChunkMapper">
 
     <insert id="insertReturningId" useGeneratedKeys="true" keyProperty="id">
-        INSERT INTO kb_chunk(doc_id, kb_id, parent_id, seq, content, page_no, token_count, embedding_id)
-        VALUES(#{docId}, #{kbId}, #{parentId}, #{seq}, #{content}, #{pageNo}, #{tokenCount}, #{embeddingId})
+        INSERT INTO kb_chunk(doc_id, kb_id, parent_id, seq, content, page_no, token_count, embedding_id, chunk_level, token_count_estimated)
+        VALUES(#{docId}, #{kbId}, #{parentId}, #{seq}, #{content}, #{pageNo}, #{tokenCount}, #{embeddingId}, 'CHILD', #{tokenCountEstimated})
     </insert>
 
     <update id="updateEmbeddingId">
@@ -18,14 +18,15 @@
     </update>
 
     <select id="insertParent" resultType="long">
-        INSERT INTO kb_parent_chunk(doc_id, kb_id, seq, content, page_no, token_count)
-        VALUES(#{docId}, #{kbId}, #{seq}, #{content}, #{pageNo}, #{tokenCount})
+        INSERT INTO kb_parent_chunk(doc_id, kb_id, seq, content, page_no, token_count, metadata, token_count_estimated, document_version)
+        VALUES(#{docId}, #{kbId}, #{seq}, #{content}, #{pageNo}, #{tokenCount}, CAST(#{metadata} AS jsonb), #{tokenEstimated},
+               COALESCE(NULLIF(CAST(#{metadata} AS jsonb)->>'document_version', '')::int, 1))
         RETURNING id
     </select>
 
     <select id="insertBase" resultType="long">
-        INSERT INTO kb_base_chunk(doc_id, kb_id, seq, content, page_no, token_count, block_type, layout_metadata)
-        VALUES(#{docId}, #{kbId}, #{seq}, #{content}, #{pageNo}, #{tokenCount}, #{blockType}, CAST(#{metadata} AS jsonb))
+        INSERT INTO kb_base_chunk(doc_id, kb_id, seq, content, page_no, token_count, block_type, layout_metadata, token_count_estimated)
+        VALUES(#{docId}, #{kbId}, #{seq}, #{content}, #{pageNo}, #{tokenCount}, #{blockType}, CAST(#{metadata} AS jsonb), #{tokenEstimated})
         RETURNING id
     </select>
 
@@ -35,7 +36,7 @@
 
     <select id="selectParent" resultType="java.util.LinkedHashMap">
         SELECT id, doc_id AS "docId", kb_id AS "kbId", seq, content, page_no AS "pageNo",
-               token_count AS "tokenCount"
+               token_count AS "tokenCount", metadata, document_version AS "documentVersion"
           FROM kb_parent_chunk
          WHERE id = #{id}
     </select>

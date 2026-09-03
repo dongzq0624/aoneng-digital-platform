@@ -45,7 +45,17 @@ public class PaddleOcrClient {
             MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
             body.add("file", new FileSystemResource(source));
             byte[] responseBytes = client.post().uri("/v1/ocr/pdf").contentType(MediaType.MULTIPART_FORM_DATA)
-                    .body(body).retrieve().body(byte[].class);
+                    .body(body)
+                    // The OCR bridge can return JSON with an octet-stream content type.
+                    // Bypass converter selection and consume the bounded response stream.
+                    .exchange((request, response) -> {
+                        if (!response.getStatusCode().is2xxSuccessful()) {
+                            throw new IOException("PaddleOCR returned HTTP " + response.getStatusCode().value());
+                        }
+                        try (InputStream responseBody = response.getBody()) {
+                            return responseBody.readAllBytes();
+                        }
+                    });
             String responseBody = responseBytes == null ? null : new String(responseBytes, java.nio.charset.StandardCharsets.UTF_8);
             JsonNode root = responseBody == null ? null : mapper.readTree(responseBody);
             if (root == null || !root.has("text") || !root.has("blocks")) throw new IOException("Invalid PaddleOCR response");

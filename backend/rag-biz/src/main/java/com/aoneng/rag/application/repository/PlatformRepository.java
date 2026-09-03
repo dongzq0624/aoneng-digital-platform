@@ -9,7 +9,6 @@ import com.aoneng.rag.domain.chat.po.KbConversationPO;
 import com.aoneng.rag.domain.chat.po.KbQaRecordPO;
 import com.aoneng.rag.domain.chat.repository.ChatRepository;
 import com.aoneng.rag.domain.kb.po.KbBasePO;
-import com.aoneng.rag.domain.kb.po.KbChunkPO;
 import com.aoneng.rag.domain.kb.po.KbDocumentPO;
 import com.aoneng.rag.domain.kb.po.KbRetrievalEvalCasePO;
 import com.aoneng.rag.domain.kb.repository.KbRepository;
@@ -473,7 +472,7 @@ public class PlatformRepository {
         kbRepository.softDeleteBase(id);
     }
 
-    public long createDoc(long kbId, String name, String type, long size, String key, long uploader) {
+    public long createDoc(long kbId, String name, String type, long size, String key, String etag, long uploader) {
         KbDocumentPO po = new KbDocumentPO();
         po.setKbId(kbId);
         po.setFileName(name);
@@ -482,7 +481,7 @@ public class PlatformRepository {
         po.setObjectKey(key);
         po.setUploaderId(uploader);
         return kbRepository.createDocument(po.getKbId(), po.getFileName(), po.getFileType(),
-                po.getFileSize(), po.getObjectKey(), po.getUploaderId());
+                po.getFileSize(), po.getObjectKey(), etag, po.getUploaderId());
     }
 
     public Map<String, Object> doc(long id) {
@@ -499,6 +498,34 @@ public class PlatformRepository {
         kbRepository.updateDocumentStatus(id, parse, chunk, count, error);
     }
 
+    public boolean initializeDocumentFingerprint(long id, String etag, long size) {
+        return kbRepository.initializeDocumentFingerprint(id, etag, size);
+    }
+
+    public boolean markDocumentChanged(long id, String etag, long size) {
+        return kbRepository.markDocumentChanged(id, etag, size);
+    }
+
+    public void touchDocumentScan(long id) {
+        kbRepository.touchDocumentScan(id);
+    }
+
+    public void enqueueIndexTask(long docId, int version, String operation) {
+        kbRepository.enqueueIndexTask(docId, version, operation);
+    }
+
+    public void updateIndexTask(long docId, int version, String operation, String status, String error) {
+        kbRepository.updateIndexTask(docId, version, operation, status, error);
+    }
+
+    public int resetStaleIndexTasks(int timeoutMinutes) {
+        return kbRepository.resetStaleIndexTasks(timeoutMinutes);
+    }
+
+    public List<Map<String, Object>> dueIndexTasks(int limit) {
+        return kbRepository.dueIndexTasks(limit);
+    }
+
     public void deleteDoc(long id) {
         kbRepository.softDeleteDocument(id);
     }
@@ -509,28 +536,22 @@ public class PlatformRepository {
     }
 
     public long saveBaseChunk(long docId, long kbId, int seq, String content, Integer pageNo,
-                              int tokenCount, String blockType, String metadata) {
-        return kbRepository.saveBaseChunk(docId, kbId, seq, content, pageNo, tokenCount, blockType, metadata);
+                              int tokenCount, String blockType, String metadata, boolean tokenEstimated) {
+        return kbRepository.saveBaseChunk(docId, kbId, seq, content, pageNo, tokenCount, blockType, metadata, tokenEstimated);
     }
 
     public void updateParentEmbeddingId(long parentId, String embeddingId) {
         kbRepository.updateParentEmbeddingId(parentId, embeddingId);
     }
 
-    public long saveParentChunk(long docId, long kbId, int seq, String content, Integer pageNo, int tokenCount) {
-        return kbRepository.saveParentChunk(docId, kbId, seq, content, pageNo, tokenCount);
+    public long saveParentChunk(long docId, long kbId, int seq, String content, Integer pageNo, int tokenCount,
+                                String metadata, boolean tokenEstimated) {
+        return kbRepository.saveParentChunk(docId, kbId, seq, content, pageNo, tokenCount, metadata, tokenEstimated);
     }
 
     public long saveChunk(long docId, long kbId, long parentId, int seq, String content, Integer pageNo,
-                          int tokenCount) {
-        KbChunkPO po = new KbChunkPO();
-        po.setDocId(docId);
-        po.setKbId(kbId);
-        po.setParentId(parentId);
-        po.setSeq(seq);
-        po.setContent(content);
-        po.setPageNo(pageNo);
-        return kbRepository.saveChunk(docId, kbId, parentId, seq, content, pageNo, tokenCount);
+                          int tokenCount, boolean tokenEstimated) {
+        return kbRepository.saveChunk(docId, kbId, parentId, seq, content, pageNo, tokenCount, tokenEstimated);
     }
 
     public void updateChunkEmbeddingId(long chunkId, String embeddingId) {

@@ -23,7 +23,9 @@ public interface KbChunkMapper extends BaseMapper<KbChunkPO> {
                       @Param("seq") int seq,
                       @Param("content") String content,
                       @Param("pageNo") Integer pageNo,
-                      @Param("tokenCount") int tokenCount);
+                      @Param("tokenCount") int tokenCount,
+                      @Param("metadata") String metadata,
+                      @Param("tokenEstimated") boolean tokenEstimated);
 
     Long insertBase(@Param("docId") long docId,
                     @Param("kbId") long kbId,
@@ -32,7 +34,8 @@ public interface KbChunkMapper extends BaseMapper<KbChunkPO> {
                     @Param("pageNo") Integer pageNo,
                     @Param("tokenCount") int tokenCount,
                     @Param("blockType") String blockType,
-                    @Param("metadata") String metadata);
+                    @Param("metadata") String metadata,
+                    @Param("tokenEstimated") boolean tokenEstimated);
 
     int updateParentEmbeddingId(@Param("parentId") long parentId, @Param("embeddingId") String embeddingId);
 

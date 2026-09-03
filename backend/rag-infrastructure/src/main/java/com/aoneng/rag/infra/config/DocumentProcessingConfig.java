@@ -2,6 +2,7 @@ package com.aoneng.rag.infra.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
 /**
@@ -9,6 +10,7 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
  * 关闭时不等待任务完成，避免异常文档阻塞整体下线。
  */
 @Configuration
+@EnableScheduling
 public class DocumentProcessingConfig {
 
     /**

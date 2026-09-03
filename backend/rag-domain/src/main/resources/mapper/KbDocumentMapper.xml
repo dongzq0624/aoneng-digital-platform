@@ -9,6 +9,8 @@
         <result column="fileType" property="fileType"/>
         <result column="fileSize" property="fileSize"/>
         <result column="objectKey" property="objectKey"/>
+        <result column="objectEtag" property="objectEtag"/>
+        <result column="lastScannedAt" property="lastScannedAt"/>
         <result column="version" property="version"/>
         <result column="parseStatus" property="parseStatus"/>
         <result column="chunkStatus" property="chunkStatus"/>
@@ -20,7 +22,8 @@
 
     <select id="selectDocument" resultMap="DocumentRow">
         SELECT id, kb_id AS "kbId", file_name AS "fileName", file_type AS "fileType",
-               file_size AS "fileSize", object_key AS "objectKey", version,
+               file_size AS "fileSize", object_key AS "objectKey", object_etag AS "objectEtag",
+               last_scanned_at AS "lastScannedAt", version,
                parse_status AS "parseStatus", chunk_status AS "chunkStatus",
                chunk_count AS "chunkCount", error_msg AS "errorMsg",
                created_at AS "createdAt", updated_at AS "updatedAt"
@@ -29,7 +32,8 @@
 
     <select id="selectDocumentsByKb" resultMap="DocumentRow">
         SELECT id, kb_id AS "kbId", file_name AS "fileName", file_type AS "fileType",
-               file_size AS "fileSize", version,
+               file_size AS "fileSize", object_key AS "objectKey", object_etag AS "objectEtag",
+               last_scanned_at AS "lastScannedAt", version,
                parse_status AS "parseStatus", chunk_status AS "chunkStatus",
                chunk_count AS "chunkCount", error_msg AS "errorMsg",
                created_at AS "createdAt", updated_at AS "updatedAt"
@@ -38,8 +42,8 @@
     </select>
 
     <insert id="insertReturningId" useGeneratedKeys="true" keyProperty="id">
-        INSERT INTO kb_document(kb_id, file_name, file_type, file_size, object_key, uploader_id)
-        VALUES(#{kbId}, #{fileName}, #{fileType}, #{fileSize}, #{objectKey}, #{uploaderId})
+        INSERT INTO kb_document(kb_id, file_name, file_type, file_size, object_key, object_etag, uploader_id)
+        VALUES(#{kbId}, #{fileName}, #{fileType}, #{fileSize}, #{objectKey}, #{objectEtag}, #{uploaderId})
     </insert>
 
     <update id="updateStatus">
@@ -51,6 +55,65 @@
                updated_at   = NOW()
          WHERE id = #{id}
     </update>
+
+    <update id="initializeFingerprint">
+        UPDATE kb_document SET object_etag = #{etag}, file_size = #{size}, last_scanned_at = NOW(), updated_at = NOW()
+         WHERE id = #{id} AND object_etag IS NULL AND deleted = FALSE
+    </update>
+
+    <update id="markObjectChanged">
+        UPDATE kb_document
+           SET object_etag = #{etag}, file_size = #{size}, version = version + 1,
+               parse_status = 'PENDING', chunk_status = 'PENDING', chunk_count = 0,
+               error_msg = NULL, last_scanned_at = NOW(), updated_at = NOW()
+         WHERE id = #{id} AND deleted = FALSE
+           AND (object_etag IS DISTINCT FROM #{etag} OR file_size IS DISTINCT FROM #{size})
+    </update>
+
+    <update id="touchScan">
+        UPDATE kb_document SET last_scanned_at = NOW() WHERE id = #{id} AND deleted = FALSE
+    </update>
+
+    <insert id="insertIndexTask">
+        INSERT INTO kb_index_task(doc_id, document_version, operation, status, attempts, next_retry_at, updated_at)
+        VALUES(#{docId}, #{version}, #{operation}, 'PENDING', 0, NOW(), NOW())
+        ON CONFLICT (doc_id, document_version, operation)
+        DO UPDATE SET status = CASE WHEN kb_index_task.status IN ('SUCCESS', 'RUNNING')
+                                    THEN kb_index_task.status ELSE 'PENDING' END,
+                      next_retry_at = NOW(), updated_at = NOW(), last_error = NULL
+    </insert>
+
+    <update id="updateIndexTask">
+        UPDATE kb_index_task
+           SET status = #{status}, last_error = #{error},
+               attempts = CASE WHEN #{status} = 'RUNNING' THEN attempts + 1 ELSE attempts END,
+               updated_at = NOW(),
+               next_retry_at = CASE WHEN #{status} = 'FAILED' THEN NOW() + INTERVAL '5 minutes' ELSE NOW() END
+         WHERE doc_id = #{docId} AND document_version = #{version} AND operation = #{operation}
+    </update>
+
+    <update id="resetStaleIndexTasks">
+        <![CDATA[
+        UPDATE kb_index_task
+           SET status = 'PENDING', updated_at = NOW(), next_retry_at = NOW(),
+               last_error = COALESCE(last_error, '服务重启或任务超时，已自动恢复')
+         WHERE status = 'RUNNING'
+           AND updated_at < NOW() - (#{timeoutMinutes} || ' minutes')::interval
+        ]]>
+    </update>
+
+    <select id="selectDueIndexTasks" resultType="java.util.LinkedHashMap">
+        SELECT t.doc_id AS "docId", t.document_version AS "version",
+               d.kb_id AS "kbId", d.object_key AS "objectKey"
+          FROM kb_index_task t
+          JOIN kb_document d ON d.id = t.doc_id AND d.deleted = FALSE
+         WHERE t.operation = 'UPSERT'
+           AND t.status = 'PENDING'
+           AND t.next_retry_at &lt;= NOW()
+           AND d.chunk_status &lt;&gt; 'INDEXED'
+         ORDER BY t.next_retry_at, t.id
+         LIMIT #{limit}
+    </select>
 
     <update id="softDelete">
         UPDATE kb_document SET deleted = TRUE, updated_at = NOW() WHERE id = #{id}

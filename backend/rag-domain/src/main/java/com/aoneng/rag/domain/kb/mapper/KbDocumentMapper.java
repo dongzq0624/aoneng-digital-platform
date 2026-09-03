@@ -23,5 +23,22 @@ public interface KbDocumentMapper extends BaseMapper<KbDocumentPO> {
                      @Param("chunkCount") int chunkCount,
                      @Param("errorMsg") String errorMsg);
 
+    int initializeFingerprint(@Param("id") long id, @Param("etag") String etag, @Param("size") long size);
+
+    int markObjectChanged(@Param("id") long id, @Param("etag") String etag, @Param("size") long size);
+
+    int touchScan(@Param("id") long id);
+
+    int insertIndexTask(@Param("docId") long docId, @Param("version") int version,
+                        @Param("operation") String operation);
+
+    int updateIndexTask(@Param("docId") long docId, @Param("version") int version,
+                        @Param("operation") String operation, @Param("status") String status,
+                        @Param("error") String error);
+
+    int resetStaleIndexTasks(@Param("timeoutMinutes") int timeoutMinutes);
+
+    List<Map<String, Object>> selectDueIndexTasks(@Param("limit") int limit);
+
     int softDelete(@Param("id") long id);
 }

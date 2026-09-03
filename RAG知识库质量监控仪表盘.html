@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RAG 知识库质量监控仪表盘</title>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'PingFang SC','Microsoft YaHei','Segoe UI',Arial,sans-serif;background:#F4F3EE;color:#1A1B1C;padding:20px;}
+.header{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;flex-wrap:wrap;gap:10px;}
+.header h1{font-size:20px;font-weight:700;}
+.header .sub{font-size:12px;color:#6B7280;margin-top:2px;}
+.header .time{font-size:12px;color:#6B7280;background:#fff;padding:6px 12px;border-radius:8px;border:1px solid #E4E3DD;}
+.kpi-row{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px;}
+.kpi-card{flex:1 1 140px;min-width:130px;padding:14px 16px;border-radius:12px;background:#fff;border:1px solid #E4E3DD;position:relative;overflow:hidden;}
+.kpi-card .label{font-size:12px;color:#6B7280;}
+.kpi-card .value{font-size:24px;font-weight:700;margin-top:4px;}
+.kpi-card .delta{font-size:11px;margin-top:4px;}
+.kpi-card .bar{position:absolute;left:0;top:0;bottom:0;width:3px;}
+.bar-blue{background:#9BBBF4;}.bar-green{background:#52C41A;}.bar-cyan{background:#8BC8EA;}
+.bar-purple{background:#C9A7E8;}.bar-orange{background:#F4B393;}.bar-red{background:#EA6668;}
+.tab-nav{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;border-bottom:2px solid #E4E3DD;padding-bottom:0;}
+.tab-btn{padding:10px 18px;border:none;background:transparent;font-size:13px;cursor:pointer;color:#6B7280;border-bottom:2px solid transparent;margin-bottom:-2px;font-weight:500;transition:all .2s;}
+.tab-btn.active{color:#4A6FA5;border-bottom-color:#9BBBF4;font-weight:600;}
+.tab-btn:hover{color:#4A6FA5;}
+.tab-panel{display:none;}
+.tab-panel.active{display:block;}
+.chart-row{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:14px;}
+.chart-box{flex:1 1 340px;min-width:300px;background:#fff;border:1px solid #E4E3DD;border-radius:12px;padding:14px;}
+.chart-title{font-size:13px;font-weight:600;margin-bottom:8px;color:#1A1B1C;}
+.chart-container{width:100%;height:240px;}
+.alert-box{padding:12px 16px;border-radius:10px;margin-bottom:14px;font-size:12px;line-height:1.8;}
+.alert-red{background:rgba(234,102,104,0.06);border-left:3px solid #EA6668;}
+.alert-yellow{background:rgba(250,173,20,0.08);border-left:3px solid #FAAD14;}
+.alert-blue{background:rgba(155,187,244,0.08);border-left:3px solid #9BBBF4;}
+.alert-title{font-weight:600;margin-bottom:4px;}
+.alert-red .alert-title{color:#EA6668;}
+.alert-yellow .alert-title{color:#B8860B;}
+.alert-blue .alert-title{color:#4A6FA5;}
+.perf-cards{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px;}
+.perf-card{flex:1 1 130px;min-width:120px;padding:10px 12px;border-radius:8px;}
+.perf-card .pl{font-size:11px;color:#6B7280;}
+.perf-card .pv{font-size:18px;font-weight:600;margin-top:2px;}
+.bg-green{background:rgba(82,196,26,0.08);}.bg-green .pv{color:#52C41A;}
+.bg-yellow{background:rgba(250,173,20,0.1);}.bg-yellow .pv{color:#B8860B;}
+.table-wrap{background:#fff;border:1px solid #E4E3DD;border-radius:12px;padding:14px;overflow-x:auto;}
+table{width:100%;border-collapse:collapse;font-size:12px;}
+th{text-align:left;padding:8px 10px;background:#F4F3EE;color:#6B7280;font-weight:600;border-bottom:1px solid #E4E3DD;}
+td{padding:8px 10px;border-bottom:1px solid #f0f0ed;color:#1A1B1C;}
+.tag{display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:500;}
+.tag-red{background:rgba(234,102,104,0.12);color:#EA6668;}
+.tag-yellow{background:rgba(250,173,20,0.15);color:#B8860B;}
+.tag-green{background:rgba(82,196,26,0.12);color:#52C41A;}
+.tag-gray{background:#f0f0ed;color:#6B7280;}
+.footer{text-align:center;font-size:11px;color:#999;margin-top:16px;padding-top:12px;border-top:1px solid #E4E3DD;}
+@media(max-width:600px){body{padding:12px;}.kpi-card .value{font-size:20px;}.chart-box{min-width:100%;}}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <h1>RAG 知识库质量监控仪表盘</h1>
+    <div class="sub">Docling版面解析 · BGE-M3嵌入 · Milvus混合检索 · 父子分块架构</div>
+  </div>
+  <div class="time" id="updateTime">数据更新：--</div>
+</div>
+
+<!-- KPI概览 -->
+<div class="kpi-row">
+  <div class="kpi-card"><div class="bar bar-blue"></div><div class="label">文档总数</div><div class="value">1,286</div><div class="delta" style="color:#52C41A;">索引成功 1,241 · 失败 28</div></div>
+  <div class="kpi-card"><div class="bar bar-green"></div><div class="label">解析成功率</div><div class="value" style="color:#52C41A;">96.5%</div><div class="delta" style="color:#6B7280;">Tika降级 3.2%</div></div>
+  <div class="kpi-card"><div class="bar bar-cyan"></div><div class="label">离线 Hit@5</div><div class="value">88.3%</div><div class="delta" style="color:#52C41A;">↑ 较上周 +2.1%</div></div>
+  <div class="kpi-card"><div class="bar bar-purple"></div><div class="label">回答引用率</div><div class="value">82.1%</div><div class="delta" style="color:#EA6668;">无引用 17.9%</div></div>
+  <div class="kpi-card"><div class="bar bar-orange"></div><div class="label">用户点赞率</div><div class="value">76.4%</div><div class="delta" style="color:#EA6668;">点踩 8.2%</div></div>
+  <div class="kpi-card"><div class="bar bar-red"></div><div class="label">活跃告警</div><div class="value" style="color:#EA6668;">3</div><div class="delta" style="color:#6B7280;">索引失败2 · 降级1</div></div>
+</div>
+
+<!-- Tab导航 -->
+<div class="tab-nav">
+  <button class="tab-btn active" data-tab="doc">文档索引质量</button>
+  <button class="tab-btn" data-tab="retrieval">检索召回质量</button>
+  <button class="tab-btn" data-tab="gen">生成回答质量</button>
+  <button class="tab-btn" data-tab="perf">系统性能</button>
+  <button class="tab-btn" data-tab="feedback">用户反馈</button>
+</div>
+
+<!-- 文档索引质量 -->
+<div class="tab-panel active" id="panel-doc">
+  <div class="chart-row">
+    <div class="chart-box">
+      <div class="chart-title">文档索引状态分布</div>
+      <div class="chart-container" id="chartDocStatus"></div>
+    </div>
+    <div class="chart-box">
+      <div class="chart-title">父块 Token 分布（合理区间 1200-2000）</div>
+      <div class="chart-container" id="chartToken"></div>
+    </div>
+  </div>
+  <div class="alert-box alert-red">
+    <div class="alert-title">需关注异常（3项）</div>
+    1. 索引失败文档 2 份：扫描件 OCR 超时 1 份、加密 PDF 被拦截 1 份<br>
+    2. Tika 降级文档 41 份：多为老版 .doc 格式，无版面元数据，已标记 parse_fallback=true<br>
+    3. 孤立未索引块 7 条：PG 存在 chunk 但 Milvus 无对应向量，需触发重建索引
+  </div>
+  <div class="table-wrap">
+    <div class="chart-title" style="margin-bottom:10px;">失败/降级文档明细（Top5）</div>
+    <table>
+      <thead><tr><th>文档ID</th><th>文件名</th><th>状态</th><th>原因</th><th>操作</th></tr></thead>
+      <tbody>
+        <tr><td>DOC-1023</td><td>储能柜消防规范_扫描版.pdf</td><td><span class="tag tag-red">索引失败</span></td><td>OCR超时（>120s）</td><td><a href="#" style="color:#4A6FA5;">重试</a></td></tr>
+        <tr><td>DOC-0987</td><td>员工手册_加密.pdf</td><td><span class="tag tag-red">索引失败</span></td><td>加密PDF被拦截</td><td><a href="#" style="color:#4A6FA5;">上传密码</a></td></tr>
+        <tr><td>DOC-0876</td><td>旧版制度汇编.doc</td><td><span class="tag tag-yellow">Tika降级</span></td><td>老版.doc格式</td><td><a href="#" style="color:#4A6FA5;">查看</a></td></tr>
+        <tr><td>DOC-0765</td><td>2019财务制度.doc</td><td><span class="tag tag-yellow">Tika降级</span></td><td>老版.doc格式</td><td><a href="#" style="color:#4A6FA5;">查看</a></td></tr>
+        <tr><td>DOC-0654</td><td>历史合同扫描件.pdf</td><td><span class="tag tag-yellow">Tika降级</span></td><td>Docling解析异常</td><td><a href="#" style="color:#4A6FA5;">重试</a></td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- 检索召回质量 -->
+<div class="tab-panel" id="panel-retrieval">
+  <div class="chart-row">
+    <div class="chart-box">
+      <div class="chart-title">离线评测 Hit@K 趋势（近6周）</div>
+      <div class="chart-container" id="chartHit"></div>
+    </div>
+    <div class="chart-box">
+      <div class="chart-title">Top1 向量相似度分布</div>
+      <div class="chart-container" id="chartSim"></div>
+    </div>
+  </div>
+  <div class="chart-row">
+    <div class="chart-box">
+      <div class="chart-title">混合检索命中占比（Dense vs Sparse）</div>
+      <div class="chart-container" id="chartHybrid"></div>
+    </div>
+    <div class="chart-box">
+      <div class="chart-title">高频召回文档 Top10</div>
+      <div class="chart-container" id="chartHotDoc"></div>
+    </div>
+  </div>
+  <div class="alert-box alert-yellow">
+    <div class="alert-title">低相似度风险 Query（近7天 Top5，top1相似度 < 0.4）</div>
+    "储能柜消防巡检流程" · "试用期社保增减员规则" · "344kWh PACK配置参数" · "Milvus稀疏向量写入方式" · "Docling PaddleOCR部署步骤"
+    <br><span style="color:#999;">→ 建议：补充对应知识库文档，或优化分块策略与父子块上下文</span>
+  </div>
+</div>
+
+<!-- 生成回答质量 -->
+<div class="tab-panel" id="panel-gen">
+  <div class="chart-row">
+    <div class="chart-box">
+      <div class="chart-title">回答引用溯源情况</div>
+      <div class="chart-container" id="chartCite"></div>
+    </div>
+    <div class="chart-box">
+      <div class="chart-title">Prompt Token 占用分布（安全阈值 6500）</div>
+      <div class="chart-container" id="chartPrompt"></div>
+    </div>
+  </div>
+  <div class="alert-box alert-red">
+    <div class="alert-title">高幻觉风险样本（近7天）</div>
+    无引用回答占比 17.9%，其中 3 条回答内容与召回文档语义冲突，已标记待人工复核<br>
+    Prompt token 接近上限（>6500）请求占比 4.2%，存在上下文截断丢失风险<br>
+    拒绝回答（知识库无相关资料）占比 6.8%
+  </div>
+  <div class="table-wrap">
+    <div class="chart-title" style="margin-bottom:10px;">待人工复核样本（Top5）</div>
+    <table>
+      <thead><tr><th>请求ID</th><th>用户问题</th><th>风险类型</th><th>召回块数</th><th>操作</th></tr></thead>
+      <tbody>
+        <tr><td>REQ-5521</td><td>储能柜电池温度阈值是多少</td><td><span class="tag tag-red">语义冲突</span></td><td>3</td><td><a href="#" style="color:#4A6FA5;">复核</a></td></tr>
+        <tr><td>REQ-5498</td><td>试用期离职社保怎么处理</td><td><span class="tag tag-yellow">无引用</span></td><td>0</td><td><a href="#" style="color:#4A6FA5;">复核</a></td></tr>
+        <tr><td>REQ-5476</td><td>Milvus怎么建稀疏向量索引</td><td><span class="tag tag-yellow">无引用</span></td><td>1</td><td><a href="#" style="color:#4A6FA5;">复核</a></td></tr>
+        <tr><td>REQ-5432</td><td>Docling支持哪些格式</td><td><span class="tag tag-red">语义冲突</span></td><td>2</td><td><a href="#" style="color:#4A6FA5;">复核</a></td></tr>
+        <tr><td>REQ-5401</td><td>杭州公租房研究生申请条件</td><td><span class="tag tag-gray">拒绝回答</span></td><td>0</td><td><a href="#" style="color:#4A6FA5;">补充文档</a></td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- 系统性能 -->
+<div class="tab-panel" id="panel-perf">
+  <div class="chart-box" style="margin-bottom:14px;">
+    <div class="chart-title">各链路阶段 P50 / P95 耗时（ms）</div>
+    <div class="chart-container" id="chartPerf" style="height:280px;"></div>
+  </div>
+  <div class="perf-cards">
+    <div class="perf-card bg-green"><div class="pl">Docling 错误率</div><div class="pv">0.3%</div></div>
+    <div class="perf-card bg-green"><div class="pl">Embedding 错误率</div><div class="pv">0.1%</div></div>
+    <div class="perf-card bg-green"><div class="pl">Milvus 错误率</div><div class="pv">0.05%</div></div>
+    <div class="perf-card bg-yellow"><div class="pl">LLM 错误率</div><div class="pv">1.2%</div></div>
+    <div class="perf-card bg-green"><div class="pl">Rerank 错误率</div><div class="pv">0.2%</div></div>
+    <div class="perf-card bg-green"><div class="pl">今日问答 QPS</div><div class="pv">42</div></div>
+  </div>
+  <div class="alert-box alert-blue" style="margin-top:14px;">
+    <div class="alert-title">性能瓶颈提示</div>
+    Docling 解析 P95 达 3500ms，扫描件 PDF 占比上升导致耗时增加，建议：扫描文档量大时考虑 GPU 部署 docling-serve，或增加解析服务副本数。
+  </div>
+</div>
+
+<!-- 用户反馈 -->
+<div class="tab-panel" id="panel-feedback">
+  <div class="chart-row">
+    <div class="chart-box">
+      <div class="chart-title">用户反馈分布</div>
+      <div class="chart-container" id="chartFb"></div>
+    </div>
+    <div class="chart-box">
+      <div class="chart-title">点踩原因标签分布</div>
+      <div class="chart-container" id="chartTag"></div>
+    </div>
+  </div>
+  <div class="chart-row">
+    <div class="chart-box">
+      <div class="chart-title">近14天点赞/点踩趋势</div>
+      <div class="chart-container" id="chartFbTrend"></div>
+    </div>
+    <div class="chart-box">
+      <div class="chart-title">各知识库满意度对比</div>
+      <div class="chart-container" id="chartKbSat"></div>
+    </div>
+  </div>
+  <div class="alert-box alert-blue">
+    <div class="alert-title">优化建议（基于反馈数据自动生成）</div>
+    "答案不全"占点踩原因 42%，主要集中在储能运维流程类问题 → 建议检查相关文档分块是否过细、父子块上下文是否完整<br>
+    "答非所问"占 28% → 建议扩充离线评测集，验证召回质量，考虑调整 Rerank 阈值
+  </div>
+</div>
+
+<div class="footer">
+  RAG 质量监控仪表盘 · 示例数据仅用于展示页面结构与交互，接入真实后端后替换为接口数据即可 · 五大维度：文档索引 / 检索召回 / 生成回答 / 系统性能 / 用户反馈
+</div>
+
+<script>
+(function(){
+  try{
+    if(typeof echarts==='undefined'){
+      document.body.innerHTML='<div style="padding:40px;text-align:center;color:#6B7280;">ECharts 库加载失败，请检查网络连接后刷新页面。</div>';
+      return;
+    }
+    document.getElementById('updateTime').textContent='数据更新：'+new Date().toLocaleString('zh-CN');
+    var accent='#9BBBF4';
+    var charts={};
+    var baseGrid={left:40,right:20,top:30,bottom:30,containLabel:true};
+    var baseTooltip={trigger:'axis',confine:true,backgroundColor:'rgba(255,255,255,0.96)',borderColor:'#E4E3DD',textStyle:{color:'#333',fontSize:12}};
+
+    function init(id){var c=echarts.init(document.getElementById(id));charts[id]=c;return c;}
+
+    // 文档状态
+    init('chartDocStatus').setOption({backgroundColor:'transparent',tooltip:{trigger:'item',confine:true,formatter:'{b}: {c} ({d}%)'},legend:{bottom:0,textStyle:{fontSize:12,color:'#555'}},series:[{type:'pie',radius:['42%','68%'],center:['50%','42%'],data:[{value:1241,name:'索引成功',itemStyle:{color:'#52C41A'}},{value:28,name:'索引失败',itemStyle:{color:'#EA6668'}},{value:17,name:'索引中',itemStyle:{color:'#FAAD14'}}],label:{fontSize:12,color:'#555',formatter:'{b}\n{d}%'},emphasis:{itemStyle:{shadowBlur:10,shadowColor:'rgba(0,0,0,0.2)'}}}]});
+
+    // Token分布
+    init('chartToken').setOption({backgroundColor:'transparent',tooltip:baseTooltip,grid:baseGrid,xAxis:{type:'category',data:['<800','800-1200','1200-1600','1600-2000','2000-2400','>2400'],axisLabel:{color:'#555',fontSize:11,interval:0}},yAxis:{type:'value',name:'块数',axisLabel:{color:'#555',fontSize:11}},series:[{type:'bar',data:[320,1850,4200,2100,680,120],itemStyle:{color:function(p){return p.dataIndex>=4?'#EA6668':accent;},borderRadius:[5,5,0,0]},barWidth:'50%',label:{show:true,position:'top',fontSize:11,color:'#555'}}]});
+
+    // Hit@K趋势
+    init('chartHit').setOption({backgroundColor:'transparent',tooltip:baseTooltip,legend:{top:0,textStyle:{fontSize:12,color:'#555'}},grid:baseGrid,xAxis:{type:'category',data:['第1周','第2周','第3周','第4周','第5周','第6周'],axisLabel:{color:'#555',fontSize:11}},yAxis:{type:'value',name:'%',max:100,axisLabel:{color:'#555',fontSize:11}},series:[{name:'Hit@3',type:'line',smooth:true,data:[72,75,78,80,82,83],itemStyle:{color:'#8BC8EA'},lineStyle:{width:2.5},symbolSize:7},{name:'Hit@5',type:'line',smooth:true,data:[81,83,85,86,87,88.3],itemStyle:{color:accent},lineStyle:{width:2.5},symbolSize:7},{name:'Hit@10',type:'line',smooth:true,data:[88,89,91,92,93,94],itemStyle:{color:'#A2DDAA'},lineStyle:{width:2.5},symbolSize:7}]});
+
+    // 相似度分布
+    init('chartSim').setOption({backgroundColor:'transparent',tooltip:baseTooltip,grid:baseGrid,xAxis:{type:'category',data:['<0.3','0.3-0.4','0.4-0.5','0.5-0.6','0.6-0.7','0.7-0.8','>0.8'],axisLabel:{color:'#555',fontSize:11,interval:0}},yAxis:{type:'value',name:'请求数',axisLabel:{color:'#555',fontSize:11}},series:[{type:'bar',data:[45,120,280,520,680,420,180],itemStyle:{color:function(p){return p.dataIndex<=2?'#EA6668':accent;},borderRadius:[5,5,0,0]},barWidth:'55%'}]});
+
+    // 混合检索
+    init('chartHybrid').setOption({backgroundColor:'transparent',tooltip:{trigger:'item',confine:true,formatter:'{b}: {d}%'},legend:{bottom:0,textStyle:{fontSize:12,color:'#555'}},series:[{type:'pie',radius:['42%','68%'],center:['50%','42%'],data:[{value:45,name:'仅Dense命中',itemStyle:{color:'#8BC8EA'}},{value:30,name:'仅Sparse命中',itemStyle:{color:'#F4B393'}},{value:25,name:'两者共同命中',itemStyle:{color:'#52C41A'}}],label:{fontSize:12,color:'#555',formatter:'{b}\n{d}%'}}]});
+
+    // 高频召回文档
+    init('chartHotDoc').setOption({backgroundColor:'transparent',tooltip:{trigger:'axis',confine:true,axisPointer:{type:'shadow'}},grid:{left:10,right:40,top:10,bottom:20,containLabel:true},xAxis:{type:'value',axisLabel:{color:'#555',fontSize:11}},yAxis:{type:'category',data:['运维工单规范','储能系统架构','社保缴纳规则','消防巡检手册','API接口文档','试用期制度','设备维护指南','安全管理制度','财务报销流程','培训材料汇编'],axisLabel:{color:'#555',fontSize:11}},series:[{type:'bar',data:[320,285,240,210,185,160,145,130,110,95],itemStyle:{color:accent,borderRadius:[0,5,5,0]},label:{show:true,position:'right',fontSize:11,color:'#555'}}]});
+
+    // 引用情况
+    init('chartCite').setOption({backgroundColor:'transparent',tooltip:{trigger:'item',confine:true,formatter:'{b}: {d}%'},legend:{bottom:0,textStyle:{fontSize:12,color:'#555'}},series:[{type:'pie',radius:['42%','68%'],center:['50%','42%'],data:[{value:82.1,name:'有知识库引用',itemStyle:{color:'#52C41A'}},{value:12.5,name:'引用但语义冲突',itemStyle:{color:'#FAAD14'}},{value:5.4,name:'完全无引用',itemStyle:{color:'#EA6668'}}],label:{fontSize:12,color:'#555',formatter:'{b}\n{d}%'}}]});
+
+    // Prompt token
+    init('chartPrompt').setOption({backgroundColor:'transparent',tooltip:baseTooltip,grid:baseGrid,xAxis:{type:'category',data:['<2000','2000-3500','3500-5000','5000-6500','>6500'],axisLabel:{color:'#555',fontSize:11,interval:0}},yAxis:{type:'value',name:'请求数',axisLabel:{color:'#555',fontSize:11}},series:[{type:'bar',data:[180,420,560,380,95],itemStyle:{color:function(p){return p.dataIndex>=4?'#EA6668':accent;},borderRadius:[5,5,0,0]},barWidth:'55%',label:{show:true,position:'top',fontSize:11,color:'#555'}}]});
+
+    // 性能耗时
+    init('chartPerf').setOption({backgroundColor:'transparent',tooltip:baseTooltip,legend:{top:0,textStyle:{fontSize:12,color:'#555'}},grid:{left:50,right:20,top:35,bottom:30,containLabel:true},xAxis:{type:'category',data:['Docling解析','分块处理','Embedding','Milvus检索','Rerank重排','LLM生成'],axisLabel:{color:'#555',fontSize:11,interval:0}},yAxis:{type:'value',name:'ms',axisLabel:{color:'#555',fontSize:11}},series:[{name:'P50',type:'bar',data:[1200,80,150,45,120,800],itemStyle:{color:accent,borderRadius:[5,5,0,0]},barWidth:'30%'},{name:'P95',type:'bar',data:[3500,200,420,120,350,2200],itemStyle:{color:'#EA6668',borderRadius:[5,5,0,0]},barWidth:'30%'}]});
+
+    // 用户反馈
+    init('chartFb').setOption({backgroundColor:'transparent',tooltip:{trigger:'item',confine:true,formatter:'{b}: {d}%'},legend:{bottom:0,textStyle:{fontSize:12,color:'#555'}},series:[{type:'pie',radius:['42%','68%'],center:['50%','42%'],data:[{value:76.4,name:'点赞',itemStyle:{color:'#52C41A'}},{value:8.2,name:'点踩',itemStyle:{color:'#EA6668'}},{value:15.4,name:'无反馈',itemStyle:{color:'#C9CFD6'}}],label:{fontSize:12,color:'#555',formatter:'{b}\n{d}%'}}]});
+
+    // 点踩标签
+    init('chartTag').setOption({backgroundColor:'transparent',tooltip:{trigger:'axis',confine:true,axisPointer:{type:'shadow'}},grid:{left:80,right:40,top:10,bottom:20,containLabel:true},xAxis:{type:'value',axisLabel:{color:'#555',fontSize:11}},yAxis:{type:'category',data:['其他','找不到资料','答案错误','答非所问','答案不全'],axisLabel:{color:'#555',fontSize:11}},series:[{type:'bar',data:[6,12,12,28,42],itemStyle:{color:'#F4B393',borderRadius:[0,5,5,0]},label:{show:true,position:'right',fontSize:11,color:'#555',formatter:'{c}%'}}]});
+
+    // 反馈趋势
+    init('chartFbTrend').setOption({backgroundColor:'transparent',tooltip:baseTooltip,legend:{top:0,textStyle:{fontSize:12,color:'#555'}},grid:baseGrid,xAxis:{type:'category',data:Array.from({length:14},function(_,i){return(i+1)+'日';}),axisLabel:{color:'#555',fontSize:10,interval:1}},yAxis:{type:'value',name:'次数',axisLabel:{color:'#555',fontSize:11}},series:[{name:'点赞',type:'line',smooth:true,data:[32,38,45,42,50,55,48,52,58,60,55,62,68,65],itemStyle:{color:'#52C41A'},lineStyle:{width:2}},{name:'点踩',type:'line',smooth:true,data:[5,4,7,6,5,8,6,7,5,4,6,5,4,5],itemStyle:{color:'#EA6668'},lineStyle:{width:2}}]});
+
+    // 知识库满意度
+    init('chartKbSat').setOption({backgroundColor:'transparent',tooltip:baseTooltip,grid:baseGrid,xAxis:{type:'category',data:['储能运维','HR制度','财务规范','技术文档','安全管理'],axisLabel:{color:'#555',fontSize:11,interval:0}},yAxis:{type:'value',name:'满意度%',max:100,axisLabel:{color:'#555',fontSize:11}},series:[{type:'bar',data:[82,75,68,88,79],itemStyle:{color:function(p){return p.value<75?'#EA6668':accent;},borderRadius:[5,5,0,0]},barWidth:'45%',label:{show:true,position:'top',fontSize:11,color:'#555',formatter:'{c}%'}}]});
+
+    // Tab切换
+    var btns=document.querySelectorAll('.tab-btn');
+    var panels=document.querySelectorAll('.tab-panel');
+    btns.forEach(function(btn){
+      btn.addEventListener('click',function(){
+        btns.forEach(function(b){b.classList.remove('active');});
+        panels.forEach(function(p){p.classList.remove('active');});
+        btn.classList.add('active');
+        document.getElementById('panel-'+btn.dataset.tab).classList.add('active');
+        setTimeout(function(){Object.keys(charts).forEach(function(k){charts[k].resize();});},60);
+      });
+    });
+    window.addEventListener('resize',function(){Object.keys(charts).forEach(function(k){charts[k].resize();});});
+  }catch(e){console.error('Dashboard error:',e);document.body.innerHTML+='<div style="padding:20px;color:#EA6668;">页面渲染异常：'+e.message+'</div>';}
+})();
+</script>
+</body>
+</html>

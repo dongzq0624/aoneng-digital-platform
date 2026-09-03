@@ -9,6 +9,8 @@ import java.io.OutputStream;
  */
 public interface ObjectStorage {
 
+    record ObjectInfo(String etag, long size) { }
+
     /**
      * 上传对象。
      *
@@ -58,4 +60,6 @@ public interface ObjectStorage {
      * @return 是否存在
      */
     boolean exists(String objectName);
+
+    default ObjectInfo stat(String objectName) { return null; }
 }

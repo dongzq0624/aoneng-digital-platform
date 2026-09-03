@@ -87,13 +87,14 @@ public class KbRepositoryImpl implements KbRepository {
     }
 
     @Override
-    public long createDocument(long kbId, String name, String type, long size, String key, long uploader) {
+    public long createDocument(long kbId, String name, String type, long size, String key, String etag, long uploader) {
         KbDocumentPO p = new KbDocumentPO();
         p.setKbId(kbId);
         p.setFileName(name);
         p.setFileType(type);
         p.setFileSize(size);
         p.setObjectKey(key);
+        p.setObjectEtag(etag);
         p.setUploaderId(uploader);
         documentMapper.insertReturningId(p);
         return p.getId();
@@ -115,15 +116,50 @@ public class KbRepositoryImpl implements KbRepository {
     }
 
     @Override
+    public boolean initializeDocumentFingerprint(long id, String etag, long size) {
+        return documentMapper.initializeFingerprint(id, etag, size) > 0;
+    }
+
+    @Override
+    public boolean markDocumentChanged(long id, String etag, long size) {
+        return documentMapper.markObjectChanged(id, etag, size) > 0;
+    }
+
+    @Override
+    public void touchDocumentScan(long id) {
+        documentMapper.touchScan(id);
+    }
+
+    @Override
+    public void enqueueIndexTask(long docId, int version, String operation) {
+        documentMapper.insertIndexTask(docId, version, operation);
+    }
+
+    @Override
+    public void updateIndexTask(long docId, int version, String operation, String status, String error) {
+        documentMapper.updateIndexTask(docId, version, operation, status, error);
+    }
+
+    @Override
+    public int resetStaleIndexTasks(int timeoutMinutes) {
+        return documentMapper.resetStaleIndexTasks(timeoutMinutes);
+    }
+
+    @Override
+    public List<Map<String, Object>> dueIndexTasks(int limit) {
+        return documentMapper.selectDueIndexTasks(limit);
+    }
+
+    @Override
     public void softDeleteDocument(long id) {
         documentMapper.softDelete(id);
     }
 
     @Override
     public long saveBaseChunk(long docId, long kbId, int seq, String content, Integer pageNo,
-                              int tokenCount, String blockType, String metadata) {
+                              int tokenCount, String blockType, String metadata, boolean tokenEstimated) {
         Long id = chunkMapper.insertBase(docId, kbId, seq, content, pageNo, tokenCount,
-                blockType, metadata == null || metadata.isBlank() ? "{}" : metadata);
+                blockType, metadata == null || metadata.isBlank() ? "{}" : metadata, tokenEstimated);
         if (id == null) throw new IllegalStateException("基础分块保存失败");
         return id;
     }
@@ -137,14 +173,17 @@ public class KbRepositoryImpl implements KbRepository {
     }
 
     @Override
-    public long saveParentChunk(long docId, long kbId, int seq, String content, Integer pageNo, int tokenCount) {
-        Long id = chunkMapper.insertParent(docId, kbId, seq, content, pageNo, tokenCount);
+    public long saveParentChunk(long docId, long kbId, int seq, String content, Integer pageNo, int tokenCount,
+                                String metadata, boolean tokenEstimated) {
+        Long id = chunkMapper.insertParent(docId, kbId, seq, content, pageNo, tokenCount,
+                metadata == null || metadata.isBlank() ? "{}" : metadata, tokenEstimated);
         if (id == null) throw new IllegalStateException("父块保存失败");
         return id;
     }
 
     @Override
-    public long saveChunk(long docId, long kbId, long parentId, int seq, String content, Integer pageNo, int tokenCount) {
+    public long saveChunk(long docId, long kbId, long parentId, int seq, String content, Integer pageNo,
+                          int tokenCount, boolean tokenEstimated) {
         KbChunkPO p = new KbChunkPO();
         p.setDocId(docId);
         p.setKbId(kbId);
@@ -153,6 +192,7 @@ public class KbRepositoryImpl implements KbRepository {
         p.setContent(content);
         p.setPageNo(pageNo);
         p.setTokenCount(tokenCount);
+        p.setTokenCountEstimated(tokenEstimated);
         chunkMapper.insertReturningId(p);
         return p.getId();
     }

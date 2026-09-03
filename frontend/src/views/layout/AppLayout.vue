@@ -102,7 +102,7 @@
 </template>
 <script setup lang="ts">
 import {computed, nextTick, onBeforeUnmount, onMounted, ref, watch} from 'vue';
-import {ArrowDown, ChatDotRound, Close, DataAnalysis, DocumentChecked, Expand, Fold, FolderOpened, HomeFilled, Menu, Moon, OfficeBuilding, Search, Setting, Sunny, SwitchButton, User, UserFilled} from '@element-plus/icons-vue';
+import {ArrowDown, ChatDotRound, Close, DataAnalysis, DocumentChecked, Expand, Fold, FolderOpened, HomeFilled, Menu, Moon, OfficeBuilding, Search, Setting, Sunny, SwitchButton, User, UserFilled, Timer} from '@element-plus/icons-vue';
 import {useRoute, useRouter} from 'vue-router'
 import {authApi, systemApi} from '../../api'
 
@@ -148,7 +148,7 @@ const menus: NavigationItem[] = [{key: 'dashboard', id: 1, path: '/dashboard', l
     {key: 'roles', id: 7, path: '/system/roles', label: '角色管理', icon: User},
     {key: 'menus', id: 8, path: '/system/menus', label: '菜单管理', icon: Menu},
   ],
-}, {key: 'audit', id: 9, path: '/audit', label: '审计日志', icon: DocumentChecked}];
+}, {key: 'audit', id: 9, path: '/audit', label: '审计日志', icon: DocumentChecked}, {key: 'monitoring', id: 10, path: '/monitoring', label: 'RAG监控', icon: DataAnalysis}, {key: 'file-processing', id: 10, path: '/monitoring/file-processing', label: '文件处理耗时', icon: Timer}];
 const visibleMenus = computed(() => menus.flatMap(item => {
   if (!item.children) return allowedMenuIds.value === null || allowedMenuIds.value.includes(item.id!) ? [item] : [];
   const children = allowedMenuIds.value === null ? item.children : item.children.filter(child => allowedMenuIds.value!.includes(child.id!));
@@ -165,6 +165,8 @@ const pageTitles: Record<string, string> = {
   '/system/roles': '角色管理',
   '/system/menus': '菜单管理',
   '/audit': '审计日志',
+  '/monitoring': 'ARG质量监控',
+  '/monitoring/file-processing': '文件处理耗时',
   '/profile': '个人中心'
 };
 const titleForPath = (path: string) => path.startsWith('/kb/') ? '知识库详情' : (pageTitles[path] || '工作台');

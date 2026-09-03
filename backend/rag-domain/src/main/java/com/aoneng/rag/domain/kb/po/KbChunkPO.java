@@ -32,6 +32,9 @@ public class KbChunkPO {
     @TableField("parent_id")
     private Long parentId;
 
+    @TableField("chunk_level")
+    private String chunkLevel;
+
     /** 在所属文档中的分块序号（从 0 开始）。 */
     private Integer seq;
 
@@ -45,6 +48,9 @@ public class KbChunkPO {
     /** 分块的 token 数（可选统计字段）。 */
     @TableField("token_count")
     private Integer tokenCount;
+
+    @TableField("token_count_estimated")
+    private Boolean tokenCountEstimated;
 
     /** 附加元数据 JSON 字符串。 */
     private String metadata;

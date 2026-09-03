@@ -238,13 +238,18 @@ function normalizeCitations(items: StreamCitation[]): ChatCitation[] {
   return [...citations.values()]
 }
 
+function mergeCitations(current: ChatCitation[], incoming: StreamCitation[]): ChatCitation[] {
+  const existing = current.map(citation => ({fileName: citation.fileName, pageNos: citation.pageNos}))
+  return normalizeCitations([...existing, ...incoming])
+}
+
 function toChatMessage(message: ChatHistoryMessage, conversationId: number): ChatMessage {
   return {
     id: message.id,
     conversationId,
     role: message.role === 'assistant' ? 'assistant' : 'user',
     text: message.content,
-    citations: normalizeCitations(message.citations.map(citation => ({...citation}))),
+    citations: normalizeCitations((message.citations || []).map(citation => ({...citation}))),
     recordId: message.qaRecordId,
     pending: message.status === 'PENDING' || message.status === 'STREAMING',
     error: message.status === 'FAILED',
@@ -284,7 +289,14 @@ async function loadAllMessages(conversationId: number) {
       cursor = data.hasMore && data.nextCursor ? data.nextCursor : undefined
     } while (cursor)
     if (version !== conversationLoadVersion || activeConversationId.value !== conversationId) return
-    messages.value = allMessages.map(message => toChatMessage(message, conversationId))
+    const previousCitations = new Map(messages.value.map(message => [message.id, message.citations]))
+    const loadedMessages = allMessages.map(message => toChatMessage(message, conversationId))
+    loadedMessages.forEach(message => {
+      if (message.role !== 'assistant' || message.citations.length) return
+      const citations = previousCitations.get(message.id)
+      if (citations?.length) message.citations = citations
+    })
+    messages.value = loadedMessages
     scrollToLatest(true)
   } catch (error) {
     if (activeConversationId.value === conversationId) ElMessage.error(toApiError(error).message)
@@ -409,7 +421,7 @@ async function ask(rawQuestion: string) {
     await streamChat({question: text, conversationId, stream: true, streamProtocol: 'openai'}, {
       onCitations: items => {
         if (componentDisposed || abortController.signal.aborted) return
-        assistant.citations = normalizeCitations(items)
+        assistant.citations = mergeCitations(assistant.citations, items)
         scrollToLatest()
       },
       onDelta: delta => {
@@ -428,6 +440,7 @@ async function ask(rawQuestion: string) {
           return
         }
         assistant.recordId = result.recordId
+        if (result.citations?.length) assistant.citations = mergeCitations(assistant.citations, result.citations)
         if (result.userMessageId) user.id = result.userMessageId
         if (result.messageId) assistant.id = result.messageId
         scrollToLatest()

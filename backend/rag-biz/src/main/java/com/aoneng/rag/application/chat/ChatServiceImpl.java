@@ -13,6 +13,8 @@ import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
+import com.aoneng.rag.evaluation.RagEvaluationService;
+import com.aoneng.rag.observability.RagObservability;
 
 import java.time.Duration;
 import java.util.ArrayList;
@@ -37,16 +39,22 @@ public class ChatServiceImpl implements ChatService {
     private final LlmService llm;
     private final RagSseProperties sseProperties;
     private final Duration sseTimeout;
+    private final RagEvaluationService evaluation;
+    private final RagObservability observability;
 
     public ChatServiceImpl(PlatformRepository repo,
                            RetrievalService retrieval,
                            LlmService llm,
-                           RagSseProperties sseProperties) {
+                           RagSseProperties sseProperties,
+                           RagEvaluationService evaluation,
+                           RagObservability observability) {
         this.repo = repo;
         this.retrieval = retrieval;
         this.llm = llm;
         this.sseProperties = sseProperties;
         this.sseTimeout = Duration.ofSeconds(sseProperties.timeoutSeconds());
+        this.evaluation = evaluation;
+        this.observability = observability;
     }
 
     @Override
@@ -97,6 +105,7 @@ public class ChatServiceImpl implements ChatService {
                 .flatMapMany(result -> {
                     ChatStreamPayload p = buildStreamPayload(result, question, scope, turn, permittedKbIds);
                     StringBuilder answer = new StringBuilder();
+                    long llmStarted = System.nanoTime();
 
                     Flux<ServerSentEvent<Object>> init = Flux.just(
                             buildEvent("message", Map.of("choices",
@@ -105,6 +114,11 @@ public class ChatServiceImpl implements ChatService {
 
                     Flux<ServerSentEvent<Object>> model = llm.streamChatFlux(question, p.modelContext())
                             .doOnNext(answer::append)
+                            .doFinally(signal -> observability.record("llm.chat", System.nanoTime() - llmStarted,
+                                    signal == reactor.core.publisher.SignalType.ON_COMPLETE,
+                                    Map.of("conversation_id", turn.conversationId(), "signal", signal.name(),
+                                            "answer_chars", answer.length(),
+                                            "trace_id", String.valueOf(result.trace().getOrDefault("trace_id", "")))))
                             .map(delta -> buildEvent("message",
                                     Map.of("choices",
                                             List.of(Map.of("index", 0, "delta",
@@ -114,6 +128,7 @@ public class ChatServiceImpl implements ChatService {
                                 String answerText = removeSourceMarkers(answer.toString());
                                 Map<String, Object> donePayload = completeTurn(turn, scope, question, answerText,
                                         permittedKbIds, p.chunkIds(), p.citationsBySource(), result.trace());
+                                donePayload.put("citations", p.sources());
                                 completed.set(true);
                                 return buildEvent("done", donePayload);
                             })
@@ -183,10 +198,13 @@ public class ChatServiceImpl implements ChatService {
                                              Map<String, Object> trace) {
         long id = repo.completeChatTurn(turn, scope.userId(), question, answerText, permittedKbIds, chunkIds,
                 citedSources(answerText, citationsBySource), 0, trace);
-        return Map.of("recordId", id,
-                "conversationId", turn.conversationId(),
-                "userMessageId", turn.userMessageId(),
-                "messageId", turn.assistantMessageId());
+        evaluation.enqueue(id);
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("recordId", id);
+        result.put("conversationId", turn.conversationId());
+        result.put("userMessageId", turn.userMessageId());
+        result.put("messageId", turn.assistantMessageId());
+        return result;
     }
 
     @Override
@@ -214,6 +232,10 @@ public class ChatServiceImpl implements ChatService {
         citation.put("snippet", content);
         Long pageNo = number(payload.get("page_no"), number(payload.get("pageNo"), 0L));
         if (pageNo > 0) citation.put("pageNo", pageNo);
+        Long pageStart = number(payload.get("start_page_no"), number(payload.get("startPageNo"), 0L));
+        Long pageEnd = number(payload.get("end_page_no"), number(payload.get("endPageNo"), 0L));
+        if (pageStart > 0) citation.put("startPageNo", pageStart);
+        if (pageEnd > 0) citation.put("endPageNo", pageEnd);
         Double score = decimal(hit.get("score"));
         if (score != null) citation.put("score", score);
         return citation;
@@ -228,7 +250,10 @@ public class ChatServiceImpl implements ChatService {
             Map<String, Object> citation = citationsBySource.get(key);
             if (citation != null && !citations.contains(citation)) citations.add(citation);
         }
-        return citations;
+        if (!citations.isEmpty()) return citations;
+        return citationsBySource.values().stream()
+                .limit(sseProperties.maxCitations())
+                .toList();
     }
 
     private List<Map<String, Object>> groupCitations(List<Map<String, Object>> citations) {

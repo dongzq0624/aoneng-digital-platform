@@ -219,6 +219,10 @@ public class RagChatServiceImpl implements RagChatService {
         citation.put("snippet", content);
         Long pageNo = number(payload.get("page_no"), number(payload.get("pageNo"), 0L));
         if (pageNo > 0) citation.put("pageNo", pageNo);
+        Long pageStart = number(payload.get("start_page_no"), number(payload.get("startPageNo"), 0L));
+        Long pageEnd = number(payload.get("end_page_no"), number(payload.get("endPageNo"), 0L));
+        if (pageStart > 0) citation.put("startPageNo", pageStart);
+        if (pageEnd > 0) citation.put("endPageNo", pageEnd);
         Double score = decimal(hit.get("score"));
         if (score != null) citation.put("score", score);
         return citation;

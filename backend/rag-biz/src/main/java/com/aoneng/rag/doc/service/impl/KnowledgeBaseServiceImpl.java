@@ -2,6 +2,7 @@ package com.aoneng.rag.doc.service.impl;
 
 import com.aoneng.rag.application.repository.KbScope;
 import com.aoneng.rag.application.repository.PlatformRepository;
+import com.aoneng.rag.observability.RagObservability;
 import com.aoneng.rag.application.processing.DocumentProcessor;
 import com.aoneng.rag.common.exception.BusinessValidationException;
 import com.aoneng.rag.common.exception.ForbiddenException;
@@ -48,15 +49,18 @@ public class KnowledgeBaseServiceImpl implements KnowledgeBaseService {
     private final ObjectStorage storage;
     private final DocParser parser;
     private final DocumentProcessor documentProcessor;
+    private final RagObservability observability;
 
     public KnowledgeBaseServiceImpl(PlatformRepository repo,
                                     ObjectStorage storage,
                                     DocParser parser,
-                                    DocumentProcessor documentProcessor) {
+                                    DocumentProcessor documentProcessor,
+                                    RagObservability observability) {
         this.repo = repo;
         this.storage = storage;
         this.parser = parser;
         this.documentProcessor = documentProcessor;
+        this.observability = observability;
         // 桶初始化由 MinioProperties 配合启动钩子处理；此处不再主动调用。
     }
 
@@ -157,12 +161,26 @@ public class KnowledgeBaseServiceImpl implements KnowledgeBaseService {
         String objectKey = UUID.randomUUID() + "-" + originalName;
         long docId = 0L;
         try (InputStream stream = file.getInputStream()) {
-            storage.upload(objectKey, stream, file.getSize(), file.getContentType());
-            docId = repo.createDoc(kbId, originalName, ext, file.getSize(), objectKey, scope.userId());
-            if (!documentProcessor.start(docId, kbId, objectKey)) {
-                throw new IllegalStateException("文档处理任务已存在");
+            long storageStarted = System.nanoTime();
+            try {
+                storage.upload(objectKey, stream, file.getSize(), file.getContentType());
+                // 文档记录创建后再写入成功事件，确保文件级监控可以关联 doc_id。
+                long uploadDuration = System.nanoTime() - storageStarted;
+                ObjectStorage.ObjectInfo objectInfo = storage.stat(objectKey);
+                String etag = objectInfo == null ? null : objectInfo.etag();
+                docId = repo.createDoc(kbId, originalName, ext, file.getSize(), objectKey, etag, scope.userId());
+                observability.record("object.upload", uploadDuration, true,
+                        Map.of("doc_id", docId, "kb_id", kbId, "file_size", file.getSize(), "file_type", ext));
+                if (!documentProcessor.start(docId, kbId, objectKey)) {
+                    throw new IllegalStateException("文档处理任务已存在");
+                }
+                return KbConvert.INSTANCE.toDocumentResponse(repo.doc(docId));
+            } catch (Exception storageFailure) {
+                observability.record("object.upload", System.nanoTime() - storageStarted, false,
+                        Map.of("kb_id", kbId, "file_size", file.getSize(), "file_type", ext,
+                                "error_type", storageFailure.getClass().getSimpleName()));
+                throw storageFailure;
             }
-            return KbConvert.INSTANCE.toDocumentResponse(repo.doc(docId));
         } catch (Exception e) {
             if (docId > 0) {
                 try {

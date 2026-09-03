@@ -303,6 +303,41 @@ export const auditApi = {
     }) => request.get<PageResponse<AuditLog>>('/audit/logs', {params}),
 }
 
+export interface MonitoringStage {
+    operation: string;
+    calls: number;
+    avg_ms: number;
+    p50_ms: number;
+    p95_ms: number;
+    success_rate: number
+}
+
+export const monitoringApi = {
+    dashboard: (params?: {from?: string; to?: string; kbId?: number; docId?: number; conversationId?: number}) =>
+        request.get<Record<string, any>>('/monitoring/dashboard', {params}),
+      overview: (params?: {from?: string; to?: string; kbId?: number; docId?: number; conversationId?: number}) =>
+         request.get<{from: string; to: string; stages: MonitoringStage[]; quality: Record<string, unknown>; summary: {calls: number; total_ms: number; errors: number; throughput: number}; performance?: Record<string, number>}>('/monitoring/overview', {params}),
+      fileProcessing: (params?: {from?: string; to?: string}) =>
+        request.get<{from: string; to: string; items: FileProcessingItem[]}>('/monitoring/file-processing', {params}),
+}
+
+export interface FileProcessingItem {
+    docId: number;
+    fileName: string;
+    fileType?: string;
+    uploadMs: number;
+    parseMs: number;
+    parseMethod?: string;
+    layoutChunkMs: number;
+    parentChildChunkMs: number;
+    vectorizationMs: number;
+    postgresMs: number;
+    milvusMs: number;
+    totalMs: number;
+    status: string;
+    errorMessage?: string | null;
+}
+
 export const dashboardApi = {
     summary: () => request.get<{
         knowledgeBaseCount: number;

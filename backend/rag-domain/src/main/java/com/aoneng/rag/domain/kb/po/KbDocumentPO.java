@@ -40,6 +40,12 @@ public class KbDocumentPO {
     @TableField("object_key")
     private String objectKey;
 
+    @TableField("object_etag")
+    private String objectEtag;
+
+    @TableField("last_scanned_at")
+    private OffsetDateTime lastScannedAt;
+
     /** 文档版本号（重新上传时递增）。 */
     private Integer version;
 

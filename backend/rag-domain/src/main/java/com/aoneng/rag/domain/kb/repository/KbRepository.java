@@ -48,7 +48,7 @@ public interface KbRepository {
     // -------- Document --------
 
     /** 创建文档记录。 */
-    long createDocument(long kbId, String name, String type, long size, String key, long uploader);
+    long createDocument(long kbId, String name, String type, long size, String key, String etag, long uploader);
 
     /** 查询文档。 */
     Map<String, Object> findDocumentById(long id);
@@ -59,20 +59,36 @@ public interface KbRepository {
     /** 更新文档状态。 */
     void updateDocumentStatus(long id, String parse, String chunk, int count, String error);
 
+    boolean initializeDocumentFingerprint(long id, String etag, long size);
+
+    boolean markDocumentChanged(long id, String etag, long size);
+
+    void touchDocumentScan(long id);
+
+    void enqueueIndexTask(long docId, int version, String operation);
+
+    void updateIndexTask(long docId, int version, String operation, String status, String error);
+
+    int resetStaleIndexTasks(int timeoutMinutes);
+
+    List<Map<String, Object>> dueIndexTasks(int limit);
+
     /** 软删除文档。 */
     void softDeleteDocument(long id);
 
     // -------- Chunk --------
 
     long saveBaseChunk(long docId, long kbId, int seq, String content, Integer pageNo,
-                       int tokenCount, String blockType, String metadata);
+                       int tokenCount, String blockType, String metadata, boolean tokenEstimated);
 
     void updateParentEmbeddingId(long parentId, String embeddingId);
 
     /** 保存分块。 */
-    long saveParentChunk(long docId, long kbId, int seq, String content, Integer pageNo, int tokenCount);
+    long saveParentChunk(long docId, long kbId, int seq, String content, Integer pageNo, int tokenCount,
+                         String metadata, boolean tokenEstimated);
 
-    long saveChunk(long docId, long kbId, long parentId, int seq, String content, Integer pageNo, int tokenCount);
+    long saveChunk(long docId, long kbId, long parentId, int seq, String content, Integer pageNo,
+                   int tokenCount, boolean tokenEstimated);
 
     /** Persist the external vector-store point identifier after the chunk row has an ID. */
     void updateChunkEmbeddingId(long chunkId, String embeddingId);
