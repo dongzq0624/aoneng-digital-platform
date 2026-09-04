@@ -92,7 +92,7 @@
                 <span v-if="message.role === 'assistant' && message.pending" class="streaming-cursor"
                       aria-label="正在生成"></span>
                 <span v-if="message.role === 'assistant' && message.citations.length"
-                      class="citation-note">PDF 引用 {{ message.citations.length }} 条</span>
+                      class="citation-note">引用 {{ message.citations.length }} 条</span>
               </div>
               <div v-if="message.role === 'assistant' && message.citations.length" class="citations"
                    aria-label="原文引用">
@@ -102,7 +102,6 @@
                       <Document/>
                     </el-icon>
                     {{ citation.fileName }}</b>
-                  <small>{{ pageLabel(citation.pageNos) }}</small>
                 </div>
               </div>
             </div>
@@ -211,10 +210,6 @@ function pageNumbers(source: StreamCitation): number[] {
   const values = Array.isArray(raw) ? raw : [source.pageNo ?? source.page_no ?? source.page]
   return [...new Set(values.map(value => Number(value)).filter(value => Number.isInteger(value) && value > 0 && value <= 100_000))]
       .sort((left, right) => left - right)
-}
-
-function pageLabel(pages: number[]): string {
-  return `第 ${pages.join('、')} 页`
 }
 
 function normalizeCitations(items: StreamCitation[]): ChatCitation[] {

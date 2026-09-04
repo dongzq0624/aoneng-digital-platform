@@ -5,34 +5,9 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="bbcf13ae-cb9e-43a8-8224-323ad3b04ac0" name="更改" comment="">
-      <change beforePath="$PROJECT_DIR$/.env.example" beforeDir="false" afterPath="$PROJECT_DIR$/.env.example" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/RAG知识库质量监控仪表盘.html" beforeDir="false" afterPath="$PROJECT_DIR$/RAG知识库质量监控仪表盘.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/paddleocr-service/app.py" beforeDir="false" afterPath="$PROJECT_DIR$/backend/paddleocr-service/app.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/aoneng/rag/application/chat/ChatServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/aoneng/rag/application/chat/ChatServiceImpl.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/aoneng/rag/application/processing/DocumentProcessorImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/aoneng/rag/application/processing/DocumentProcessorImpl.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/aoneng/rag/application/repository/PlatformRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/aoneng/rag/application/repository/PlatformRepository.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/aoneng/rag/application/retrieval/RetrievalServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/aoneng/rag/application/retrieval/RetrievalServiceImpl.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/aoneng/rag/chat/service/impl/RagChatServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/aoneng/rag/chat/service/impl/RagChatServiceImpl.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/aoneng/rag/chat/vo/EvalRunResultVO.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/aoneng/rag/chat/vo/EvalRunResultVO.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/aoneng/rag/dashboard/controller/DashboardController.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/aoneng/rag/dashboard/controller/DashboardController.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/aoneng/rag/dashboard/service/impl/DashboardServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/aoneng/rag/dashboard/service/impl/DashboardServiceImpl.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/aoneng/rag/dashboard/vo/DashboardSummaryVO.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/aoneng/rag/dashboard/vo/DashboardSummaryVO.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/aoneng/rag/doc/service/impl/KnowledgeBaseServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/aoneng/rag/doc/service/impl/KnowledgeBaseServiceImpl.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/aoneng/rag/monitoring/ChunkQualityMonitor.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/aoneng/rag/monitoring/ChunkQualityMonitor.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/aoneng/rag/monitoring/MonitoringService.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/aoneng/rag/monitoring/MonitoringService.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/rag-biz/src/main/resources/application.yml" beforeDir="false" afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/resources/application.yml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/rag-common/src/main/java/com/aoneng/rag/common/constant/FileConstants.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/rag-common/src/main/java/com/aoneng/rag/common/constant/FileConstants.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/rag-infrastructure/src/main/java/com/aoneng/rag/infra/parse/DoclingServeClient.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/rag-infrastructure/src/main/java/com/aoneng/rag/infra/parse/DoclingServeClient.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/rag-infrastructure/src/main/java/com/aoneng/rag/infra/parse/TikaDocParser.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/rag-infrastructure/src/main/java/com/aoneng/rag/infra/parse/TikaDocParser.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/docker-compose.yml" beforeDir="false" afterPath="$PROJECT_DIR$/docker-compose.yml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/src/api.ts" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/api.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/src/api/kb.ts" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/api/kb.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/nginx.conf" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/nginx.conf" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/frontend/src/views/chat/Chat.vue" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/views/chat/Chat.vue" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/src/views/dashboard/Dashboard.vue" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/views/dashboard/Dashboard.vue" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/src/views/kb/KnowledgeBaseDetail.vue" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/views/kb/KnowledgeBaseDetail.vue" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/src/views/monitoring/FileProcessing.vue" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/views/monitoring/FileProcessing.vue" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/src/views/monitoring/Monitoring.vue" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/views/monitoring/Monitoring.vue" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -146,7 +121,7 @@
       <workItem from="1788398654979" duration="16783000" />
       <workItem from="1788447328677" duration="110000" />
       <workItem from="1788484345238" duration="9111000" />
-      <workItem from="1788494501012" duration="1505000" />
+      <workItem from="1788494501012" duration="3629000" />
     </task>
     <servers />
   </component>
@@ -154,6 +129,7 @@
     <option name="version" value="3" />
   </component>
   <component name="UnknownFeatures">
+    <option featureType="com.intellij.fileTypeFactory" implementationName="*.conf" />
     <option featureType="com.intellij.fileTypeFactory" implementationName=".env" />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
