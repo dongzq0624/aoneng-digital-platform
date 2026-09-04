@@ -22,7 +22,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.TreeSet;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -110,7 +109,8 @@ public class ChatServiceImpl implements ChatService {
                     Flux<ServerSentEvent<Object>> init = Flux.just(
                             buildEvent("message", Map.of("choices",
                                     List.of(Map.of("index", 0, "delta", Map.of("role", "assistant"))))),
-                            buildEvent("sources", p.sources()));
+                            // 检索结果只是候选来源，等模型明确引用后再展示，避免无关文件提前出现在答案底部。
+                            buildEvent("sources", List.of()));
 
                     Flux<ServerSentEvent<Object>> model = llm.streamChatFlux(question, p.modelContext())
                             .doOnNext(answer::append)
@@ -128,7 +128,9 @@ public class ChatServiceImpl implements ChatService {
                                 String answerText = removeSourceMarkers(answer.toString());
                                 Map<String, Object> donePayload = new LinkedHashMap<>(completeTurn(turn, scope, question, answerText,
                                         permittedKbIds, p.chunkIds(), p.citationsBySource(), result.trace()));
-                                donePayload.put("citations", p.sources());
+                                // 只返回模型实际标记的来源；检索候选不再作为引用展示。
+                                donePayload.put("citations", publicCitations(groupCitations(
+                                        citedSources(answer.toString(), p.citationsBySource()))));
                                 completed.set(true);
                                 return buildEvent("done", donePayload);
                             })
@@ -168,13 +170,12 @@ public class ChatServiceImpl implements ChatService {
             long parentId = number(payload.get("parent_id"), number(payload.get("parentId"), 0L));
             Map<String, Object> document = indexedDocument(docId, kbId);
             if (content.isBlank() || document == null) continue;
-            if (isCiteablePdf(document, payload)) {
-                long pageNo = number(payload.get("page_no"), number(payload.get("pageNo"), 0L));
-                citations.putIfAbsent(sourceKey(docId, pageNo), citation(hit, payload, content, document));
-                context.append("[source:").append(docId).append('-').append(pageNo).append("]\n");
+            long chunkId = number(payload.get("chunk_id"), number(hit.get("id"), 0L));
+            if (isCiteableDocument(document, payload)) {
+                citations.putIfAbsent(sourceKey(docId, chunkId), citation(hit, payload, content, document));
+                context.append("[source:").append(docId).append('-').append(chunkId).append("]\n");
             }
             if (parentId <= 0) context.append(content).append('\n');
-            long chunkId = number(payload.get("chunk_id"), number(hit.get("id"), 0L));
             if (chunkId > 0 && !chunkIds.contains(chunkId)) chunkIds.add(chunkId);
             if (parentId > 0 && expandedParents.add(parentId)) {
                 Map<String, Object> parent = repo.parentChunk(parentId);
@@ -233,12 +234,6 @@ public class ChatServiceImpl implements ChatService {
         citation.put("kbId", number(payload.get("kb_id"), 0L));
         citation.put("fileName", fileName(payload, document));
         citation.put("snippet", content);
-        Long pageNo = number(payload.get("page_no"), number(payload.get("pageNo"), 0L));
-        if (pageNo > 0) citation.put("pageNo", pageNo);
-        Long pageStart = number(payload.get("start_page_no"), number(payload.get("startPageNo"), 0L));
-        Long pageEnd = number(payload.get("end_page_no"), number(payload.get("endPageNo"), 0L));
-        if (pageStart > 0) citation.put("startPageNo", pageStart);
-        if (pageEnd > 0) citation.put("endPageNo", pageEnd);
         Double score = decimal(hit.get("score"));
         if (score != null) citation.put("score", score);
         return citation;
@@ -253,10 +248,8 @@ public class ChatServiceImpl implements ChatService {
             Map<String, Object> citation = citationsBySource.get(key);
             if (citation != null && !citations.contains(citation)) citations.add(citation);
         }
-        if (!citations.isEmpty()) return citations;
-        return citationsBySource.values().stream()
-                .limit(sseProperties.maxCitations())
-                .toList();
+        // 没有明确来源标记时不保存任何引用，避免把未支撑答案的检索候选误展示为来源。
+        return citations;
     }
 
     private List<Map<String, Object>> groupCitations(List<Map<String, Object>> citations) {
@@ -264,20 +257,14 @@ public class ChatServiceImpl implements ChatService {
         for (Map<String, Object> citation : citations) {
             long docId = number(citation.get("docId"), 0L);
             long kbId = number(citation.get("kbId"), 0L);
-            long pageNo = number(citation.get("pageNo"), 0L);
             String fileName = stringValue(citation.get("fileName"));
-            if (docId <= 0 || kbId <= 0 || pageNo <= 0 || fileName.isBlank()) continue;
+            if (docId <= 0 || kbId <= 0 || fileName.isBlank()) continue;
             String key = docId + ":" + kbId + ":" + fileName;
-            groups.computeIfAbsent(key, ignored -> new CitationGroup(citation)).pages.add(pageNo);
+            groups.computeIfAbsent(key, ignored -> new CitationGroup(citation));
         }
         List<Map<String, Object>> result = new ArrayList<>();
         for (CitationGroup group : groups.values()) {
-            List<Long> pages = group.pages.stream().sorted().toList();
-            if (pages.isEmpty()) continue;
-            Map<String, Object> citation = new LinkedHashMap<>(group.first);
-            citation.put("pageNo", pages.get(0));
-            citation.put("pageNos", pages);
-            result.add(citation);
+            result.add(new LinkedHashMap<>(group.first));
         }
         return result;
     }
@@ -286,20 +273,22 @@ public class ChatServiceImpl implements ChatService {
         List<Map<String, Object>> result = new ArrayList<>();
         for (Map<String, Object> citation : citations) {
             String fileName = stringValue(citation.get("fileName"));
-            long pageNo = number(citation.get("pageNo"), 0L);
-            Object pageNos = citation.get("pageNos");
-            if (fileName.isBlank() || pageNo <= 0 || !(pageNos instanceof List<?> pages) || pages.isEmpty()) continue;
+            if (fileName.isBlank()) continue;
             Map<String, Object> view = new LinkedHashMap<>();
             view.put("fileName", fileName);
-            view.put("pageNo", pageNo);
-            view.put("pageNos", pages);
+            copyCitationField(citation, view, "chunkId");
+            copyCitationField(citation, view, "parentId");
+            copyCitationField(citation, view, "docId");
+            copyCitationField(citation, view, "kbId");
+            copyCitationField(citation, view, "snippet");
+            copyCitationField(citation, view, "score");
             result.add(view);
         }
         return result;
     }
 
-    private String sourceKey(long docId, long pageNo) {
-        return docId + ":" + pageNo;
+    private String sourceKey(long docId, long chunkId) {
+        return docId + ":" + chunkId;
     }
 
     private static final java.util.regex.Pattern SOURCE_MARKER =
@@ -308,18 +297,19 @@ public class ChatServiceImpl implements ChatService {
 
     private static final class CitationGroup {
         private final Map<String, Object> first;
-        private final Set<Long> pages = new TreeSet<>();
 
         private CitationGroup(Map<String, Object> first) {
             this.first = first;
         }
     }
 
-    private boolean isCiteablePdf(Map<String, Object> document, Map<String, Object> payload) {
-        String fileType = String.valueOf(document.getOrDefault("fileType", "")).trim();
-        if (!"pdf".equalsIgnoreCase(fileType)) return false;
-        long pageNo = number(payload.get("page_no"), number(payload.get("pageNo"), 0L));
-        return pageNo > 0 && pageNo <= 100_000;
+    private boolean isCiteableDocument(Map<String, Object> document, Map<String, Object> payload) {
+        return document != null && !fileName(payload, document).isBlank();
+    }
+
+    private void copyCitationField(Map<String, Object> source, Map<String, Object> target, String key) {
+        Object value = source.get(key);
+        if (value != null) target.put(key, value);
     }
 
     private String validParentContent(Map<String, Object> parent, long docId, long kbId) {

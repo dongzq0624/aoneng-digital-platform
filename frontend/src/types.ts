@@ -16,10 +16,13 @@ export interface KnowledgeBase {
 }
 
 export interface Citation {
+    chunkId?: number;
     parentId?: number;
+    docId?: number;
+    kbId?: number;
     fileName: string;
-    pageNo?: number;
-    pageNos: number[]
+    snippet?: string;
+    score?: number
 }
 
 export interface DocumentItem { id:number; kbId:number; fileName:string; fileType:string; fileSize:number; version:number; parseStatus:'PENDING'|'PARSING'|'SUCCESS'|'FAILED'; chunkStatus:'PENDING'|'INDEXING'|'INDEXED'|'PARTIAL'|'FAILED'; chunkCount:number; errorMsg?:string }

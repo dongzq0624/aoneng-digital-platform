@@ -186,14 +186,13 @@ public class ChatRepositoryImpl implements ChatRepository {
     }
 
     @Override
-    public void insertCitation(long messageId, Long chunkId, Long docId, Long kbId, String fileName, Integer pageNo, String snippet, int rankNo, Double score) {
+    public void insertCitation(long messageId, Long chunkId, Long docId, Long kbId, String fileName, String snippet, int rankNo, Double score) {
         KbChatMessageCitationPO p = new KbChatMessageCitationPO();
         p.setMessageId(messageId);
         p.setChunkId(chunkId);
         p.setDocId(docId);
         p.setKbId(kbId);
         p.setFileName(fileName);
-        p.setPageNo(pageNo);
         p.setSnippet(snippet);
         p.setRankNo(rankNo);
         p.setScore(score);
@@ -230,7 +229,7 @@ public class ChatRepositoryImpl implements ChatRepository {
         Map<String, Object> m = new LinkedHashMap<>();
         m.put("id", p.getId()); m.put("messageId", p.getMessageId()); m.put("chunkId", p.getChunkId());
         m.put("docId", p.getDocId()); m.put("kbId", p.getKbId()); m.put("fileName", p.getFileName());
-        m.put("pageNo", p.getPageNo()); m.put("snippet", p.getSnippet()); m.put("rankNo", p.getRankNo()); m.put("score", p.getScore());
+        m.put("snippet", p.getSnippet()); m.put("rankNo", p.getRankNo()); m.put("score", p.getScore());
         return m;
     }
 

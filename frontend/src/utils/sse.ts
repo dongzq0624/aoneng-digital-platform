@@ -27,7 +27,6 @@ export interface DocumentProcessingEvent {
     chunkCount?: number
     chunkId?: number
     sequence?: number
-    pageNo?: number
     content?: string
     message?: string
 }
@@ -209,7 +208,6 @@ function documentEvent(data: unknown): DocumentProcessingEvent {
         chunkCount: numeric('chunkCount'),
         chunkId: numeric('chunkId'),
         sequence: numeric('sequence'),
-        pageNo: numeric('pageNo'),
         content: textValue(value, ['content']),
         message: textValue(value, ['message']),
     }

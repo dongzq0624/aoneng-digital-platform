@@ -38,10 +38,6 @@ public class KbChatMessageCitationPO {
     @TableField("file_name")
     private String fileName;
 
-    /** 来源页码（PDF 引用时填写）。 */
-    @TableField("page_no")
-    private Integer pageNo;
-
     /** 引用的分块文本摘要（已脱敏，长度有限）。 */
     private String snippet;
 

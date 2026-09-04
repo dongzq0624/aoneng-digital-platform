@@ -716,38 +716,52 @@ a {
     border-radius: 4px
 }
 
-.citation-note {
-    display: block;
-    color: #839ba2;
-    font-size: 10px;
-    margin-top: 8px
-}
-
 .citations {
-    display: grid;
-    gap: 7px;
-    margin-top: 8px
-}
-
-.citation {
-    border-left: 2px solid #75b5b4;
-    background: #f6faf9;
-    padding: 8px 10px;
     display: flex;
-    flex-direction: column;
-    gap: 4px
+    align-items: flex-start;
+    gap: 7px;
+    margin-top: 10px;
+    min-width: 0;
+    color: #7b6bc5;
+    font-size: 11px;
 }
 
-.citation b {
-    font-size: 10px;
-    color: #356f78
+.citation-files {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+    min-width: 0;
 }
 
-.citation small {
-    font-size: 10px;
-    color: #8da1a7;
-    line-height: 1.6;
-    overflow-wrap: anywhere
+.citation-source-label {
+    flex: 0 0 auto;
+    color: #7b6bc5;
+    line-height: 26px;
+}
+
+.citation-file {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    min-width: 0;
+    max-width: 100%;
+    padding: 5px 9px;
+    border: 1px solid #ddceff;
+    border-radius: 999px;
+    background: #faf8ff;
+    color: #7555c7;
+    line-height: 14px;
+    overflow-wrap: anywhere;
+}
+
+@media (max-width: 760px) {
+    .citations {
+        align-items: flex-start;
+    }
+
+    .citation-source-label {
+        line-height: 24px;
+    }
 }
 
 .message.error .msg-bubble {
@@ -2117,8 +2131,6 @@ button { border: 0; background: none; }
 .message.user .msg-bubble { color: #fff; background: var(--primary); border-radius: 12px 5px 12px 12px; }
 .suggestions button { min-height: 32px; color: var(--primary); border-color: #bdc9fa; border-radius: var(--radius-md); background: #fff; cursor: pointer; }
 .suggestions button:hover { background: var(--blue-50); border-color: var(--primary); }
-.citation { border-left-color: var(--primary); background: var(--blue-50); }
-.citation b { color: var(--primary-hover); }
 .chat-input { padding: 14px 16px; background: var(--surface); }
 
 /* Keep the chat controls visible while only the conversation itself scrolls. */

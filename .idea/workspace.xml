@@ -6,8 +6,20 @@
   <component name="ChangeListManager">
     <list default="true" id="bbcf13ae-cb9e-43a8-8224-323ad3b04ac0" name="更改" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/nginx.conf" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/nginx.conf" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/aoneng/rag/application/chat/ChatServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/aoneng/rag/application/chat/ChatServiceImpl.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/aoneng/rag/application/processing/DocumentProcessorImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/aoneng/rag/application/processing/DocumentProcessorImpl.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/aoneng/rag/application/repository/PlatformRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/aoneng/rag/application/repository/PlatformRepository.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/aoneng/rag/chat/service/impl/RagChatServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/aoneng/rag/chat/service/impl/RagChatServiceImpl.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/rag-domain/src/main/java/com/aoneng/rag/domain/chat/po/KbChatMessageCitationPO.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/rag-domain/src/main/java/com/aoneng/rag/domain/chat/po/KbChatMessageCitationPO.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/rag-domain/src/main/java/com/aoneng/rag/domain/chat/repository/ChatRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/rag-domain/src/main/java/com/aoneng/rag/domain/chat/repository/ChatRepository.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/rag-domain/src/main/resources/mapper/KbChatMessageCitationMapper.xml" beforeDir="false" afterPath="$PROJECT_DIR$/backend/rag-domain/src/main/resources/mapper/KbChatMessageCitationMapper.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/rag-infrastructure/src/main/java/com/aoneng/rag/infra/llm/DashScopeLlmService.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/rag-infrastructure/src/main/java/com/aoneng/rag/infra/llm/DashScopeLlmService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/rag-infrastructure/src/main/java/com/aoneng/rag/infra/repository/ChatRepositoryImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/rag-infrastructure/src/main/java/com/aoneng/rag/infra/repository/ChatRepositoryImpl.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/styles.scss" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/styles.scss" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/types.ts" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/types.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/utils/sse.ts" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/utils/sse.ts" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/frontend/src/views/chat/Chat.vue" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/views/chat/Chat.vue" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/sql/rag.sql" beforeDir="false" afterPath="$PROJECT_DIR$/sql/rag.sql" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -121,7 +133,7 @@
       <workItem from="1788398654979" duration="16783000" />
       <workItem from="1788447328677" duration="110000" />
       <workItem from="1788484345238" duration="9111000" />
-      <workItem from="1788494501012" duration="3629000" />
+      <workItem from="1788494501012" duration="10527000" />
     </task>
     <servers />
   </component>

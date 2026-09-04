@@ -91,17 +91,17 @@
                 <template v-else>{{ message.text }}</template>
                 <span v-if="message.role === 'assistant' && message.pending" class="streaming-cursor"
                       aria-label="正在生成"></span>
-                <span v-if="message.role === 'assistant' && message.citations.length"
-                      class="citation-note">引用 {{ message.citations.length }} 条</span>
               </div>
               <div v-if="message.role === 'assistant' && message.citations.length" class="citations"
                    aria-label="原文引用">
-                <div v-for="citation in message.citations" :key="citation.key" class="citation">
-                  <b>
+                <span class="citation-source-label">知识库来源：</span>
+                <div class="citation-files">
+                  <span v-for="citation in message.citations" :key="citation.key" class="citation-file">
                     <el-icon aria-hidden="true">
                       <Document/>
                     </el-icon>
-                    {{ citation.fileName }}</b>
+                    {{ citation.fileName }}
+                  </span>
                 </div>
               </div>
             </div>
@@ -205,36 +205,32 @@ function numberFrom(source: StreamCitation, keys: string[]): number | undefined 
   return undefined
 }
 
-function pageNumbers(source: StreamCitation): number[] {
-  const raw = source.pageNos ?? source.page_nos
-  const values = Array.isArray(raw) ? raw : [source.pageNo ?? source.page_no ?? source.page]
-  return [...new Set(values.map(value => Number(value)).filter(value => Number.isInteger(value) && value > 0 && value <= 100_000))]
-      .sort((left, right) => left - right)
-}
-
 function normalizeCitations(items: StreamCitation[]): ChatCitation[] {
   const citations = new Map<string, ChatCitation>()
   for (const item of items) {
-    const pages = pageNumbers(item)
     const fileName = textFrom(item, ['fileName', 'file_name', 'filename'])
-    if (!pages.length || !/\.pdf(?:$|[?#])/i.test(fileName)) continue
-    const documentKey = fileName.toLowerCase()
+    if (!fileName) continue
+    const documentId = numberFrom(item, ['docId', 'doc_id'])
+    const knowledgeBaseId = numberFrom(item, ['kbId', 'kb_id'])
+    const documentKey = `${knowledgeBaseId || ''}:${documentId || ''}:${fileName.toLowerCase()}`
     const existing = citations.get(documentKey)
-    if (existing) {
-      existing.pageNos = [...new Set([...existing.pageNos, ...pages])].sort((left, right) => left - right)
-      continue
-    }
+    if (existing) continue
     citations.set(documentKey, {
       key: `${documentKey}-${citations.size}`,
-      pageNos: pages,
+      chunkId: numberFrom(item, ['chunkId', 'chunk_id']),
+      parentId: numberFrom(item, ['parentId', 'parent_id']),
+      docId: documentId,
+      kbId: knowledgeBaseId,
       fileName,
+      snippet: textFrom(item, ['snippet', 'content', 'text']),
+      score: typeof item.score === 'number' ? item.score : undefined,
     })
   }
   return [...citations.values()]
 }
 
 function mergeCitations(current: ChatCitation[], incoming: StreamCitation[]): ChatCitation[] {
-  const existing = current.map(citation => ({fileName: citation.fileName, pageNos: citation.pageNos}))
+  const existing = current.map(citation => ({...citation}))
   return normalizeCitations([...existing, ...incoming])
 }
 

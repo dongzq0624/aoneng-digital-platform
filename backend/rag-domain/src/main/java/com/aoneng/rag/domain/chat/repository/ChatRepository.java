@@ -93,7 +93,7 @@ public interface ChatRepository {
 
     /** 插入引用。 */
     void insertCitation(long messageId, Long chunkId, Long docId, Long kbId,
-                          String fileName, Integer pageNo, String snippet, int rankNo, Double score);
+                          String fileName, String snippet, int rankNo, Double score);
 
     /** 查询消息的引用列表。 */
     List<Map<String, Object>> findCitationsByMessage(long messageId);

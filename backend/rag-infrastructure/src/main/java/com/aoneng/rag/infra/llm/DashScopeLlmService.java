@@ -158,7 +158,7 @@ public class DashScopeLlmService implements LlmService {
     @Override
     public String chat(String question, String context) {
         requireKey();
-        String prompt = "仅依据以下企业知识库上下文回答问题。每条已标记【来源:文档ID-页码】的上下文，"
+        String prompt = "仅依据以下企业知识库上下文回答问题。每条已标记【来源:文档ID-分块ID】的上下文，"
                 + "如被用于回答事实，必须在对应句末原样标注该来源；不得标注未提供的来源，也不要输出通用的[引用]。"
                 + "如果上下文不足，请明确说明未找到相关信息。\n上下文：\n" + context + "\n问题：" + question;
         java.util.Map<String, Object> body = java.util.Map.of("model", chatModel,
@@ -175,7 +175,7 @@ public class DashScopeLlmService implements LlmService {
                            BooleanSupplier cancelled) {
         requireKey();
         Objects.requireNonNull(onDelta, "onDelta");
-        String prompt = "仅依据以下企业知识库上下文回答问题。每条已标记【来源:文档ID-页码】的上下文，"
+        String prompt = "仅依据以下企业知识库上下文回答问题。每条已标记[source:文档ID-分块ID]的上下文，"
                 + "如被用于回答事实，必须在对应句末原样标注该来源；不得标注未提供的来源，也不要输出通用的[引用]。"
                 + "如果上下文不足，请明确说明未找到相关信息。\n上下文：\n" + (context == null ? "" : context)
                 + "\n问题：" + (question == null ? "" : question);
@@ -223,7 +223,7 @@ public class DashScopeLlmService implements LlmService {
     @Override
     public Flux<String> streamChatFlux(String question, String context) {
         requireKey();
-        String prompt = "仅依据以下企业知识库上下文回答问题。每条已标记【来源:文档ID-页码】的上下文，"
+        String prompt = "仅依据以下企业知识库上下文回答问题。每条已标记[source:文档ID-分块ID]的上下文，"
                 + "如被用于回答事实，必须在对应句末原样标注该来源；不得标注未提供的来源，也不要输出通用的[引用]。"
                 + "如果上下文不足，请明确说明未找到相关信息。\n上下文：\n" + (context == null ? "" : context)
                 + "\n问题：" + (question == null ? "" : question);

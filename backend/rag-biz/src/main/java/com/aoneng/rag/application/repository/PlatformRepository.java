@@ -37,7 +37,6 @@ import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.TreeSet;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -826,12 +825,11 @@ public class PlatformRepository {
             po.setDocId(longValue(citation.get("docId")));
             po.setKbId(longValue(citation.get("kbId")));
             po.setFileName(String.valueOf(citation.getOrDefault("fileName", "知识库文档")));
-            po.setPageNo(positiveInt(citation.get("pageNo")));
             po.setSnippet(String.valueOf(citation.getOrDefault("snippet", "")));
             po.setRankNo(index + 1);
             po.setScore(doubleValue(citation.get("score")));
             chatRepository.insertCitation(po.getMessageId(), po.getChunkId(), po.getDocId(),
-                    po.getKbId(), po.getFileName(), po.getPageNo(), po.getSnippet(),
+                    po.getKbId(), po.getFileName(), po.getSnippet(),
                     po.getRankNo(), po.getScore());
         }
         chatRepository.updateAssistantMessageId(qaId, turn.assistantMessageId());
@@ -940,34 +938,23 @@ public class PlatformRepository {
         for (Map<String, Object> citation : rows) {
             Long docId = citation.get("docId") == null ? null : ((Number) citation.get("docId")).longValue();
             Long kbId = citation.get("kbId") == null ? null : ((Number) citation.get("kbId")).longValue();
-            Integer pageNo = citation.get("pageNo") == null ? null : ((Number) citation.get("pageNo")).intValue();
             String fileName = citation.get("fileName") == null ? "" : String.valueOf(citation.get("fileName")).trim();
-            if (docId == null || kbId == null || pageNo == null
+            if (docId == null || kbId == null
                     || docId <= 0 || kbId <= 0
-                    || !fileName.toLowerCase().endsWith(".pdf")) continue;
+                    || fileName.isBlank()) continue;
             String key = docId + ":" + kbId + ":" + fileName;
-            Map<String, Object> entry = grouped.computeIfAbsent(key, ignored -> {
+            grouped.computeIfAbsent(key, ignored -> {
                 Map<String, Object> value = new LinkedHashMap<>();
+                value.put("chunkId", citation.get("chunkId"));
+                value.put("docId", docId);
+                value.put("kbId", kbId);
                 value.put("fileName", fileName);
-                value.put("pageNo", pageNo);
-                value.put("pageNos", new TreeSet<Integer>());
+                value.put("snippet", citation.getOrDefault("snippet", ""));
+                if (citation.get("score") != null) value.put("score", citation.get("score"));
                 return value;
             });
-            @SuppressWarnings("unchecked")
-            Set<Integer> pages = (Set<Integer>) entry.get("pageNos");
-            pages.add(pageNo);
         }
-        List<Map<String, Object>> result = new ArrayList<>();
-        for (Map<String, Object> citation : grouped.values()) {
-            @SuppressWarnings("unchecked")
-            Set<Integer> pages = (Set<Integer>) citation.get("pageNos");
-            List<Integer> sortedPages = List.copyOf(pages);
-            if (sortedPages.isEmpty()) continue;
-            citation.put("pageNo", sortedPages.get(0));
-            citation.put("pageNos", sortedPages);
-            result.add(citation);
-        }
-        return result;
+        return new ArrayList<>(grouped.values());
     }
 
     private void enrichConversation(Map<String, Object> row) {

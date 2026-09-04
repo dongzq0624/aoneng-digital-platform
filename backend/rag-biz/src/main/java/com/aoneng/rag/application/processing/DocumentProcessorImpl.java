@@ -389,7 +389,7 @@ public class DocumentProcessorImpl implements DocumentProcessor {
                                     "payload_fields", childPayload.size()));
                     repo.updateChunkEmbeddingId(childId, String.valueOf(childId));
                     chunks.add(new Chunker.PageChunk(childContent, childPageNo, childMetadata));
-                    publish(job, ProcessingEvent.segment(job.docId, childId, chunks.size() - 1, childPageNo,
+                    publish(job, ProcessingEvent.segment(job.docId, childId, chunks.size() - 1,
                             childContent, chunks.size(), totalChildren,
                             15 + (int) Math.round(chunks.size() * 80D / totalChildren)));
                 }
@@ -833,8 +833,8 @@ public class DocumentProcessorImpl implements DocumentProcessor {
                     "message", message));
         }
 
-        private static ProcessingEvent segment(long docId, long chunkId, int sequence, Integer pageNo, String content,
-                                               int completedChunks, int totalChunks, int progress) {
+        private static ProcessingEvent segment(long docId, long chunkId, int sequence, String content,
+                                                int completedChunks, int totalChunks, int progress) {
             Map<String, Object> data = new HashMap<>();
             data.put("docId", docId);
             data.put("chunkId", chunkId);
@@ -843,7 +843,6 @@ public class DocumentProcessorImpl implements DocumentProcessor {
             data.put("completedChunks", completedChunks);
             data.put("totalChunks", totalChunks);
             data.put("progress", progress);
-            if (pageNo != null) data.put("pageNo", pageNo);
             return new ProcessingEvent("segment", data);
         }
 

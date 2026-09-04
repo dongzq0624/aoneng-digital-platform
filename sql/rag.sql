@@ -349,7 +349,7 @@ CREATE TABLE IF NOT EXISTS kb_chat_message_citation (
     id BIGSERIAL PRIMARY KEY,
     message_id BIGINT NOT NULL REFERENCES kb_chat_message(id) ON DELETE CASCADE,
     chunk_id BIGINT, doc_id BIGINT, kb_id BIGINT, file_name VARCHAR(255) NOT NULL,
-    page_no INT, snippet TEXT NOT NULL, rank_no INT NOT NULL,
+    snippet TEXT NOT NULL, rank_no INT NOT NULL,
     score DOUBLE PRECISION, created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     CONSTRAINT uk_chat_message_citation_rank UNIQUE (message_id, rank_no)
 );
