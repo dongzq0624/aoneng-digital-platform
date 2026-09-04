@@ -126,8 +126,8 @@ public class ChatServiceImpl implements ChatService {
 
                     Mono<ServerSentEvent<Object>> done = Mono.fromCallable(() -> {
                                 String answerText = removeSourceMarkers(answer.toString());
-                                Map<String, Object> donePayload = completeTurn(turn, scope, question, answerText,
-                                        permittedKbIds, p.chunkIds(), p.citationsBySource(), result.trace());
+                                Map<String, Object> donePayload = new LinkedHashMap<>(completeTurn(turn, scope, question, answerText,
+                                        permittedKbIds, p.chunkIds(), p.citationsBySource(), result.trace()));
                                 donePayload.put("citations", p.sources());
                                 completed.set(true);
                                 return buildEvent("done", donePayload);
@@ -178,12 +178,15 @@ public class ChatServiceImpl implements ChatService {
             if (chunkId > 0 && !chunkIds.contains(chunkId)) chunkIds.add(chunkId);
             if (parentId > 0 && expandedParents.add(parentId)) {
                 Map<String, Object> parent = repo.parentChunk(parentId);
-                String parentContent = parent == null ? "" : text(parent, "content");
+                String parentContent = validParentContent(parent, docId, kbId);
                 if (!parentContent.isBlank()) context.append(parentContent).append('\n');
                 else context.append(content).append('\n');
             }
         }
-        List<Map<String, Object>> sources = publicCitations(groupCitations(new ArrayList<>(citations.values())));
+        List<Map<String, Object>> sources = publicCitations(groupCitations(new ArrayList<>(citations.values())))
+                .stream()
+                .limit(sseProperties.maxCitations())
+                .toList();
         return new ChatStreamPayload(context.toString(), sources, citations, chunkIds);
     }
 
@@ -300,7 +303,8 @@ public class ChatServiceImpl implements ChatService {
     }
 
     private static final java.util.regex.Pattern SOURCE_MARKER =
-            java.util.regex.Pattern.compile("[【\\[]来源[：:]\\s*(\\d+)\\s*-\\s*(\\d+)[】\\]]");
+            java.util.regex.Pattern.compile("[【\\[](?:来源|source)[：:]\\s*(\\d+)\\s*-\\s*(\\d+)[】\\]]",
+                    java.util.regex.Pattern.CASE_INSENSITIVE);
 
     private static final class CitationGroup {
         private final Map<String, Object> first;
@@ -316,6 +320,13 @@ public class ChatServiceImpl implements ChatService {
         if (!"pdf".equalsIgnoreCase(fileType)) return false;
         long pageNo = number(payload.get("page_no"), number(payload.get("pageNo"), 0L));
         return pageNo > 0 && pageNo <= 100_000;
+    }
+
+    private String validParentContent(Map<String, Object> parent, long docId, long kbId) {
+        if (parent == null) return "";
+        long parentDocId = number(parent.get("docId"), number(parent.get("doc_id"), 0L));
+        long parentKbId = number(parent.get("kbId"), number(parent.get("kb_id"), 0L));
+        return parentDocId == docId && parentKbId == kbId ? text(parent, "content", "text") : "";
     }
 
     private Map<String, Object> indexedDocument(long docId, long kbId) {

@@ -44,6 +44,12 @@ public class MonitoringService {
                         "COALESCE(AVG(" + metric("citation_completeness") + "),0) AS citation_completeness " +
                         "FROM rag_evaluation_task t JOIN kb_qa_record q ON q.id=t.qa_record_id " +
                         qualityWhere(filter, kbId, docId, conversationId), qualityArgs(filter, kbId, docId, conversationId).toArray());
+        Number recall = jdbc.queryForObject(
+                "SELECT COALESCE(AVG(" + recallMetricExpression() + "),0) " +
+                        "FROM rag_evaluation_task t JOIN kb_qa_record q ON q.id=t.qa_record_id " +
+                        qualityWhere(filter, kbId, docId, conversationId) + " AND t.status='SUCCESS'",
+                Number.class, qualityArgs(filter, kbId, docId, conversationId).toArray());
+        quality.put("recallAt5", toRatio(recall));
         Map<String, Object> summary = jdbc.queryForMap(
                 "SELECT COUNT(*) AS calls, COALESCE(SUM(duration_ms),0) AS total_ms, " +
                         "COALESCE(SUM(CASE WHEN NOT success THEN 1 ELSE 0 END),0) AS errors " +
@@ -72,7 +78,8 @@ public class MonitoringService {
             List<Map<String, Object>> events = jdbc.queryForList(
                     "SELECT operation, COALESCE(SUM(duration_ms),0) AS duration_ms, " +
                             "BOOL_AND(success) AS success, MAX(attributes->>'parse_method') AS parse_method, " +
-                            "MAX(attributes->>'error_type') AS error_type " +
+                            "MAX(attributes->>'error_type') AS error_type, " +
+                            "MAX(attributes->>'timing_version') AS timing_version " +
                             "FROM rag_observation_event WHERE doc_id=? AND created_at BETWEEN ? AND ? GROUP BY operation",
                     id, filter.from, filter.to);
             Map<String, Object> item = new LinkedHashMap<>();
@@ -82,12 +89,16 @@ public class MonitoringService {
             item.put("parseMethod", "-");
             Map<String, Double> durations = new LinkedHashMap<>();
             String errorType = null;
+            boolean independentTiming = false;
             for (Map<String, Object> event : events) {
                 String operation = String.valueOf(event.get("operation"));
                 Number duration = (Number) event.get("duration_ms");
                 durations.put(operation, duration == null ? 0D : duration.doubleValue());
                 if ("document.parse".equals(operation) && event.get("parse_method") != null) {
                     item.put("parseMethod", event.get("parse_method"));
+                }
+                if ("2".equals(String.valueOf(event.get("timing_version")))) {
+                    independentTiming = true;
                 }
                 if (Boolean.FALSE.equals(event.get("success")) && event.get("error_type") != null) {
                     errorType = String.valueOf(event.get("error_type"));
@@ -100,9 +111,11 @@ public class MonitoringService {
             double vector = value(durations, "embedding.dense") + value(durations, "embedding.sparse_bm25");
             double postgres = value(durations, "document.persist_database");
             double milvus = value(durations, "vector.upsert");
-            // document.parse currently covers parser output plus base splitting; avoid counting
-            // the overlapping base_chunk observation twice in the file total.
-            double total = upload + Math.max(parse, layout) + parentChild + vector + postgres + milvus;
+            // Version 2 records three independent processing stages. Legacy events
+            // used document.parse as a superset of base_chunk, so retain the
+            // historical de-duplication rule when no v2 event is present.
+            double parseAndLayout = independentTiming ? parse + layout : Math.max(parse, layout);
+            double total = upload + parseAndLayout + parentChild + vector + postgres + milvus;
             item.put("uploadMs", upload);
             item.put("parseMs", parse);
             item.put("layoutChunkMs", layout);
@@ -151,7 +164,7 @@ public class MonitoringService {
         Map<String, Object> retrieval = new LinkedHashMap<>();
         retrieval.put("hybrid", jdbc.queryForList("SELECT COALESCE(attributes->>'retrievalSources','unknown') AS source, COUNT(*) AS count FROM rag_observation_event " + filter.sql + " AND operation='retrieval.hybrid_rrf' GROUP BY source ORDER BY count DESC", filter.args.toArray()));
         retrieval.put("hotDocuments", jdbc.queryForList("SELECT d.id AS \"docId\", d.file_name AS \"fileName\", COUNT(*) AS count FROM kb_qa_record q CROSS JOIN LATERAL unnest(COALESCE(q.retrieved_chunk_ids, ARRAY[]::bigint[])) rid JOIN kb_chunk c ON c.id=rid JOIN kb_document d ON d.id=c.doc_id WHERE q.created_at BETWEEN ? AND ?" + qaScope(kbId, docId, conversationId) + " GROUP BY d.id,d.file_name ORDER BY count DESC LIMIT 10", qaArgs(filter, kbId, docId, conversationId).toArray()));
-        retrieval.put("hitTrend", List.of());
+        retrieval.put("recallTrend", retrievalRecallTrend(filter, kbId, docId, conversationId));
         retrieval.put("similarity", List.of());
         retrieval.put("lowSimilarityQueries", List.of());
         result.put("retrievalQuality", retrieval);
@@ -262,6 +275,41 @@ public class MonitoringService {
 
     private String metric(String key) {
         return "CASE WHEN t.metrics->>'" + key + "' ~ '^[0-9]+(\\.[0-9]+)?$' THEN (t.metrics->>'" + key + "')::numeric END";
+    }
+
+    /**
+     * 读取离线评估服务产生的召回率。优先采用 Recall@5，兼容历史任务中的
+     * Recall@K、通用 recall 以及 RAGAS 的上下文召回率字段。
+     */
+    private String recallMetricExpression() {
+        return "CASE " +
+                "WHEN t.metrics->>'recall_at_5' ~ '^[0-9]+(\\.[0-9]+)?$' THEN (t.metrics->>'recall_at_5')::numeric " +
+                "WHEN t.metrics->>'recallAt5' ~ '^[0-9]+(\\.[0-9]+)?$' THEN (t.metrics->>'recallAt5')::numeric " +
+                "WHEN t.metrics->>'recall_at_k' ~ '^[0-9]+(\\.[0-9]+)?$' THEN (t.metrics->>'recall_at_k')::numeric " +
+                "WHEN t.metrics->>'recallAtK' ~ '^[0-9]+(\\.[0-9]+)?$' THEN (t.metrics->>'recallAtK')::numeric " +
+                "WHEN t.metrics->>'recall' ~ '^[0-9]+(\\.[0-9]+)?$' THEN (t.metrics->>'recall')::numeric " +
+                "WHEN t.metrics->>'context_recall' ~ '^[0-9]+(\\.[0-9]+)?$' THEN (t.metrics->>'context_recall')::numeric " +
+                "END";
+    }
+
+    private List<Map<String, Object>> retrievalRecallTrend(Filter filter, Long kbId, Long docId,
+                                                            Long conversationId) {
+        return jdbc.queryForList(
+                "SELECT to_char(date_trunc('day', t.created_at),'MM-DD') AS period, " +
+                        "COALESCE(AVG(" + recallMetricExpression() + "),0) AS \"recallAt5\" " +
+                        "FROM rag_evaluation_task t JOIN kb_qa_record q ON q.id=t.qa_record_id " +
+                        qualityWhere(filter, kbId, docId, conversationId) +
+                        " AND t.status='SUCCESS' GROUP BY date_trunc('day', t.created_at) " +
+                        "ORDER BY date_trunc('day', t.created_at)",
+                qualityArgs(filter, kbId, docId, conversationId).toArray());
+    }
+
+    private double toRatio(Number raw) {
+        if (raw == null) return 0D;
+        double value = raw.doubleValue();
+        if (!Double.isFinite(value)) return 0D;
+        double ratio = value > 1D && value <= 100D ? value / 100D : value;
+        return Math.max(0D, Math.min(1D, ratio));
     }
 
     private OffsetDateTime parse(String value, OffsetDateTime fallback) {

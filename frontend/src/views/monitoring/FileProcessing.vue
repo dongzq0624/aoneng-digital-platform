@@ -21,9 +21,9 @@
           <template #default="{row}"><div class="file-name">{{ row.fileName }}</div><small>#{{ row.docId }} · {{ (row.fileType || '').toUpperCase() }}</small></template>
         </el-table-column>
         <el-table-column label="上传与存储" width="110" align="right"><template #default="{row}">{{ formatMs(row.uploadMs) }}</template></el-table-column>
-        <el-table-column label="文档解析" width="110" align="right"><template #default="{row}">{{ formatMs(row.parseMs) }}</template></el-table-column>
+        <el-table-column label="解析服务调用" width="125" align="right"><template #default="{row}">{{ formatMs(row.parseMs) }}</template></el-table-column>
         <el-table-column prop="parseMethod" label="解析方式" width="110" />
-        <el-table-column label="版面感知分块" width="125" align="right"><template #default="{row}">{{ formatMs(row.layoutChunkMs) }}</template></el-table-column>
+        <el-table-column label="基础分块" width="110" align="right"><template #default="{row}">{{ formatMs(row.layoutChunkMs) }}</template></el-table-column>
         <el-table-column label="父子分块" width="110" align="right"><template #default="{row}">{{ formatMs(row.parentChildChunkMs) }}</template></el-table-column>
         <el-table-column label="向量化" width="110" align="right"><template #default="{row}">{{ formatMs(row.vectorizationMs) }}</template></el-table-column>
         <el-table-column label="PostgreSQL" width="115" align="right"><template #default="{row}">{{ formatMs(row.postgresMs) }}</template></el-table-column>

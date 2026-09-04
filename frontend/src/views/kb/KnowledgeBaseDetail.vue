@@ -6,7 +6,7 @@
         <p>{{ detail?.description || '管理知识库文档并维护检索索引。' }}</p></div>
       <div>
         <el-button plain :icon="ArrowLeft" @click="back">返回列表</el-button>
-        <input ref="fileInput" type="file" class="hidden-file" accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.md,.txt"
+        <input ref="fileInput" type="file" class="hidden-file" accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.rtf,.wp,.jpg,.jpeg,.png,.md,.txt"
                @change="handleFile"/>
         <el-button v-if="detail?.canManage" type="primary" :icon="Upload" @click="upload">上传文档</el-button>
       </div>

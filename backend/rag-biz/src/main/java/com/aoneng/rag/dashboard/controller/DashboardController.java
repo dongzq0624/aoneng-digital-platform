@@ -24,7 +24,7 @@ public class DashboardController {
     /**
      * 获取仪表盘摘要数据。
      *
-     * @return 仪表盘摘要（知识库数量、文档数量、今日问答数、命中率等）
+     * @return 仪表盘摘要（知识库数量、文档数量、今日问答数、召回率等）
      */
     @GetMapping("/summary")
     public Result<DashboardSummaryVO> summary() {

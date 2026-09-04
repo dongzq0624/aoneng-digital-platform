@@ -5,13 +5,11 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.tika.exception.TikaException;
 import org.springframework.core.io.FileSystemResource;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestClient;
-import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Component;
 import org.xml.sax.SAXException;
 
@@ -21,25 +19,17 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
 
-/** Strict client for the versioned Docling-Serve HTTP contract, with Tika fallback. */
-@Primary
+/** Client for the versioned Docling-Serve HTTP contract. Routing and fallback are handled by DocumentParseRouter. */
 @Component
 public class DoclingServeClient implements StructuredDocumentParser {
     private final TikaDocParser tika;
     private final DoclingSamplingProperties properties;
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final RestClient client;
-    private final PaddleOcrClient paddleOcr;
 
     public DoclingServeClient(TikaDocParser tika, DoclingSamplingProperties properties) {
-        this(tika, properties, null);
-    }
-
-    @Autowired
-    public DoclingServeClient(TikaDocParser tika, DoclingSamplingProperties properties, PaddleOcrClient paddleOcr) {
         this.tika = tika;
         this.properties = properties;
-        this.paddleOcr = paddleOcr;
         SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
         factory.setConnectTimeout(Math.min(properties.timeoutSeconds(), 60) * 1000);
         factory.setReadTimeout(properties.timeoutSeconds() * 1000);
@@ -85,15 +75,6 @@ public class DoclingServeClient implements StructuredDocumentParser {
                     if (!pages.isEmpty()) return pages;
                 } catch (Exception failure) {
                     if (!properties.fallbackToTika()) throw new IOException("Docling-Serve PDF parse failed", failure);
-                    if (paddleOcr != null && paddleOcr.enabled()) {
-                        try (InputStream ocrInput = Files.newInputStream(source)) {
-                            var ocr = paddleOcr.parseStructured(ocrInput, "document.pdf");
-                            List<ParsedPage> pages = pagesOf(ocr);
-                            if (!pages.isEmpty()) return pages;
-                        } catch (Exception ocrFailure) {
-                            // Tika remains the final compatibility parser.
-                        }
-                    }
                 }
             }
             try (InputStream fallback = Files.newInputStream(source)) { return tika.parsePdfPages(fallback); }

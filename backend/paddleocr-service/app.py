@@ -27,7 +27,7 @@ def engine():
 @app.get("/health")
 def health():
     return {"status": "UP", "parser": "paddleocr", "engine": "PaddleOCR",
-            "engineVersion": "2.10.0", "language": OCR_LANG,
+            "engineVersion": OCR_PACKAGE_VERSION, "language": OCR_LANG,
             "packageVersion": OCR_PACKAGE_VERSION,
             "modelVersion": OCR_MODEL_VERSION,
             "modelLoaded": ocr is not None}
@@ -99,7 +99,7 @@ async def ocr_pdf(file: UploadFile = File(...), dpi: int = Form(150)):
         text = "\n".join(block["text"] for block in pages)
         return {"text": text, "blocks": pages,
                 "metadata": {"parser": "paddleocr", "engine": "PaddleOCR",
-                             "engineVersion": "2.10.0", "language": OCR_LANG,
+                             "engineVersion": OCR_PACKAGE_VERSION, "language": OCR_LANG,
                              "packageVersion": OCR_PACKAGE_VERSION,
                              "modelVersion": OCR_MODEL_VERSION,
                              "blockCount": len(pages)}}

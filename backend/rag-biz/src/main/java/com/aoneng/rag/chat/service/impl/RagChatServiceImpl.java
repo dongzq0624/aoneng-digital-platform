@@ -115,8 +115,11 @@ public class RagChatServiceImpl implements RagChatService {
 
                     Mono<ServerSentEvent<Object>> done = Mono.fromCallable(() -> {
                                 String answerText = removeSourceMarkers(answer.toString());
-                                Map<String, Object> donePayload = completeTurn(turn, scope, question, answerText,
-                                        permittedKbIds, p.chunkIds(), p.citationsBySource(), result.trace());
+                                Map<String, Object> donePayload = new LinkedHashMap<>(completeTurn(turn, scope, question, answerText,
+                                        permittedKbIds, p.chunkIds(), p.citationsBySource(), result.trace()));
+                                // 引用在 sources 事件中先行展示，完成事件也必须携带同一批数据，
+                                // 这样前端在流式状态切换为历史消息时不会丢失引用。
+                                donePayload.put("citations", p.sources());
                                 completed.set(true);
                                 return buildEvent("done", donePayload);
                             })
@@ -166,12 +169,15 @@ public class RagChatServiceImpl implements RagChatService {
             if (chunkId > 0 && !chunkIds.contains(chunkId)) chunkIds.add(chunkId);
             if (parentId > 0 && expandedParents.add(parentId)) {
                 Map<String, Object> parent = repo.parentChunk(parentId);
-                String parentContent = parent == null ? "" : text(parent, "content");
+                String parentContent = validParentContent(parent, docId, kbId);
                 if (!parentContent.isBlank()) context.append(parentContent).append('\n');
                 else context.append(content).append('\n');
             }
         }
-        List<Map<String, Object>> sources = publicCitations(groupCitations(new ArrayList<>(citations.values())));
+        List<Map<String, Object>> sources = publicCitations(groupCitations(new ArrayList<>(citations.values())))
+                .stream()
+                .limit(sseProperties.maxCitations())
+                .toList();
         return new ChatStreamPayload(context.toString(), sources, citations, chunkIds);
     }
 
@@ -229,15 +235,22 @@ public class RagChatServiceImpl implements RagChatService {
     }
 
     private List<Map<String, Object>> citedSources(String answer, Map<String, Map<String, Object>> citationsBySource) {
-        if (answer == null || answer.isBlank() || citationsBySource.isEmpty()) return List.of();
+        if (citationsBySource == null || citationsBySource.isEmpty()) return List.of();
         List<Map<String, Object>> citations = new ArrayList<>();
-        java.util.regex.Matcher matcher = SOURCE_MARKER.matcher(answer);
-        while (matcher.find() && citations.size() < sseProperties.maxCitations()) {
-            String key = sourceKey(Long.parseLong(matcher.group(1)), Long.parseLong(matcher.group(2)));
-            Map<String, Object> citation = citationsBySource.get(key);
-            if (citation != null && !citations.contains(citation)) citations.add(citation);
+        if (answer != null && !answer.isBlank()) {
+            java.util.regex.Matcher matcher = SOURCE_MARKER.matcher(answer);
+            while (matcher.find() && citations.size() < sseProperties.maxCitations()) {
+                String key = sourceKey(Long.parseLong(matcher.group(1)), Long.parseLong(matcher.group(2)));
+                Map<String, Object> citation = citationsBySource.get(key);
+                if (citation != null && !citations.contains(citation)) citations.add(citation);
+            }
         }
-        return citations;
+        // 来源标记会在落库前从答案中移除，模型未输出标记或答案为空时仍需
+        // 持久化本次检索实际展示的引用，避免刷新历史消息后引用消失。
+        if (!citations.isEmpty()) return citations;
+        return citationsBySource.values().stream()
+                .limit(sseProperties.maxCitations())
+                .toList();
     }
 
     private List<Map<String, Object>> groupCitations(List<Map<String, Object>> citations) {
@@ -284,7 +297,8 @@ public class RagChatServiceImpl implements RagChatService {
     }
 
     private static final java.util.regex.Pattern SOURCE_MARKER =
-            java.util.regex.Pattern.compile("[【\\[]来源[：:]\\s*(\\d+)\\s*-\\s*(\\d+)[】\\]]");
+            java.util.regex.Pattern.compile("[【\\[](?:来源|source)[：:]\\s*(\\d+)\\s*-\\s*(\\d+)[】\\]]",
+                    java.util.regex.Pattern.CASE_INSENSITIVE);
 
     private static final class CitationGroup {
         private final Map<String, Object> first;
@@ -300,6 +314,13 @@ public class RagChatServiceImpl implements RagChatService {
         if (!"pdf".equalsIgnoreCase(fileType)) return false;
         long pageNo = number(payload.get("page_no"), number(payload.get("pageNo"), 0L));
         return pageNo > 0 && pageNo <= 100_000;
+    }
+
+    private String validParentContent(Map<String, Object> parent, long docId, long kbId) {
+        if (parent == null) return "";
+        long parentDocId = number(parent.get("docId"), number(parent.get("doc_id"), 0L));
+        long parentKbId = number(parent.get("kbId"), number(parent.get("kb_id"), 0L));
+        return parentDocId == docId && parentKbId == kbId ? text(parent, "content", "text") : "";
     }
 
     private Map<String, Object> indexedDocument(long docId, long kbId) {

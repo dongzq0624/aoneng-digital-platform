@@ -28,25 +28,38 @@ import java.util.Set;
 @Component
 public class TikaDocParser implements DocParser {
 
-    private static final Map<String, Set<String>> EXPECTED_MEDIA_TYPES = Map.of(
-            "pdf", Set.of("application/pdf"),
-            "doc", Set.of("application/msword"),
-            "docx", Set.of("application/vnd.openxmlformats-officedocument.wordprocessingml.document", "application/x-tika-ooxml"),
-            "xls", Set.of("application/vnd.ms-excel"),
-            "xlsx", Set.of("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "application/x-tika-ooxml"),
-            "ppt", Set.of("application/vnd.ms-powerpoint"),
-            "pptx", Set.of("application/vnd.openxmlformats-officedocument.presentationml.presentation", "application/x-tika-ooxml")
+    private static final Map<String, Set<String>> EXPECTED_MEDIA_TYPES = Map.ofEntries(
+            Map.entry("pdf", Set.of("application/pdf")),
+            Map.entry("doc", Set.of("application/msword")),
+            Map.entry("docx", Set.of("application/vnd.openxmlformats-officedocument.wordprocessingml.document", "application/x-tika-ooxml")),
+            Map.entry("xls", Set.of("application/vnd.ms-excel")),
+            Map.entry("xlsx", Set.of("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "application/x-tika-ooxml")),
+            Map.entry("ppt", Set.of("application/vnd.ms-powerpoint")),
+            Map.entry("pptx", Set.of("application/vnd.openxmlformats-officedocument.presentationml.presentation", "application/x-tika-ooxml")),
+            Map.entry("rtf", Set.of("application/rtf", "text/rtf")),
+            Map.entry("wp", Set.of("application/vnd.wordperfect", "application/x-wordperfect")),
+            Map.entry("jpg", Set.of("image/jpeg")),
+            Map.entry("jpeg", Set.of("image/jpeg")),
+            Map.entry("png", Set.of("image/png")),
+            Map.entry("md", Set.of("text/markdown", "text/plain", "application/octet-stream")),
+            Map.entry("txt", Set.of("text/plain", "application/octet-stream"))
     );
 
     private final Tika tika = new Tika();
 
+    /** Detects actual MIME using lightweight type detection only. */
+    public String detectMime(InputStream input, String fileName) throws IOException {
+        return tika.detect(input, fileName);
+    }
+
     @Override
     public void validateUpload(InputStream input, String fileName, String extension) throws IOException {
-        String detected = tika.detect(input, fileName);
-        if ("pdf".equals(extension) && !"application/pdf".equals(detected)) {
+        String normalizedExtension = extension == null ? "" : extension.toLowerCase(java.util.Locale.ROOT);
+        String detected = detectMime(input, fileName);
+        if ("pdf".equals(normalizedExtension) && !"application/pdf".equals(detected)) {
             throw new IllegalArgumentException("文件扩展名为 PDF，但文件内容不是有效的 PDF 文档");
         }
-        Set<String> expected = EXPECTED_MEDIA_TYPES.get(extension);
+        Set<String> expected = EXPECTED_MEDIA_TYPES.get(normalizedExtension);
         if (expected != null && !expected.contains(detected)) {
             throw new IllegalArgumentException("文件内容与扩展名不匹配，检测到的类型为 " + detected);
         }

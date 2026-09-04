@@ -377,7 +377,7 @@ public class PlatformRepository {
         po.setVisibility(visibility);
         po.setOwnerId(scope.userId());
         po.setDeptId(deptId);
-        int chunkSize = normalizedParentChunkTokens(r.get("chunkSize"), 2_000);
+        int chunkSize = normalizedParentChunkTokens(r.get("chunkSize"), 1_200);
         int chunkOverlap = normalizedParentOverlapTokens(r.get("chunkOverlap"), chunkSize, 64);
         po.setChunkSize(chunkSize);
         po.setChunkOverlap(chunkOverlap);
@@ -416,8 +416,8 @@ public class PlatformRepository {
         Integer chunkOverlap = null;
         if (r.containsKey("chunkSize") || r.containsKey("chunkOverlap")) {
             int effectiveSize = r.containsKey("chunkSize")
-                    ? normalizedParentChunkTokens(r.get("chunkSize"), 2_000)
-                    : normalizedParentChunkTokens(existing.get("chunkSize"), 2_000);
+                    ? normalizedParentChunkTokens(r.get("chunkSize"), 1_200)
+                    : normalizedParentChunkTokens(existing.get("chunkSize"), 1_200);
             int effectiveOverlap = r.containsKey("chunkOverlap")
                     ? normalizedParentOverlapTokens(r.get("chunkOverlap"), effectiveSize, 64)
                     : normalizedParentOverlapTokens(existing.get("chunkOverlap"), effectiveSize, 64);

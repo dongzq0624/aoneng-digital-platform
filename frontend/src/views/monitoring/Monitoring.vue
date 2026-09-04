@@ -69,8 +69,8 @@
 
     <section v-show="activeTab === 'retrieval'" class="tab-content">
       <div class="chart-row">
-        <ChartCard title="离线评测 Hit@K 趋势" chart-id="hit-trend" :option="hitOption"
-                   :empty="!retrieval.hitTrend?.length" :set-ref="setChartRef"/>
+        <ChartCard title="离线评测 Recall@K 趋势" chart-id="recall-trend" :option="recallOption"
+                   :empty="!retrieval.recallTrend?.length" :set-ref="setChartRef"/>
         <ChartCard title="首位命中相似度分布" chart-id="similarity" :option="similarityOption"
                    :empty="!retrieval.similarity?.length" :set-ref="setChartRef"/>
       </div>
@@ -190,7 +190,7 @@ const quality = computed(() => overview.value.quality || {});
 const summary = computed(() => overview.value.summary || {});
 const stages = computed(() => overview.value.stages || [])
 const performanceStages = computed(() => {
-  const order = ['document.parse', 'document.chunk', 'embedding.dense', 'retrieval.hybrid_rrf', 'llm.rerank', 'llm.chat']
+  const order = ['document.parse', 'document.base_chunk', 'document.parent_child_chunk', 'document.chunk', 'embedding.dense', 'retrieval.hybrid_rrf', 'llm.rerank', 'llm.chat']
   return order.map(operation => stages.value.find((stage: AnyMap) => stage.operation === operation)).filter(Boolean) as AnyMap[]
 })
 const performance = computed(() => overview.value.performance || {})
@@ -221,8 +221,10 @@ const ms = (v: unknown) => {
   return Number.isFinite(n) ? `${n.toFixed(1)} 毫秒` : '-'
 };
 const stageLabel = (v: string) => ({
-  'document.parse': '文档解析',
-  'document.chunk': '文本分块',
+  'document.parse': '解析服务调用',
+  'document.base_chunk': '基础分块',
+  'document.parent_child_chunk': '父子分块',
+  'document.chunk': '父子分块（历史）',
   'embedding.dense': '语义向量化',
   'embedding.sparse_bm25': '关键词向量化',
   'vector.upsert': '向量写入',
@@ -234,8 +236,10 @@ const stageLabel = (v: string) => ({
   'object.scan': '对象变更扫描'
 } as AnyMap)[v] || v || '-'
 const stageChartLabel = (v: string) => ({
-  'document.parse': 'Docling解析',
-  'document.chunk': '分块处理',
+  'document.parse': '解析服务调用',
+  'document.base_chunk': '基础分块',
+  'document.parent_child_chunk': '父子分块',
+  'document.chunk': '父子分块（历史）',
   'embedding.dense': 'Embedding',
   'retrieval.hybrid_rrf': 'Milvus检索',
   'llm.rerank': 'Rerank重排',
@@ -252,9 +256,9 @@ const kpis = computed(() => [{
   detail: `降级 ${documentQuality.value.fallbackCount ?? 0} 份`,
   tone: 'green'
 }, {
-  label: '离线命中率',
-  value: percent(quality.value.hitAt5),
-  detail: '当前评测集 Hit@5',
+  label: '召回率',
+  value: percent(quality.value.recallAt5),
+  detail: '当前评测集 Recall@5',
   tone: 'cyan'
 }, {
   label: '回答引用率',
@@ -320,17 +324,17 @@ const docStatusOption = computed(() => pie(documentStatus.value.map((x: AnyMap) 
   name: x.status === 'INDEXED' ? '索引成功' : x.status === 'FAILED' ? '索引失败' : x.status === 'INDEXING' ? '索引中' : x.status
 }))));
 const tokenOption = computed(() => axis(tokenDistribution.value.map((x: AnyMap) => x.bucket), tokenDistribution.value.map((x: AnyMap) => x.count)));
-const hitOption = computed(() => ({
+const recallOption = computed(() => ({
   tooltip: {trigger: 'axis'},
   legend: {top: 0},
   grid: {left: 42, right: 20, top: 34, bottom: 30, containLabel: true},
-  xAxis: {type: 'category', data: (retrieval.value.hitTrend || []).map((x: AnyMap) => x.period)},
+  xAxis: {type: 'category', data: (retrieval.value.recallTrend || []).map((x: AnyMap) => x.period)},
   yAxis: {type: 'value', max: 100},
   series: [{
-    name: '命中率',
+    name: '召回率',
     type: 'line',
     smooth: true,
-    data: (retrieval.value.hitTrend || []).map((x: AnyMap) => x.hitAt5),
+    data: (retrieval.value.recallTrend || []).map((x: AnyMap) => score(x.recallAt5)),
     itemStyle: {color: '#4967ed'},
     areaStyle: {color: 'rgba(73,103,237,.10)'}
   }]
@@ -420,7 +424,7 @@ function renderCharts() {
     const options: AnyMap = {
       'doc-status': docStatusOption.value,
       'token-distribution': tokenOption.value,
-      'hit-trend': hitOption.value,
+      'recall-trend': recallOption.value,
       similarity: similarityOption.value,
       hybrid: hybridOption.value,
       'hot-documents': hotDocOption.value,

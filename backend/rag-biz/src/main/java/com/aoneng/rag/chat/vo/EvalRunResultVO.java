@@ -14,7 +14,7 @@ import java.util.Set;
  * @param recallAtK        召回率
  * @param mrrAtK           MRR
  * @param nDcgAtK          nDCG
- * @param hit              是否命中
+ * @param hasRecall        是否召回到期望分块
  * @param retrieval        检索 trace 详情
  */
 public record EvalRunResultVO(
@@ -25,6 +25,6 @@ public record EvalRunResultVO(
         Double recallAtK,
         Double mrrAtK,
         Double nDcgAtK,
-        boolean hit,
+        boolean hasRecall,
         Map<String, Object> retrieval) {
 }

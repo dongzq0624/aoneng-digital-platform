@@ -318,7 +318,7 @@ public class KnowledgeBaseServiceImpl implements KnowledgeBaseService {
         p.put("description", req.description());
         p.put("category", req.category());
         p.put("visibility", req.visibility());
-        p.put("chunkSize", req.chunkSize() == null ? 2_000 : req.chunkSize());
+        p.put("chunkSize", req.chunkSize() == null ? 1_200 : req.chunkSize());
         p.put("chunkOverlap", req.chunkOverlap() == null ? 64 : req.chunkOverlap());
         return p;
     }

@@ -15,7 +15,8 @@ public final class FileConstants {
 
     /** 支持上传的文件扩展名（小写，不含点号）。 */
     public static final java.util.Set<String> ALLOWED_EXTENSIONS =
-            java.util.Set.of("pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx", "md", "txt");
+            java.util.Set.of("pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx",
+                    "rtf", "wp", "jpg", "jpeg", "png", "md", "txt");
 
     /** 单个文件最大字节数：50MB。 */
     public static final long MAX_FILE_BYTES = 50L * 1024 * 1024;

@@ -53,10 +53,10 @@ rag:
     query-rewrite-enabled: ${RAG_QUERY_REWRITE_ENABLED:true}
     rerank-enabled: ${RAG_RERANK_ENABLED:true}
     max-rewrites: ${RAG_MAX_REWRITES:3}
-    dense-limit: ${RAG_DENSE_LIMIT:40}
-    keyword-limit: ${RAG_KEYWORD_LIMIT:40}
-    candidate-limit: ${RAG_CANDIDATE_LIMIT:40}
-    context-limit: ${RAG_CONTEXT_LIMIT:8}
+    dense-limit: ${RAG_DENSE_LIMIT:50}
+    keyword-limit: ${RAG_KEYWORD_LIMIT:50}
+    candidate-limit: ${RAG_CANDIDATE_LIMIT:50}
+    context-limit: ${RAG_CONTEXT_LIMIT:5}
     rrf-constant: ${RAG_RRF_CONSTANT:60}
   index-task:
     initial-delay-ms: ${RAG_INDEX_TASK_INITIAL_DELAY_MS:15000}

@@ -14,7 +14,7 @@
       </div>
       <div class="hero-visual" aria-hidden="true">
         <div class="energy-array"><i v-for="cell in 12" :key="cell"></i></div>
-        <div class="hero-stat"><b>{{ stats.hitRate }}%</b><small>知识命中率</small></div>
+        <div class="hero-stat"><b>{{ stats.recallRate }}%</b><small>知识召回率</small></div>
       </div>
     </div>
     <div class="stat-grid">
@@ -53,14 +53,14 @@ import {ArrowRight, ChatDotRound, Collection, Document, FolderOpened, Histogram,
 import {ElMessage} from 'element-plus';
 import {authApi, dashboardApi} from '../../api';
 
-const stats = reactive({kb: 0, hitRate: 0, pendingCount: 0});
+const stats = reactive({kb: 0, recallRate: 0, pendingCount: 0});
 const statCards = reactive([{label: '知识库空间', value: '0', delta: '接口统计', icon: FolderOpened}, {
   label: '文档总量',
   value: '0',
   delta: '接口统计',
   icon: Collection
 }, {label: '今日问答', value: '0', delta: '接口统计', icon: ChatDotRound}, {
-  label: '知识命中率',
+  label: '知识召回率',
   value: '0%',
   delta: '接口统计',
   icon: Histogram
@@ -75,13 +75,13 @@ onMounted(async () => {
   try {
     const [{data}, me] = await Promise.all([dashboardApi.summary(), authApi.me()]);
     stats.kb = data.knowledgeBaseCount;
-    stats.hitRate = data.hitRate;
+    stats.recallRate = data.recallRate;
     stats.pendingCount = data.pendingCount;
     userName.value = me.data.realName || me.data.username;
     statCards[0].value = String(data.knowledgeBaseCount);
     statCards[1].value = String(data.documentCount);
     statCards[2].value = String(data.todayQaCount);
-    statCards[3].value = `${data.hitRate}%`;
+    statCards[3].value = `${data.recallRate}%`;
     recentKbs.value = (data.recentKbs || []).map((item: any) => ({
       ...item,
       visibility: item.visibility,

@@ -312,11 +312,61 @@ export interface MonitoringStage {
     success_rate: number
 }
 
+export interface MonitoringQuality {
+    evaluated: number;
+    failed: number;
+    faithfulness: number;
+    answer_correctness: number;
+    context_precision: number;
+    context_recall: number;
+    citation_completeness: number;
+    /** 离线评估召回率（0-1），兼容 Recall@5 与历史评估字段。 */
+    recallAt5: number
+}
+
+export interface MonitoringRetrievalTrend {
+    period: string;
+    /** Recall@5 比例（0-1，超过 1 的历史百分比值也可兼容展示）。 */
+    recallAt5: number
+}
+
+export interface MonitoringRetrievalQuality {
+    hybrid: Array<Record<string, unknown>>;
+    hotDocuments: Array<Record<string, unknown>>;
+    recallTrend: MonitoringRetrievalTrend[];
+    similarity: Array<Record<string, unknown>>;
+    lowSimilarityQueries: string[]
+}
+
+export interface MonitoringDashboard {
+    updatedAt: string;
+    overview: {
+        from: string;
+        to: string;
+        stages: MonitoringStage[];
+        quality: MonitoringQuality;
+        summary: {calls: number; total_ms: number; errors: number; throughput: number};
+        performance?: Record<string, number>
+    };
+    retrievalQuality?: MonitoringRetrievalQuality;
+    [key: string]: unknown
+}
+
+export interface DashboardSummary {
+    knowledgeBaseCount: number;
+    documentCount: number;
+    todayQaCount: number;
+    recallRate: number;
+    pendingCount: number;
+    recentKbs: Array<KnowledgeBase & { docs?: number }>;
+    todos: Array<{ title: string; type?: string; time?: string; color?: string }>
+}
+
 export const monitoringApi = {
     dashboard: (params?: {from?: string; to?: string; kbId?: number; docId?: number; conversationId?: number}) =>
-        request.get<Record<string, any>>('/monitoring/dashboard', {params}),
+        request.get<MonitoringDashboard>('/monitoring/dashboard', {params}),
       overview: (params?: {from?: string; to?: string; kbId?: number; docId?: number; conversationId?: number}) =>
-         request.get<{from: string; to: string; stages: MonitoringStage[]; quality: Record<string, unknown>; summary: {calls: number; total_ms: number; errors: number; throughput: number}; performance?: Record<string, number>}>('/monitoring/overview', {params}),
+         request.get<{from: string; to: string; stages: MonitoringStage[]; quality: MonitoringQuality; summary: {calls: number; total_ms: number; errors: number; throughput: number}; performance?: Record<string, number>}>('/monitoring/overview', {params}),
       fileProcessing: (params?: {from?: string; to?: string}) =>
         request.get<{from: string; to: string; items: FileProcessingItem[]}>('/monitoring/file-processing', {params}),
 }
@@ -339,13 +389,5 @@ export interface FileProcessingItem {
 }
 
 export const dashboardApi = {
-    summary: () => request.get<{
-        knowledgeBaseCount: number;
-        documentCount: number;
-        todayQaCount: number;
-        hitRate: number;
-        pendingCount: number;
-        recentKbs: Array<KnowledgeBase & { docs?: number }>;
-        todos: Array<{ title: string; type?: string; time?: string; color?: string }>;
-    }>('/dashboard/summary'),
+    summary: () => request.get<DashboardSummary>('/dashboard/summary'),
 }

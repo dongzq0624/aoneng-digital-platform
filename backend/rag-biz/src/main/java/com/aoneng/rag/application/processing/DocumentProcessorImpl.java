@@ -6,7 +6,8 @@ import com.aoneng.rag.infra.chunk.ModelTokenizer;
 import com.aoneng.rag.infra.llm.LlmService;
 import com.aoneng.rag.infra.parse.DocParser;
 import com.aoneng.rag.infra.parse.StructuredDocumentParser;
-import com.aoneng.rag.infra.parse.DoclingServeClient;
+import com.aoneng.rag.infra.parse.DocumentParseRouter;
+import com.aoneng.rag.infra.parse.ScannedPdfParseException;
 import com.aoneng.rag.infra.storage.ObjectStorage;
 import com.aoneng.rag.observability.RagObservability;
 import com.aoneng.rag.infra.vector.VectorStore;
@@ -43,7 +44,7 @@ public class DocumentProcessorImpl implements DocumentProcessor {
 
     private static final Logger log = LoggerFactory.getLogger(DocumentProcessorImpl.class);
     private static final long SSE_TIMEOUT_MS = 0L;
-    private static final int PARENT_CHUNK_TOKENS = 2_000;
+    private static final int PARENT_CHUNK_TOKENS = 1_200;
     private static final int CHILD_CHUNK_TOKENS = 400;
     private static final int CHILD_OVERLAP_TOKENS = 64;
 
@@ -273,32 +274,33 @@ public class DocumentProcessorImpl implements DocumentProcessor {
             Map<String, Object> base = repo.base(kbId);
             int parentTokens = normalizedParentChunkTokens(base.get("chunkSize"), PARENT_CHUNK_TOKENS);
             int parentOverlap = normalizedParentOverlapTokens(base.get("chunkOverlap"), parentTokens, 64);
-            long parseStarted = System.nanoTime();
-            List<Chunker.PageChunk> baseSources = withBaseSequence(parseChunks(document, key, parentTokens, parentOverlap));
+            ParseTimings parseTimings = new ParseTimings();
+            List<Chunker.PageChunk> parsedSources = parseChunks(document, key, parentTokens, parentOverlap, parseTimings);
+            long baseSequenceStarted = System.nanoTime();
+            List<Chunker.PageChunk> baseSources = withBaseSequence(parsedSources);
+            parseTimings.addBaseChunk(System.nanoTime() - baseSequenceStarted);
             String parseMethod = baseSources.stream()
                     .map(chunk -> chunk.metadata() == null ? null : chunk.metadata().get("parse_method"))
                     .filter(java.util.Objects::nonNull)
                     .map(String::valueOf).findFirst()
-                    .orElse(parser instanceof DoclingServeClient ? "docling" : parser.getClass().getSimpleName());
-            observability.record("document.parse", System.nanoTime() - parseStarted, true,
+                    .orElse(parser instanceof StructuredDocumentParser ? "docling" : parser.getClass().getSimpleName());
+            observability.record("document.parse", parseTimings.parseServiceNanos(), true,
                     Map.of("doc_id", job.docId, "base_chunk_count", baseSources.size(), "version", documentVersion,
-                            "parse_method", parseMethod));
-            observability.record("document.base_chunk", System.nanoTime() - parseStarted, true,
-                    Map.of("doc_id", job.docId, "base_chunk_count", baseSources.size(), "parse_method", parseMethod));
+                            "parse_method", parseMethod, "timing_version", 2));
+            observability.record("document.base_chunk", parseTimings.baseChunkNanos(), true,
+                    Map.of("doc_id", job.docId, "base_chunk_count", baseSources.size(), "parse_method", parseMethod,
+                            "timing_version", 2));
             if (baseSources.isEmpty()) {
                 throw new IllegalStateException("未能从文档中提取可索引文本，请检查文件内容后重试");
             }
             long chunkStarted = System.nanoTime();
             List<ParentChunks> parents = aggregateParents(baseSources, parentTokens, parentOverlap);
             int totalChildren = parents.stream().mapToInt(parent -> parent.children().size()).sum();
-            observability.record("document.chunk", System.nanoTime() - chunkStarted, true,
-                    Map.of("doc_id", job.docId, "base_chunk_count", baseSources.size(),
-                            "parent_chunk_count", parents.size(), "child_chunk_count", totalChildren,
-                            "parent_token_limit", parentTokens, "parent_overlap_tokens", parentOverlap));
             observability.record("document.parent_child_chunk", System.nanoTime() - chunkStarted, true,
                     Map.of("doc_id", job.docId, "base_chunk_count", baseSources.size(),
                             "parent_chunk_count", parents.size(), "child_chunk_count", totalChildren,
-                            "parent_token_limit", parentTokens, "parent_overlap_tokens", parentOverlap));
+                            "parent_token_limit", parentTokens, "parent_overlap_tokens", parentOverlap,
+                            "timing_version", 2));
             trace.tag("parent_count", parents.size());
             trace.tag("child_count", totalChildren);
             if (totalChildren == 0) {
@@ -336,51 +338,59 @@ public class DocumentProcessorImpl implements DocumentProcessor {
                         chunker.countTokens(parentContent), objectMapper.writeValueAsString(parentMetadata),
                         modelTokenizer.isApproximate());
                 databaseNanos += System.nanoTime() - parentDbStarted;
-                long embeddingStarted = System.nanoTime();
-                List<Float> parentVector = llm.embed(embeddingText(fileName, parentContent));
-                observability.record("embedding.dense", System.nanoTime() - embeddingStarted, true,
-                        Map.of("doc_id", job.docId, "parent_id", parentId, "token_count", chunker.countTokens(parentContent), "vector_dimension", parentVector.size()));
-                long sparseStarted = System.nanoTime();
-                SortedMap<Long, Float> parentSparse = sparseVectorizer.vectorize(parentContent);
-                observability.record("embedding.sparse_bm25", System.nanoTime() - sparseStarted, !parentSparse.isEmpty(),
-                        Map.of("doc_id", job.docId, "parent_id", parentId, "term_count", parentSparse.size()));
-                if (parentSparse.isEmpty()) throw new IllegalStateException("无法为父块生成关键词向量");
-                Map<String, Object> parentPayload = new HashMap<>();
-                parentPayload.put("chunk_id", parentId);
-                parentPayload.put("parent_id", parentId);
-                parentPayload.put("doc_id", job.docId);
-                parentPayload.put("kb_id", kbId);
-                parentPayload.put("seq", parentIndex);
-                parentPayload.put("content", parentContent);
-                parentPayload.put("visibility", base.get("visibility"));
-                parentPayload.put("dept_id", base.get("deptId"));
-                parentPayload.put("file_name", fileName);
-                parentPayload.put("chunk_level", "PARENT");
-                parentPayload.put("layout_metadata", tokenMetadata(parentMetadata));
-                copyPageRange(parentPayload, parentMetadata);
-                parentPayload.put("document_version", parentMetadata.get("document_version"));
-                if (pageNo != null) parentPayload.put("page_no", pageNo);
-                long vectorStarted = System.nanoTime();
-                vectorStore.upsert(parentId, parentVector, parentSparse, parentPayload);
-                observability.record("vector.upsert", System.nanoTime() - vectorStarted, true,
-                        Map.of("doc_id", job.docId, "parent_id", parentId, "payload_fields", parentPayload.size()));
-                repo.updateParentEmbeddingId(parentId, String.valueOf(parentId));
                 int parentSeq = 0;
-                for (String child : parent.children()) {
+                for (Chunker.PageChunk child : parent.children()) {
+                    String childContent = child.content();
+                    Integer childPageNo = validPageNo(child.pageNo());
                     long childDbStarted = System.nanoTime();
-                    long childId = repo.saveChunk(job.docId, kbId, parentId, chunks.size(), child, pageNo,
-                            chunker.countTokens(child), modelTokenizer.isApproximate());
+                    long childId = repo.saveChunk(job.docId, kbId, parentId, chunks.size(), childContent, childPageNo,
+                            chunker.countTokens(childContent), modelTokenizer.isApproximate());
                     databaseNanos += System.nanoTime() - childDbStarted;
                     Map<String, Object> childMetadata = tokenMetadata(parentMetadata);
                     childMetadata.put("parent_seq", parentSeq++);
                     childMetadata.put("parent_id", parentId);
-                    childMetadata.put("base_chunk_seqs", childBaseSequences(parent.members(), child));
+                    childMetadata.put("base_chunk_seqs", childBaseSequences(parent.members(), childContent));
+                    if (childPageNo != null) childMetadata.put("page_no", childPageNo);
                     long metadataDbStarted = System.nanoTime();
                     repo.updateChunkMetadata(childId, objectMapper.writeValueAsString(childMetadata));
                     databaseNanos += System.nanoTime() - metadataDbStarted;
-                    chunks.add(new Chunker.PageChunk(child, pageNo, childMetadata));
-                    publish(job, ProcessingEvent.segment(job.docId, childId, chunks.size() - 1, pageNo,
-                            child, chunks.size(), totalChildren,
+
+                    long embeddingStarted = System.nanoTime();
+                    List<Float> childVector = llm.embed(embeddingText(fileName, childContent));
+                    observability.record("embedding.dense", System.nanoTime() - embeddingStarted, true,
+                            Map.of("doc_id", job.docId, "chunk_id", childId, "parent_id", parentId,
+                                    "token_count", chunker.countTokens(childContent), "vector_dimension", childVector.size()));
+                    long sparseStarted = System.nanoTime();
+                    SortedMap<Long, Float> childSparse = sparseVectorizer.vectorize(childContent);
+                    observability.record("embedding.sparse_bm25", System.nanoTime() - sparseStarted, !childSparse.isEmpty(),
+                            Map.of("doc_id", job.docId, "chunk_id", childId, "parent_id", parentId,
+                                    "term_count", childSparse.size()));
+                    if (childSparse.isEmpty()) throw new IllegalStateException("无法为子块生成关键词向量");
+                    Map<String, Object> childPayload = new HashMap<>();
+                    childPayload.put("chunk_id", childId);
+                    childPayload.put("parent_id", parentId);
+                    childPayload.put("doc_id", job.docId);
+                    childPayload.put("kb_id", kbId);
+                    childPayload.put("seq", chunks.size());
+                    childPayload.put("parent_seq", parentSeq - 1);
+                    childPayload.put("content", childContent);
+                    childPayload.put("visibility", base.get("visibility"));
+                    childPayload.put("dept_id", base.get("deptId"));
+                    childPayload.put("file_name", fileName);
+                    childPayload.put("chunk_level", "CHILD");
+                    childPayload.put("layout_metadata", tokenMetadata(childMetadata));
+                    copyPageRange(childPayload, parentMetadata);
+                    childPayload.put("document_version", parentMetadata.get("document_version"));
+                    if (childPageNo != null) childPayload.put("page_no", childPageNo);
+                    long vectorStarted = System.nanoTime();
+                    vectorStore.upsert(childId, childVector, childSparse, childPayload);
+                    observability.record("vector.upsert", System.nanoTime() - vectorStarted, true,
+                            Map.of("doc_id", job.docId, "chunk_id", childId, "parent_id", parentId,
+                                    "payload_fields", childPayload.size()));
+                    repo.updateChunkEmbeddingId(childId, String.valueOf(childId));
+                    chunks.add(new Chunker.PageChunk(childContent, childPageNo, childMetadata));
+                    publish(job, ProcessingEvent.segment(job.docId, childId, chunks.size() - 1, childPageNo,
+                            childContent, chunks.size(), totalChildren,
                             15 + (int) Math.round(chunks.size() * 80D / totalChildren)));
                 }
             }
@@ -433,7 +443,28 @@ public class DocumentProcessorImpl implements DocumentProcessor {
         return failure instanceof RuntimeException runtime ? runtime : new IllegalStateException(failure);
     }
 
-    private record ParentChunks(Chunker.PageChunk source, List<String> children,
+    private static final class ParseTimings {
+        private long parseServiceNanos;
+        private long baseChunkNanos;
+
+        private void addParseService(long durationNanos) {
+            parseServiceNanos += Math.max(0L, durationNanos);
+        }
+
+        private void addBaseChunk(long durationNanos) {
+            baseChunkNanos += Math.max(0L, durationNanos);
+        }
+
+        private long parseServiceNanos() {
+            return parseServiceNanos;
+        }
+
+        private long baseChunkNanos() {
+            return baseChunkNanos;
+        }
+    }
+
+    private record ParentChunks(Chunker.PageChunk source, List<Chunker.PageChunk> children,
                                 List<Chunker.PageChunk> members) {
     }
 
@@ -510,8 +541,39 @@ public class DocumentProcessorImpl implements DocumentProcessor {
             metadata.put("end_page_no", java.util.Collections.max(pages));
         }
         result.add(new ParentChunks(new Chunker.PageChunk(content, pageNo, metadata),
-                chunker.splitTokens(content, CHILD_CHUNK_TOKENS, CHILD_OVERLAP_TOKENS),
-                List.copyOf(members)));
+                splitChildrenByPage(members, chunker), List.copyOf(members)));
+    }
+
+    /**
+     * Split a parent without losing the page provenance of its child chunks.
+     * Parents may span several pages for retrieval context, but a child should
+     * never inherit the first page number of the whole parent.
+     */
+    static List<Chunker.PageChunk> splitChildrenByPage(List<Chunker.PageChunk> members, Chunker chunker) {
+        List<Chunker.PageChunk> children = new ArrayList<>();
+        List<Chunker.PageChunk> pageMembers = new ArrayList<>();
+        Integer pageNo = null;
+        for (Chunker.PageChunk member : members) {
+            if (member.content() == null || member.content().isBlank()) continue;
+            Integer memberPageNo = member.pageNo();
+            if (!pageMembers.isEmpty() && !java.util.Objects.equals(pageNo, memberPageNo)) {
+                appendChildren(children, pageMembers, pageNo, chunker);
+                pageMembers = new ArrayList<>();
+            }
+            if (pageMembers.isEmpty()) pageNo = memberPageNo;
+            pageMembers.add(member);
+        }
+        appendChildren(children, pageMembers, pageNo, chunker);
+        return children;
+    }
+
+    private static void appendChildren(List<Chunker.PageChunk> target, List<Chunker.PageChunk> members,
+                                       Integer pageNo, Chunker chunker) {
+        if (members.isEmpty()) return;
+        String content = joinContent(members);
+        for (String child : chunker.splitTokens(content, CHILD_CHUNK_TOKENS, CHILD_OVERLAP_TOKENS)) {
+            target.add(new Chunker.PageChunk(child, pageNo));
+        }
     }
 
     private List<Object> childBaseSequences(List<Chunker.PageChunk> members, String child) {
@@ -532,7 +594,7 @@ public class DocumentProcessorImpl implements DocumentProcessor {
         return sequences;
     }
 
-    private String joinContent(List<Chunker.PageChunk> members) {
+    private static String joinContent(List<Chunker.PageChunk> members) {
         return members.stream().map(Chunker.PageChunk::content)
                 .filter(value -> value != null && !value.isBlank())
                 .collect(java.util.stream.Collectors.joining("\n\n"));
@@ -571,13 +633,17 @@ public class DocumentProcessorImpl implements DocumentProcessor {
     }
 
     private List<Chunker.PageChunk> parseChunks(Map<String, Object> document, String key,
-                                                int parentTokens, int parentOverlap) throws Exception {
+                                                int parentTokens, int parentOverlap,
+                                                ParseTimings timings) throws Exception {
         String fileType = String.valueOf(document.getOrDefault("fileType", "")).toLowerCase(Locale.ROOT);
         String fileName = String.valueOf(document.getOrDefault("fileName", ""));
         boolean structuredFailed = false;
         if (parser instanceof StructuredDocumentParser structured) {
             try (InputStream input = storage.download(key)) {
+                long parserStarted = System.nanoTime();
                 StructuredDocumentParser.StructuredDocument parsed = structured.parseStructured(input, fileName, fileType);
+                timings.addParseService(System.nanoTime() - parserStarted);
+                long baseChunkStarted = System.nanoTime();
                 List<Chunker.PageChunk> sampled = new ArrayList<>();
                 for (StructuredDocumentParser.Block block : parsed.blocks()) {
                     if (block.text().isBlank()) continue;
@@ -589,32 +655,43 @@ public class DocumentProcessorImpl implements DocumentProcessor {
                                 .map(content -> new Chunker.PageChunk(content, block.pageNo(), layoutMetadata(block))).toList());
                     }
                 }
+                timings.addBaseChunk(System.nanoTime() - baseChunkStarted);
                 if (!sampled.isEmpty()) return sampled;
             } catch (Exception failure) {
+                if (failure instanceof ScannedPdfParseException || parser instanceof DocumentParseRouter) throw failure;
                 structuredFailed = true;
                 log.warn("Docling 结构化采样失败，将使用兼容解析器: docId={}, error={}", document.get("id"), failure.getMessage());
             }
         }
-        if ("pdf".equals(fileType)) {
+        if (!(parser instanceof DocumentParseRouter) && "pdf".equals(fileType)) {
             try (InputStream input = storage.download(key)) {
+                long parserStarted = System.nanoTime();
+                List<DocParser.ParsedPage> pages = parser.parsePdfPages(input);
+                timings.addParseService(System.nanoTime() - parserStarted);
+                long baseChunkStarted = System.nanoTime();
                 List<Chunker.PageChunk> chunks = new ArrayList<>();
-                for (DocParser.ParsedPage page : parser.parsePdfPages(input)) {
+                for (DocParser.ParsedPage page : pages) {
                     chunks.addAll(splitPageTokens(page.content(), page.pageNo(), parentTokens, parentOverlap));
                 }
+                timings.addBaseChunk(System.nanoTime() - baseChunkStarted);
                 if (!chunks.isEmpty()) return chunks;
             }
         }
         try (InputStream input = storage.download(key)) {
             String text;
-            if (structuredFailed && parser instanceof DoclingServeClient docling) {
-                text = docling.parseWithTika(input, fileName, fileType);
-            } else {
-                text = parser.parse(input, fileName, fileType);
+            if (parser instanceof DocumentParseRouter) {
+                throw new IOException("Document parser returned no usable content");
             }
+            long parserStarted = System.nanoTime();
+            text = parser.parse(input, fileName, fileType);
+            timings.addParseService(System.nanoTime() - parserStarted);
             final boolean usedStructuredFallback = structuredFailed;
-            return chunker.splitTokens(text, parentTokens, parentOverlap).stream()
-                    .map(content -> new Chunker.PageChunk(content, null, Map.of("parse_method", usedStructuredFallback ? "tika_fallback" : "tika")))
+            long baseChunkStarted = System.nanoTime();
+            List<Chunker.PageChunk> result = chunker.splitTokens(text, parentTokens, parentOverlap).stream()
+                    .map(content -> new Chunker.PageChunk(content, null, Map.of("parse_method", usedStructuredFallback ? "tika-fallback" : "tika")))
                     .toList();
+            timings.addBaseChunk(System.nanoTime() - baseChunkStarted);
+            return result;
         }
     }
 
@@ -629,7 +706,8 @@ public class DocumentProcessorImpl implements DocumentProcessor {
         metadata.put("type", block.type());
         metadata.put("level", block.level());
         metadata.put("order", block.order());
-        metadata.put("parse_method", "docling");
+        metadata.putIfAbsent("parser", "docling");
+        metadata.putIfAbsent("parse_method", metadata.get("parser"));
         if (!block.bbox().isEmpty()) metadata.put("bbox", block.bbox());
         return metadata;
     }

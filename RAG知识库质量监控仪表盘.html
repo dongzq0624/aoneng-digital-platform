@@ -71,7 +71,7 @@ td{padding:8px 10px;border-bottom:1px solid #f0f0ed;color:#1A1B1C;}
 <div class="kpi-row">
   <div class="kpi-card"><div class="bar bar-blue"></div><div class="label">文档总数</div><div class="value">1,286</div><div class="delta" style="color:#52C41A;">索引成功 1,241 · 失败 28</div></div>
   <div class="kpi-card"><div class="bar bar-green"></div><div class="label">解析成功率</div><div class="value" style="color:#52C41A;">96.5%</div><div class="delta" style="color:#6B7280;">Tika降级 3.2%</div></div>
-  <div class="kpi-card"><div class="bar bar-cyan"></div><div class="label">离线 Hit@5</div><div class="value">88.3%</div><div class="delta" style="color:#52C41A;">↑ 较上周 +2.1%</div></div>
+  <div class="kpi-card"><div class="bar bar-cyan"></div><div class="label">离线召回率 @5</div><div class="value">88.3%</div><div class="delta" style="color:#52C41A;">↑ 较上周 +2.1%</div></div>
   <div class="kpi-card"><div class="bar bar-purple"></div><div class="label">回答引用率</div><div class="value">82.1%</div><div class="delta" style="color:#EA6668;">无引用 17.9%</div></div>
   <div class="kpi-card"><div class="bar bar-orange"></div><div class="label">用户点赞率</div><div class="value">76.4%</div><div class="delta" style="color:#EA6668;">点踩 8.2%</div></div>
   <div class="kpi-card"><div class="bar bar-red"></div><div class="label">活跃告警</div><div class="value" style="color:#EA6668;">3</div><div class="delta" style="color:#6B7280;">索引失败2 · 降级1</div></div>
@@ -123,8 +123,8 @@ td{padding:8px 10px;border-bottom:1px solid #f0f0ed;color:#1A1B1C;}
 <div class="tab-panel" id="panel-retrieval">
   <div class="chart-row">
     <div class="chart-box">
-      <div class="chart-title">离线评测 Hit@K 趋势（近6周）</div>
-      <div class="chart-container" id="chartHit"></div>
+      <div class="chart-title">离线评测召回率趋势（@K，近6周）</div>
+      <div class="chart-container" id="chartRecall"></div>
     </div>
     <div class="chart-box">
       <div class="chart-title">Top1 向量相似度分布</div>
@@ -255,8 +255,8 @@ td{padding:8px 10px;border-bottom:1px solid #f0f0ed;color:#1A1B1C;}
     // Token分布
     init('chartToken').setOption({backgroundColor:'transparent',tooltip:baseTooltip,grid:baseGrid,xAxis:{type:'category',data:['<800','800-1200','1200-1600','1600-2000','2000-2400','>2400'],axisLabel:{color:'#555',fontSize:11,interval:0}},yAxis:{type:'value',name:'块数',axisLabel:{color:'#555',fontSize:11}},series:[{type:'bar',data:[320,1850,4200,2100,680,120],itemStyle:{color:function(p){return p.dataIndex>=4?'#EA6668':accent;},borderRadius:[5,5,0,0]},barWidth:'50%',label:{show:true,position:'top',fontSize:11,color:'#555'}}]});
 
-    // Hit@K趋势
-    init('chartHit').setOption({backgroundColor:'transparent',tooltip:baseTooltip,legend:{top:0,textStyle:{fontSize:12,color:'#555'}},grid:baseGrid,xAxis:{type:'category',data:['第1周','第2周','第3周','第4周','第5周','第6周'],axisLabel:{color:'#555',fontSize:11}},yAxis:{type:'value',name:'%',max:100,axisLabel:{color:'#555',fontSize:11}},series:[{name:'Hit@3',type:'line',smooth:true,data:[72,75,78,80,82,83],itemStyle:{color:'#8BC8EA'},lineStyle:{width:2.5},symbolSize:7},{name:'Hit@5',type:'line',smooth:true,data:[81,83,85,86,87,88.3],itemStyle:{color:accent},lineStyle:{width:2.5},symbolSize:7},{name:'Hit@10',type:'line',smooth:true,data:[88,89,91,92,93,94],itemStyle:{color:'#A2DDAA'},lineStyle:{width:2.5},symbolSize:7}]});
+    // 召回率趋势
+    init('chartRecall').setOption({backgroundColor:'transparent',tooltip:baseTooltip,legend:{top:0,textStyle:{fontSize:12,color:'#555'}},grid:baseGrid,xAxis:{type:'category',data:['第1周','第2周','第3周','第4周','第5周','第6周'],axisLabel:{color:'#555',fontSize:11}},yAxis:{type:'value',name:'%',max:100,axisLabel:{color:'#555',fontSize:11}},series:[{name:'Recall@3',type:'line',smooth:true,data:[72,75,78,80,82,83],itemStyle:{color:'#8BC8EA'},lineStyle:{width:2.5},symbolSize:7},{name:'Recall@5',type:'line',smooth:true,data:[81,83,85,86,87,88.3],itemStyle:{color:accent},lineStyle:{width:2.5},symbolSize:7},{name:'Recall@10',type:'line',smooth:true,data:[88,89,91,92,93,94],itemStyle:{color:'#A2DDAA'},lineStyle:{width:2.5},symbolSize:7}]});
 
     // 相似度分布
     init('chartSim').setOption({backgroundColor:'transparent',tooltip:baseTooltip,grid:baseGrid,xAxis:{type:'category',data:['<0.3','0.3-0.4','0.4-0.5','0.5-0.6','0.6-0.7','0.7-0.8','>0.8'],axisLabel:{color:'#555',fontSize:11,interval:0}},yAxis:{type:'value',name:'请求数',axisLabel:{color:'#555',fontSize:11}},series:[{type:'bar',data:[45,120,280,520,680,420,180],itemStyle:{color:function(p){return p.dataIndex<=2?'#EA6668':accent;},borderRadius:[5,5,0,0]},barWidth:'55%'}]});

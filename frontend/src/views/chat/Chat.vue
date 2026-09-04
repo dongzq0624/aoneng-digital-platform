@@ -171,7 +171,7 @@ function messageText(message: ChatMessage): string {
 }
 
 function renderMarkdown(content: string): string {
-  const visibleContent = content.replace(/(?:【来源[:：]\s*\d+\s*-\s*\d+】|\[来源[:：]?\s*\d+\s*-\s*\d+\])/g, '')
+  const visibleContent = content.replace(/(?:【(?:来源|source)[:：]\s*\d+\s*-\s*\d+】|\[(?:来源|source)[:：]?\s*\d+\s*-\s*\d+\])/gi, '')
   return DOMPurify.sanitize(marked.parse(visibleContent, {async: false}) as string, {USE_PROFILES: {html: true}})
 }
 
@@ -289,12 +289,22 @@ async function loadAllMessages(conversationId: number) {
       cursor = data.hasMore && data.nextCursor ? data.nextCursor : undefined
     } while (cursor)
     if (version !== conversationLoadVersion || activeConversationId.value !== conversationId) return
-    const previousCitations = new Map(messages.value.map(message => [message.id, message.citations]))
+    // 流式回答开始时使用临时负数 ID，完成事件才会替换为数据库消息 ID。
+    // 同时保留问答记录 ID索引，避免刷新/完成后的历史加载覆盖流式引用。
+    const previousByMessageId = new Map(messages.value.map(message => [message.id, message]))
+    const previousByRecordId = new Map(
+      messages.value
+        .filter(message => message.recordId)
+        .map(message => [message.recordId as number, message]),
+    )
     const loadedMessages = allMessages.map(message => toChatMessage(message, conversationId))
     loadedMessages.forEach(message => {
-      if (message.role !== 'assistant' || message.citations.length) return
-      const citations = previousCitations.get(message.id)
-      if (citations?.length) message.citations = citations
+      if (message.role !== 'assistant') return
+      const previous = previousByMessageId.get(message.id)
+        ?? (message.recordId ? previousByRecordId.get(message.recordId) : undefined)
+      if (!previous?.citations.length) return
+      const incoming = message.citations.map(citation => ({...citation}))
+      message.citations = mergeCitations(previous.citations, incoming)
     })
     messages.value = loadedMessages
     scrollToLatest(true)
