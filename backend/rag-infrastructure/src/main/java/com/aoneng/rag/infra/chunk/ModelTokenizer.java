@@ -11,7 +11,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-/** Offline tokenizer loader with an explicit approximation fallback. */
+/** Offline Qwen3-Embedding tokenizer loader with an explicit approximation fallback. */
 @Component
 public final class ModelTokenizer {
     private final String path;
@@ -19,7 +19,7 @@ public final class ModelTokenizer {
     private volatile boolean approximate;
     private final AtomicBoolean warningLogged = new AtomicBoolean();
 
-    public ModelTokenizer(@Value("${rag.tokenizer.path:/models/bge‑m3‑tokenizer/tokenizer.json}") String path) {
+    public ModelTokenizer(@Value("${rag.tokenizer.path:/models/qwen3-embedding-tokenizer/tokenizer.json}") String path) {
         this.path = path == null ? "" : path.trim();
     }
 

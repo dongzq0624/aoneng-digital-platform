@@ -405,6 +405,13 @@ public class PlatformRepository {
         Long deptId;
         if ("DEPT".equals(visibility)) {
             deptId = scope.admin() ? numberOrNull(existing, "deptId") : scope.deptId();
+            // Older administrator-created department knowledge bases may not have
+            // a legacy dept_id. Reuse an existing allowed department as the
+            // compatibility owner while the junction table remains authoritative.
+            if (scope.admin() && deptId == null) {
+                List<Long> allowed = allowedDepartmentIds(id);
+                if (!allowed.isEmpty()) deptId = allowed.get(0);
+            }
         } else {
             deptId = null;
         }

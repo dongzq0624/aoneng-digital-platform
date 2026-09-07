@@ -44,7 +44,7 @@
         INSERT INTO kb_knowledge_base(name, description, category, visibility, owner_id, dept_id,
                                       chunk_size, chunk_overlap, embedding_model, status)
         VALUES(#{name}, #{description}, #{category}, #{visibility}, #{ownerId}, #{deptId},
-               #{chunkSize}, #{chunkOverlap}, COALESCE(#{embeddingModel}, 'bge-m3'), COALESCE(#{status}, 1))
+               #{chunkSize}, #{chunkOverlap}, COALESCE(#{embeddingModel}, 'text-embedding-v4'), COALESCE(#{status}, 1))
     </insert>
 
     <update id="updateBase">

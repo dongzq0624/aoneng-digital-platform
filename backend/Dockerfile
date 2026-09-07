@@ -17,8 +17,8 @@ WORKDIR /app
 RUN apt-get update \
     && apt-get install -y --no-install-recommends curl tesseract-ocr tesseract-ocr-chi-sim \
     && rm -rf /var/lib/apt/lists/*
-RUN mkdir -p /models/bge‑m3‑tokenizer
+RUN mkdir -p /models/qwen3-embedding-tokenizer
 COPY --from=build /app/backend/rag-biz/target/rag-biz-1.0.0.jar app.jar
-COPY backend/models/bge‑m3‑tokenizer /models/bge‑m3‑tokenizer
+COPY backend/models/qwen3-embedding-tokenizer /models/qwen3-embedding-tokenizer
 EXPOSE 8080
 ENTRYPOINT ["java","-jar","app.jar"]

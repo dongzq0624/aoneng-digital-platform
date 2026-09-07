@@ -43,8 +43,8 @@ dashscope:
   rerank-base-url: ${DASHSCOPE_RERANK_BASE_URL:https://dashscope.aliyuncs.com}
 rag:
   tokenizer:
-    # Offline tokenizer.json shipped with the BGE-M3 embedding model.
-    path: ${RAG_TOKENIZER_PATH:/models/bge‑m3‑tokenizer/tokenizer.json}
+    # Qwen3-Embedding tokenizer used by DashScope text-embedding-v4.
+    path: ${RAG_TOKENIZER_PATH:/models/qwen3-embedding-tokenizer/tokenizer.json}
   sse:
     timeout-seconds: ${RAG_SSE_TIMEOUT:120}
     history-message-count: ${RAG_HISTORY_MESSAGES:8}

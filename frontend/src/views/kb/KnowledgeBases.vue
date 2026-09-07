@@ -73,17 +73,18 @@
             <el-option label="公开" value="PUBLIC" />
           </el-select>
         </el-form-item>
-        <div v-if="editingBase && createForm.visibility === 'DEPT'" class="department-access-section">
+        <div v-if="createForm.visibility === 'DEPT'" class="department-access-section">
           <div class="department-access-intro">
             <b>允许访问部门</b>
-            <p v-if="editingBase?.canConfigureDepartments || !editingBase">可多选部门，只有所选部门的已授权成员可以访问该知识库。</p>
+            <p v-if="canConfigureDepartments">可多选部门，只有所选部门的已授权成员可以访问该知识库。</p>
             <p v-else>仅系统管理员可调整部门权限，当前授权部门保持不变。</p>
           </div>
           <el-checkbox-group v-model="selectedDepartmentIds" class="department-access-list"
-                             :disabled="Boolean(editingBase && !editingBase.canConfigureDepartments)">
+                             :disabled="!canConfigureDepartments">
             <el-checkbox v-for="department in departmentOptions" :key="department.id" :value="department.id"
                          :class="['department-option', {'is-parent': department.hasChildren, 'is-child': department.level > 0}]"
-                         :style="{paddingLeft: `${department.level * 20}px`}">
+                         :style="{'--department-level': department.level}"
+                         @change="handleDepartmentChange(department.id, $event)">
               {{ department.name }}
             </el-checkbox>
           </el-checkbox-group>
@@ -140,15 +141,32 @@ const totalDocuments = computed(() => filtered.value.reduce((total, kb) => {
 const manageableCount = computed(() => filtered.value.filter(kb => kb.canManage).length);
 const departmentOptions = computed(() => {
   const grouped = new Map<number, Department[]>();
-  departments.value.forEach(item => { const parent = item.parentId || 0; grouped.set(parent, [...(grouped.get(parent) || []), item]) });
+  departments.value.forEach(item => {
+    const parent = Number(item.parentId) || 0;
+    grouped.set(parent, [...(grouped.get(parent) || []), item]);
+  });
+  grouped.forEach(items => items.sort((left, right) => {
+    const sortDiff = (Number(left.sort) || 0) - (Number(right.sort) || 0);
+    return sortDiff || left.id - right.id;
+  }));
   const output: Array<{id: number; name: string; level: number; hasChildren: boolean}> = [];
+  const visited = new Set<number>();
   const visit = (parentId: number, level: number) => (grouped.get(parentId) || []).forEach(item => {
+    if (visited.has(item.id)) return;
+    visited.add(item.id);
     output.push({id: item.id, name: item.name, level, hasChildren: Boolean(grouped.get(item.id)?.length)});
-    visit(item.id, level + 1)
+    visit(item.id, level + 1);
   });
   visit(0, 0);
+  // Keep malformed/orphaned records visible without losing the single-column layout.
+  departments.value.forEach(item => {
+    if (visited.has(item.id)) return;
+    output.push({id: item.id, name: item.name, level: 0, hasChildren: Boolean(grouped.get(item.id)?.length)});
+  });
   return output
 });
+const canConfigureDepartments = computed(() => editingBase.value?.canConfigureDepartments
+  ?? list.value.some(item => item.canConfigureDepartments));
 
 onMounted(async () => {
   try {
@@ -166,7 +184,12 @@ onMounted(async () => {
       canConfigureDepartments: item.canConfigureDepartments ?? item.canconfiguredepartments,
       allowedDeptIds: item.allowedDeptIds ?? item.alloweddeptids ?? []
     }))
-    departments.value = (Array.isArray(departmentResponse.data) ? departmentResponse.data : []).map((item: any) => ({...item, parentId: item.parentId ?? item.parentid}))
+    departments.value = (Array.isArray(departmentResponse.data) ? departmentResponse.data : []).map((item: any) => ({
+      ...item,
+      id: Number(item.id),
+      parentId: Number(item.parentId ?? item.parentid) || 0,
+      sort: Number(item.sort) || 0,
+    }))
   } catch (error) {
     ElMessage.error(error instanceof Error ? error.message : '知识库加载失败')
   }
@@ -192,7 +215,7 @@ async function submitCreate() {
   if (!form) return;
   const valid = await form.validate().catch(() => false);
   if (!valid) return;
-  if (editingBase.value?.canConfigureDepartments && createForm.visibility === 'DEPT' && !selectedDepartmentIds.value.length) {
+  if (canConfigureDepartments.value && createForm.visibility === 'DEPT' && !selectedDepartmentIds.value.length) {
     ElMessage.warning('部门知识库至少需要选择一个允许访问的部门');
     return;
   }
@@ -205,12 +228,27 @@ async function submitCreate() {
       category: createForm.category.trim(),
       visibility: createForm.visibility,
     };
+    // Legacy department knowledge bases created by an administrator can have
+    // no compatibility dept_id. Persist the selected departments first so the
+    // backend can derive that field without trusting a client-supplied deptId.
+    const existingDeptId = Number((editingBase.value as any)?.deptId);
+    const syncBeforeUpdate = Boolean(editingBase.value)
+      && canConfigureDepartments.value
+      && createForm.visibility === 'DEPT'
+      && !(existingDeptId > 0);
+    if (syncBeforeUpdate) {
+      await knowledgeBaseApi.updateAllowedDepartments(
+        editingBase.value!.id,
+        selectedDepartmentIds.value,
+      );
+    }
     const {data: baseData} = editingBase.value
       ? await knowledgeBaseApi.update(editingBase.value.id, payload)
       : await knowledgeBaseApi.create(payload);
     let item: any = baseData;
-    const canSyncDepartments = Boolean(editingBase.value?.canConfigureDepartments);
-    if (canSyncDepartments) {
+    const canSyncDepartments = Boolean(editingBase.value?.canConfigureDepartments)
+      || Boolean(item.canConfigureDepartments ?? item.canconfiguredepartments);
+    if (canSyncDepartments && !syncBeforeUpdate) {
       const {data} = await knowledgeBaseApi.updateAllowedDepartments(
         item.id,
         createForm.visibility === 'DEPT' ? selectedDepartmentIds.value : [],
@@ -245,14 +283,92 @@ async function submitCreate() {
 }
 
 async function loadDepartmentSelection(kb: KnowledgeBase) {
-  selectedDepartmentIds.value = [...(kb.allowedDeptIds || [])];
+  selectedDepartmentIds.value = normalizeDepartmentSelection(
+    (kb.allowedDeptIds || []).map(id => Number(id)),
+  );
   if (!kb.canConfigureDepartments) return;
   try {
     const {data} = await knowledgeBaseApi.allowedDepartments(kb.id);
-    selectedDepartmentIds.value = data.departmentIds || [];
+    selectedDepartmentIds.value = normalizeDepartmentSelection(
+      (data.departmentIds || []).map((id: number | string) => Number(id)),
+    );
   } catch (error) {
     ElMessage.error(error instanceof Error ? error.message : '部门权限加载失败')
   }
+}
+
+const departmentById = computed(() => new Map(departments.value.map(department => [department.id, department])));
+
+function directChildren(departmentId: number) {
+  return departments.value.filter(department => (Number(department.parentId) || 0) === departmentId);
+}
+
+function descendantIds(departmentId: number) {
+  const result: number[] = [];
+  const visited = new Set<number>();
+  const visit = (parentId: number) => {
+    directChildren(parentId).forEach(child => {
+      if (visited.has(child.id)) return;
+      visited.add(child.id);
+      result.push(child.id);
+      visit(child.id);
+    });
+  };
+  visit(departmentId);
+  return result;
+}
+
+function normalizeDepartmentSelection(ids: number[]) {
+  const selected = new Set(ids.filter(id => Number.isFinite(id) && id > 0));
+  // A selected parent represents access to its complete subtree.
+  [...selected].forEach(id => descendantIds(id).forEach(childId => selected.add(childId)));
+  // Recalculate ancestor states from the leaves up using the same cascade rules.
+  const ordered = [...departments.value].sort((left, right) => {
+    const depth = (id: number) => {
+      let value = 0;
+      let current = departmentById.value.get(id);
+      const seen = new Set<number>();
+      while (current && current.parentId > 0 && !seen.has(current.id)) {
+        seen.add(current.id);
+        value++;
+        current = departmentById.value.get(Number(current.parentId));
+      }
+      return value;
+    };
+    return depth(right.id) - depth(left.id);
+  });
+  ordered.forEach(department => {
+    const children = directChildren(department.id);
+    if (!children.length) return;
+    const allChildrenSelected = children.every(child => selected.has(child.id));
+    if (children.length === 1 || allChildrenSelected) selected.add(department.id);
+    else selected.delete(department.id);
+  });
+  return [...selected];
+}
+
+function handleDepartmentChange(departmentId: number, checked: boolean) {
+  const selected = new Set(selectedDepartmentIds.value.map(Number));
+  const descendants = descendantIds(departmentId);
+  if (checked) {
+    selected.add(departmentId);
+    descendants.forEach(id => selected.add(id));
+  } else {
+    selected.delete(departmentId);
+    descendants.forEach(id => selected.delete(id));
+  }
+
+  // Walk upwards: one child implies the parent; multiple children require all
+  // direct children before the parent is considered selected.
+  let parentId = Number(departmentById.value.get(departmentId)?.parentId) || 0;
+  while (parentId > 0) {
+    const children = directChildren(parentId);
+    const allChildrenSelected = children.length > 0 && children.every(child => selected.has(child.id));
+    if (children.length === 1 || allChildrenSelected) selected.add(parentId);
+    else selected.delete(parentId);
+    parentId = Number(departmentById.value.get(parentId)?.parentId) || 0;
+  }
+  selectedDepartmentIds.value = [...selected];
 }
 
 async function edit(k: KnowledgeBase) {
@@ -581,8 +697,32 @@ async function remove(k: KnowledgeBase) {
 }
 .department-access-intro b { font-size: 13px }
 .department-access-intro p { margin: 6px 0 0; color: var(--muted); font-size: 12px; line-height: 1.6 }
-.department-access-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 18px; margin-top: 16px; padding: 0 2px }
-.department-access-list :deep(.el-checkbox) { min-width: 0; margin-right: 0; }
-.department-access-list :deep(.el-checkbox__label) { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-@media (max-width: 520px) { .department-access-list { grid-template-columns: 1fr } }
+.department-access-list {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 4px;
+  margin-top: 16px;
+  padding: 0 2px;
+}
+.department-access-list :deep(.el-checkbox) {
+  --department-indent: calc(var(--department-level, 0) * 24px);
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  min-height: 36px;
+  margin-right: 0;
+  padding: 6px 10px 6px var(--department-indent);
+  border-radius: 6px;
+  transition: background-color .18s ease;
+}
+.department-access-list :deep(.el-checkbox:hover) { background: var(--soft-blue); }
+.department-access-list :deep(.el-checkbox__label) {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  white-space: normal;
+  line-height: 1.45;
+}
+.department-access-list :deep(.el-checkbox.is-disabled:hover) { background: transparent; }
 </style>
