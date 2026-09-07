@@ -48,13 +48,8 @@ public class DashboardServiceImpl implements DashboardService {
                         toInstant(rs.getTimestamp("updated_at")),
                         rs.getInt("docs")));
 
-        List<DashboardSummaryVO.TodoItemVO> todos = List.of(
-                new DashboardSummaryVO.TodoItemVO("2026 年度目标确认", "人事", "今天 18:00 前", "orange"),
-                new DashboardSummaryVO.TodoItemVO("华东区域差旅报销单", "财务", "明天 12:00 前", "blue"),
-                new DashboardSummaryVO.TodoItemVO("办公用品领用审批", "行政", "3 月 20 日", "purple"));
-
         return new DashboardSummaryVO(kb, docs, qa == null ? 0 : qa,
-                toPercentage(averageRecall), todos.size(), recent, todos);
+                toPercentage(averageRecall), recent);
     }
 
     /**

@@ -10,18 +10,14 @@ import java.util.List;
  * @param documentCount      文档总数量
  * @param todayQaCount       今日问答记录数
  * @param recallRate         召回率（百分比，整数）
- * @param pendingCount       待处理任务数量
  * @param recentKbs          最近更新的知识库列表
- * @param todos              待办事项列表
  */
 public record DashboardSummaryVO(
         int knowledgeBaseCount,
         int documentCount,
         int todayQaCount,
         int recallRate,
-        int pendingCount,
-        List<RecentKnowledgeBaseVO> recentKbs,
-        List<TodoItemVO> todos) {
+        List<RecentKnowledgeBaseVO> recentKbs) {
 
     /**
      * 最近更新的知识库摘要。
@@ -33,11 +29,5 @@ public record DashboardSummaryVO(
             String visibility,
             Instant updatedAt,
             int docs) {
-    }
-
-    /**
-     * 待办事项条目。
-     */
-    public record TodoItemVO(String title, String type, String time, String color) {
     }
 }

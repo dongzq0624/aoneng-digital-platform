@@ -6,9 +6,12 @@ import com.aoneng.rag.doc.dto.UpdateKnowledgeBaseDTO;
 import com.aoneng.rag.doc.vo.AllowedDepartmentsVO;
 import com.aoneng.rag.doc.vo.KnowledgeBaseDocumentVO;
 import com.aoneng.rag.doc.vo.KnowledgeBaseVO;
+import com.aoneng.rag.doc.vo.DocumentParentChunksVO;
+import com.aoneng.rag.common.result.PageResult;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
+import java.io.InputStream;
 import java.util.List;
 
 /**
@@ -42,11 +45,19 @@ public interface KnowledgeBaseService {
 
     KnowledgeBaseVO updateAllowedDepartments(String username, long id, UpdateAllowedDepartmentsDTO req);
 
-    List<KnowledgeBaseDocumentVO> listDocuments(String username, long kbId);
+    PageResult<KnowledgeBaseDocumentVO> listDocuments(String username, long kbId, String keyword, int page, int pageSize);
 
     KnowledgeBaseDocumentVO uploadDocument(String username, long kbId, MultipartFile file);
 
     KnowledgeBaseDocumentVO getDocument(String username, long docId);
+
+    DocumentParentChunksVO listParentChunks(String username, long docId);
+
+    /**
+     * Returns a permission-checked stream for browser-native preview formats.
+     * The caller owns and must close the returned stream.
+     */
+    DocumentPreview previewDocument(String username, long docId);
 
     void deleteDocument(String username, long docId);
 
@@ -71,4 +82,6 @@ public interface KnowledgeBaseService {
      * @return SSE 事件发射器
      */
     SseEmitter streamDocumentEvents(long docId);
+
+    record DocumentPreview(InputStream stream, String fileName, String contentType, long size) { }
 }

@@ -123,6 +123,7 @@ VALUES (1, 4)
 ON CONFLICT DO NOTHING;
 
 -- 9) 演示审计日志
+/* Demo audit rows intentionally disabled; audit records are created by real business events.
 INSERT INTO audit_log (user_id, username, action, module, detail, result)
 VALUES
     (1, E'管理员', 'LOGIN',     E'系统管理', '{"message":"网页登录"}'::jsonb,                   1),
@@ -131,4 +132,5 @@ VALUES
     (4, E'孙可平', 'DOC_DELETE', E'知识库',  '{"documentId":182}'::jsonb,                       0)
 ;
 
+*/
 COMMIT;

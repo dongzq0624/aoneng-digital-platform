@@ -9,10 +9,11 @@
     <div class="role-layout">
       <section class="panel role-list-panel" v-loading="loading">
         <div class="panel-title">
-          <div><h3>角色列表</h3><small>共 {{ roles.length }} 个角色</small></div>
+          <div><h3>角色列表</h3><small>共 {{ total }} 个角色</small></div>
         </div>
         <el-table :data="roles" class="audit-table role-table" highlight-current-row @current-change="selectRole"
                   empty-text="暂无角色">
+          <el-table-column type="index" label="序号" width="70" align="center" :index="rowNumber" />
           <el-table-column prop="name" label="角色名称" min-width="140"/>
           <el-table-column prop="code" label="编码" min-width="150"/>
           <el-table-column label="菜单" width="72">
@@ -33,6 +34,11 @@
             </template>
           </el-table-column>
         </el-table>
+        <div class="table-pagination">
+          <el-pagination v-model:current-page="page" v-model:page-size="pageSize" :total="total"
+                         :page-sizes="[10, 20, 50]" layout="total, sizes, prev, pager, next"
+                         @current-change="load" @size-change="handleSizeChange" />
+        </div>
       </section>
       <section class="panel role-permission-panel" v-loading="permissionLoading">
         <div class="panel-title">
@@ -81,6 +87,7 @@ interface TreeMenu extends MenuPermission {
 }
 
 const roles = ref<Role[]>([]), menus = ref<MenuPermission[]>([]), selected = ref<Role>();
+const page = ref(1), pageSize = ref(20), total = ref(0);
 const loading = ref(false), permissionLoading = ref(false), permissionSaving = ref(false), saving = ref(false),
     dialogVisible = ref(false), editing = ref(false);
 const treeRef = ref<any>();
@@ -99,8 +106,10 @@ const menuTree = computed<TreeMenu[]>(() => {
 async function load() {
   loading.value = true;
   try {
-    const [roleRes, menuRes] = await Promise.all([systemApi.roles(), systemApi.menus()]);
-    roles.value = roleRes.data;
+    const [roleRes, menuRes] = await Promise.all([systemApi.roles({page: page.value, pageSize: pageSize.value}), systemApi.menus()]);
+    const payload: any = Array.isArray(roleRes.data) ? {items: roleRes.data, total: roleRes.data.length} : roleRes.data;
+    roles.value = payload.items || [];
+    total.value = Number(payload.total ?? roles.value.length);
     menus.value = menuRes.data.map((m: any) => ({
       ...m,
       parentId: m.parentId ?? m.parentid,
@@ -198,6 +207,9 @@ async function remove(role: Role) {
     if (e !== 'cancel') ElMessage.error(e instanceof Error ? e.message : '角色删除失败')
   }
 }
+
+function handleSizeChange(size: number) { pageSize.value = size; page.value = 1; load() }
+function rowNumber(index: number) { return (page.value - 1) * pageSize.value + index + 1 }
 
 onMounted(load)
 </script>

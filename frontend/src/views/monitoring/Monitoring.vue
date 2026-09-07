@@ -1,904 +1,350 @@
 <template>
-  <div class="monitoring-page">
-    <div class="page-head compact monitoring-head">
+  <div class="ragas-page">
+    <header class="ragas-head">
       <div>
-        <p class="eyebrow">运行观测 / RAG质量</p>
-        <h1>知识库质量监控仪表盘</h1>
-        <p>统一查看文档索引、检索召回、回答质量、系统性能与用户反馈。</p>
+        <p class="eyebrow">RAG QUALITY / EVALUATION</p>
+        <h1>RAGAS 评估面板</h1>
+        <p>基于已完成的 RAGAS 评估任务，持续观测回答与检索上下文质量。</p>
       </div>
-      <div class="head-actions">
-        <span class="update-time">数据更新：{{ updatedAt }}</span>
-        <el-button type="primary" :icon="Refresh" :loading="loading" @click="load">刷新数据</el-button>
+      <div class="ragas-actions">
+        <el-select v-model="windowDays" aria-label="评估时间范围" @change="load">
+          <el-option :value="7" label="近 7 天" />
+          <el-option :value="30" label="近 30 天" />
+          <el-option :value="90" label="近 90 天" />
+        </el-select>
+        <el-button type="primary" :icon="Refresh" :loading="loading" @click="load">刷新</el-button>
       </div>
-    </div>
+    </header>
 
-    <section class="filter-bar monitoring-filter" aria-label="监控筛选">
-      <el-date-picker v-model="range" style="width: 300px" type="datetimerange" value-format="YYYY-MM-DDTHH:mm:ss[Z]"
-                      start-placeholder="开始时间" end-placeholder="结束时间" :shortcuts="dateShortcuts"/>
-      <el-button @click="reset">重置</el-button>
-      <el-button type="primary" @click="load">应用筛选</el-button>
+    <el-alert v-if="error" class="ragas-error" type="error" :title="error" show-icon :closable="false" />
+
+    <section class="ragas-summary" aria-label="RAGAS 评估概览">
+      <div class="summary-item" :class="{danger: healthState === 'degraded'}">
+        <span>通过率</span>
+        <strong>{{ passRate }}</strong>
+        <small>{{ evaluation.passed || 0 }} / {{ evaluation.completed || 0 }} 次运行</small>
+      </div>
+      <div class="summary-item">
+        <span>最近运行</span>
+        <strong class="summary-date">{{ lastRun }}</strong>
+        <small>{{ evaluation.evaluated || 0 }} 个有效评估样本</small>
+      </div>
+      <div class="summary-item">
+        <span>观察窗口</span>
+        <strong>{{ windowDays }} 天</strong>
+        <small>{{ formattedWindow }}</small>
+      </div>
+      <div class="summary-item" :class="healthState">
+        <span>综合健康度</span>
+        <strong>{{ healthLabel }}</strong>
+        <small>基于 4 个维度阈值</small>
+      </div>
     </section>
 
-    <el-alert v-if="error" type="error" :title="error" show-icon :closable="false" class="monitoring-error"/>
-
-    <section class="kpi-grid" aria-label="关键指标">
-      <div v-for="item in kpis" :key="item.label" class="kpi-card" :class="item.tone">
-        <div class="kpi-label">{{ item.label }}</div>
-        <div class="kpi-value">{{ item.value }}</div>
-        <div class="kpi-detail">{{ item.detail }}</div>
-      </div>
+    <section class="ragas-metric-grid" aria-label="RAGAS 指标">
+      <article v-for="metric in metricCards" :key="metric.key" class="ragas-metric-card" :class="metric.status">
+        <div class="metric-topline">
+          <div>
+            <span class="metric-name">{{ metric.label }}</span>
+            <el-tooltip :content="metric.description" placement="top" :show-after="220">
+              <button type="button" class="metric-help" :aria-label="`${metric.label} 指标说明`">?</button>
+            </el-tooltip>
+          </div>
+          <span class="metric-delta" :class="metric.delta === null ? '' : metric.delta >= 0 ? 'up' : 'down'">{{ formatDelta(metric.delta) }}</span>
+        </div>
+        <strong class="metric-score">{{ metric.score }}</strong>
+        <span class="metric-threshold">阈值 ≥ {{ metric.threshold.toFixed(2) }} · 评分范围 0–1</span>
+        <div class="metric-sparkline" aria-hidden="true">
+          <svg viewBox="0 0 220 58" preserveAspectRatio="none">
+            <defs>
+              <linearGradient :id="`fill-${metric.key}`" x1="0" x2="0" y1="0" y2="1">
+                <stop offset="0%" :stop-color="metric.color" stop-opacity=".22" />
+                <stop offset="100%" :stop-color="metric.color" stop-opacity=".02" />
+              </linearGradient>
+            </defs>
+            <line x1="0" :y1="thresholdY(metric.threshold)" x2="220" :y2="thresholdY(metric.threshold)" stroke="#cbd5e1" stroke-dasharray="3 4" />
+            <path v-if="metric.sparkline.length" :d="sparkArea(metric.sparkline)" :fill="`url(#fill-${metric.key})`" />
+            <polyline v-if="metric.sparkline.length" :points="sparkPoints(metric.sparkline)" fill="none" :stroke="metric.color" stroke-width="2.2" vector-effect="non-scaling-stroke" />
+            <circle v-if="metric.sparkline.length" :cx="lastPoint(metric.sparkline).x" :cy="lastPoint(metric.sparkline).y" r="3" :fill="metric.color" />
+          </svg>
+          <span v-if="!metric.sparkline.length">暂无趋势数据</span>
+        </div>
+        <div class="metric-stat-row">
+          <span>MIN <b>{{ metric.min }}</b></span>
+          <span>AVG <b>{{ metric.score }}</b></span>
+          <span>MAX <b>{{ metric.max }}</b></span>
+        </div>
+      </article>
     </section>
 
-    <section v-if="alerts.length" class="alert-stack" aria-label="活跃告警">
-      <div v-for="alert in alerts" :key="`${alert.title}-${alert.count}`" class="alert-item"
-           :class="`alert-${alert.severity || 'info'}`">
-        <el-icon>
-          <WarningFilled/>
-        </el-icon>
-        <div><strong>{{ alert.title }}</strong><span v-if="alert.count">涉及 {{ alert.count }} 项</span></div>
-      </div>
-    </section>
-
-    <nav class="monitor-tabs" aria-label="监控维度">
-      <button v-for="tab in tabs" :key="tab.key" type="button" class="monitor-tab"
-              :class="{active: activeTab === tab.key}" @click="activeTab = tab.key">{{ tab.label }}
-      </button>
-    </nav>
-
-    <section v-show="activeTab === 'document'" class="tab-content">
-      <div class="chart-row">
-        <ChartCard title="文档索引状态分布" chart-id="doc-status" :option="docStatusOption"
-                   :empty="!documentStatus.length" :set-ref="setChartRef"/>
-        <ChartCard title="父块 Token 分布" subtitle="合理区间：1200–2000" chart-id="token-distribution"
-                   :option="tokenOption" :empty="!tokenDistribution.length" :set-ref="setChartRef"/>
-      </div>
-      <DataTable title="失败与降级文档" :rows="failedDocuments" :columns="['docId','fileName','status','reason']"
-                 empty-text="暂无失败或降级文档">
-        <template #default="{row}">
-          <td>{{ row.docId }}</td>
-          <td class="text-ellipsis" :title="row.fileName">{{ row.fileName }}</td>
-          <td>
-            <el-tag :type="row.chunkStatus === 'FAILED' || row.parseStatus === 'FAILED' ? 'danger' : 'warning'">
-              {{ documentState(row) }}
-            </el-tag>
-          </td>
-          <td class="text-ellipsis" :title="row.reason">{{ row.reason || '未提供原因' }}</td>
-        </template>
-      </DataTable>
-    </section>
-
-    <section v-show="activeTab === 'retrieval'" class="tab-content">
-      <div class="chart-row">
-        <ChartCard title="离线评测 Recall@K 趋势" chart-id="recall-trend" :option="recallOption"
-                   :empty="!retrieval.recallTrend?.length" :set-ref="setChartRef"/>
-        <ChartCard title="首位命中相似度分布" chart-id="similarity" :option="similarityOption"
-                   :empty="!retrieval.similarity?.length" :set-ref="setChartRef"/>
-      </div>
-      <div class="chart-row">
-        <ChartCard title="混合检索命中构成" chart-id="hybrid" :option="hybridOption" :empty="!retrieval.hybrid?.length"
-                   :set-ref="setChartRef"/>
-        <ChartCard title="高频召回文档" chart-id="hot-documents" :option="hotDocOption"
-                   :empty="!retrieval.hotDocuments?.length" :set-ref="setChartRef"/>
-      </div>
-      <div v-if="retrieval.lowSimilarityQueries?.length" class="notice notice-warning">
-        <strong>低相似度问题</strong><span>{{ retrieval.lowSimilarityQueries.join('、') }}</span></div>
-    </section>
-
-    <section v-show="activeTab === 'generation'" class="tab-content">
-      <div class="chart-row">
-        <ChartCard title="回答引用情况" chart-id="citation" :option="citationOption"
-                   :empty="!generation.citation?.length" :set-ref="setChartRef"/>
-        <ChartCard title="提示词 Token 分布" subtitle="超过 6500 视为高风险" chart-id="prompt-tokens"
-                   :option="promptOption" :empty="!generation.promptTokens?.length" :set-ref="setChartRef"/>
-      </div>
-      <div v-if="generation.riskSamples?.length" class="table-wrap">
-        <div class="section-title">待人工复核样本</div>
-        <table>
-          <thead>
-          <tr>
-            <th>请求编号</th>
-            <th>用户问题</th>
-            <th>风险类型</th>
-            <th>召回块数</th>
-          </tr>
-          </thead>
-          <tbody>
-          <tr v-for="row in generation.riskSamples" :key="row.requestId">
-            <td>{{ row.requestId }}</td>
-            <td>{{ row.question }}</td>
-            <td>
-              <el-tag type="danger">{{ row.riskType }}</el-tag>
-            </td>
-            <td>{{ row.retrievedCount ?? 0 }}</td>
-          </tr>
-          </tbody>
-        </table>
-      </div>
-      <div v-else class="empty-inline">暂无高风险回答样本</div>
-    </section>
-
-    <section v-show="activeTab === 'performance'" class="tab-content">
-      <ChartCard title="各链路阶段 P50 / P95 耗时（ms）" chart-id="performance"
-                 :option="performanceOption" :empty="!performanceStages.length" :set-ref="setChartRef" :large="true"/>
-      <div class="performance-grid performance-kpis">
-        <div v-for="item in performanceKpis" :key="item.label" class="perf-card" :class="item.tone">
-          <span>{{ item.label }}</span>
-          <strong>{{ item.value }}</strong>
+    <section class="ragas-trend-card">
+      <div class="trend-head">
+        <div>
+          <h2>四个维度趋势对比</h2>
+          <p>按评估完成日聚合，展示真实 RAGAS 评分变化。</p>
+        </div>
+        <div class="trend-legend" aria-label="指标图例">
+          <span v-for="metric in metricDefinitions" :key="metric.key"><i :style="{background: metric.color}"></i>{{ metric.label }}</span>
         </div>
       </div>
-      <div v-if="performanceNotice" class="performance-notice">
-        <div class="performance-notice-title">性能瓶颈提示</div>
-        <div>{{ performanceNotice }}</div>
-      </div>
+      <div ref="trendChart" class="ragas-trend-chart" aria-label="RAGAS 四维趋势图"></div>
+      <div v-if="!evaluation.trend?.length" class="trend-empty">当前时间范围内暂无已完成的 RAGAS 评估结果</div>
     </section>
 
-    <section v-show="activeTab === 'feedback'" class="tab-content">
-      <div class="chart-row">
-        <ChartCard title="用户反馈分布" chart-id="feedback" :option="feedbackOption"
-                   :empty="!feedback.distribution?.length" :set-ref="setChartRef"/>
-        <ChartCard title="点踩原因分布" chart-id="feedback-reasons" :option="feedbackReasonOption"
-                   :empty="!feedback.reasons?.length" :set-ref="setChartRef"/>
-      </div>
-      <div class="chart-row">
-        <ChartCard title="反馈趋势" subtitle="按日统计" chart-id="feedback-trend" :option="feedbackTrendOption"
-                   :empty="!feedback.trend?.length" :set-ref="setChartRef"/>
-        <ChartCard title="各知识库满意度" chart-id="kb-satisfaction" :option="kbSatisfactionOption"
-                   :empty="!feedback.knowledgeBases?.length" :set-ref="setChartRef"/>
-      </div>
+    <section class="metric-definitions" aria-label="指标口径">
+      <article v-for="metric in metricDefinitions" :key="metric.key">
+        <span class="definition-marker" :style="{background: metric.color}"></span>
+        <div><b>{{ metric.label }}</b><p>{{ metric.formula }}</p></div>
+      </article>
     </section>
-
   </div>
 </template>
 
 <script setup lang="ts">
 import {computed, nextTick, onBeforeUnmount, onMounted, ref, watch} from 'vue'
-import {
-  Refresh,
-  WarningFilled
-} from '@element-plus/icons-vue'
-import {BarChart, LineChart, PieChart} from 'echarts/charts'
-import {GridComponent, LegendComponent, TooltipComponent, GraphicComponent} from 'echarts/components'
+import {Refresh} from '@element-plus/icons-vue'
+import {LineChart} from 'echarts/charts'
+import {GridComponent, LegendComponent, TooltipComponent} from 'echarts/components'
 import {CanvasRenderer} from 'echarts/renderers'
 import * as echarts from 'echarts/core'
 import {ElMessage} from 'element-plus'
-import {ApiError, monitoringApi} from '../../api'
-import {default as ChartCard} from '../../components/monitoring/MonitoringChartCard.vue'
-import {default as DataTable} from '../../components/monitoring/MonitoringDataTable.vue'
+import {ApiError, monitoringApi, type RagasEvaluation, type RagasMetricSummary} from '../../api'
+import {formatBeijingTime} from '../../utils/datetime'
 
-type AnyMap = Record<string, any>
-echarts.use([BarChart, LineChart, PieChart, GridComponent, LegendComponent, TooltipComponent, GraphicComponent, CanvasRenderer])
-const loading = ref(false);
-const error = ref('');
-const updatedAt = ref('-');
-const range = ref<string[]>([]);
-const activeTab = ref('document');
-const dashboard = ref<AnyMap>({});
-const dateShortcuts = [
-  {text: '近1天', value: () => dateRange(1)},
-  {text: '近7天', value: () => dateRange(7)},
-  {text: '近30天', value: () => dateRange(30)},
-  {text: '近90天', value: () => dateRange(90)}
+echarts.use([LineChart, GridComponent, LegendComponent, TooltipComponent, CanvasRenderer])
+
+type MetricKey = 'faithfulness' | 'answerRelevancy' | 'contextPrecision' | 'contextRecall'
+type TrendPoint = {x: number; y: number}
+
+const loading = ref(false)
+const error = ref('')
+const windowDays = ref(30)
+const evaluation = ref<Partial<RagasEvaluation>>({metrics: {} as RagasEvaluation['metrics'], trend: []})
+const trendChart = ref<HTMLElement>()
+let chart: echarts.ECharts | undefined
+
+const metricDefinitions: Array<{key: MetricKey; label: string; color: string; description: string; formula: string}> = [
+  {
+    key: 'faithfulness', label: 'Faithfulness', color: '#2563eb',
+    description: '衡量回答中的声明是否均可由检索上下文支撑。',
+    formula: '忠实度 = 被检索上下文支持的回答声明数 / 回答声明总数。'
+  },
+  {
+    key: 'answerRelevancy', label: 'Answer Relevancy', color: '#7556d9',
+    description: '衡量回答是否直接回应用户问题；兼容历史 answer_correctness 结果。',
+    formula: '回答相关性 = 原问题与由回答反向生成问题之间的平均语义相似度。'
+  },
+  {
+    key: 'contextPrecision', label: 'Context Precision', color: '#e4a11b',
+    description: '衡量相关上下文是否排在检索结果前列。',
+    formula: '上下文精确率 = Σ(Precision@k × 第 k 项相关性) / 相关上下文数量。'
+  },
+  {
+    key: 'contextRecall', label: 'Context Recall', color: '#14a897',
+    description: '衡量检索上下文对参考答案所需信息的覆盖程度。',
+    formula: '上下文召回率 = 被检索上下文覆盖的参考答案声明数 / 参考答案声明总数。'
+  },
 ]
-const tabs = [{key: 'document', label: '文档索引质量'}, {key: 'retrieval', label: '检索召回质量'}, {
-  key: 'generation',
-  label: '生成回答质量'
-}, {key: 'performance', label: '系统性能'}, {key: 'feedback', label: '用户反馈'}]
-const chartRefs = new Map<string, HTMLElement>();
-const charts = new Map<string, echarts.ECharts>()
-const overview = computed(() => dashboard.value.overview || {});
-const quality = computed(() => overview.value.quality || {});
-const summary = computed(() => overview.value.summary || {});
-const stages = computed(() => overview.value.stages || [])
-const performanceStages = computed(() => {
-  const order = ['document.parse', 'document.base_chunk', 'document.parent_child_chunk', 'document.chunk', 'embedding.dense', 'retrieval.hybrid_rrf', 'llm.rerank', 'llm.chat']
-  return order.map(operation => stages.value.find((stage: AnyMap) => stage.operation === operation)).filter(Boolean) as AnyMap[]
-})
-const performance = computed(() => overview.value.performance || {})
-const documentQuality = computed(() => dashboard.value.documentQuality || {});
-const documentStatus = computed(() => documentQuality.value.status || []);
-const tokenDistribution = computed(() => documentQuality.value.tokens || []);
-const failedDocuments = computed(() => documentQuality.value.failed || [])
-const retrieval = computed(() => dashboard.value.retrievalQuality || {});
-const generation = computed(() => dashboard.value.generationQuality || {});
-const feedback = computed(() => dashboard.value.feedback || {});
-const alerts = computed(() => dashboard.value.alerts || [])
-const percent = (v: unknown) => {
-  const n = Number(v);
-  return Number.isFinite(n) ? `${(n <= 1 ? n * 100 : n).toFixed(1)}%` : '0.0%'
-};
-const errorRate = (v: unknown) => {
-  const n = Number(v);
-  if (!Number.isFinite(n)) return '0%';
-  const digits = n > 0 && n < 0.1 ? 2 : 1;
-  return `${n.toFixed(digits).replace(/\.0+$/, '')}%`;
-};
-const score = (v: unknown) => {
-  const n = Number(v);
-  return Number.isFinite(n) ? Math.max(0, Math.min(100, n <= 1 ? n * 100 : n)) : 0
-};
-const ms = (v: unknown) => {
-  const n = Number(v);
-  return Number.isFinite(n) ? `${n.toFixed(1)} 毫秒` : '-'
-};
-const stageLabel = (v: string) => ({
-  'document.parse': '解析服务调用',
-  'document.base_chunk': '基础分块',
-  'document.parent_child_chunk': '父子分块',
-  'document.chunk': '父子分块（历史）',
-  'embedding.dense': '语义向量化',
-  'embedding.sparse_bm25': '关键词向量化',
-  'vector.upsert': '向量写入',
-  'retrieval.hybrid_rrf': '混合检索与融合排序',
-  'llm.rerank': '模型重排序',
-  'llm.chat': '回答生成',
-  'task.schedule': '任务调度',
-  'task.recovery': '任务恢复',
-  'object.scan': '对象变更扫描'
-} as AnyMap)[v] || v || '-'
-const stageChartLabel = (v: string) => ({
-  'document.parse': '解析服务调用',
-  'document.base_chunk': '基础分块',
-  'document.parent_child_chunk': '父子分块',
-  'document.chunk': '父子分块（历史）',
-  'embedding.dense': 'Embedding',
-  'retrieval.hybrid_rrf': 'Milvus检索',
-  'llm.rerank': 'Rerank重排',
-  'llm.chat': 'LLM生成'
-} as AnyMap)[v] || stageLabel(v)
-const kpis = computed(() => [{
-  label: '文档总数',
-  value: documentQuality.value.total ?? '-',
-  detail: `索引成功 ${statusCount('INDEXED')} · 失败 ${statusCount('FAILED')}`,
-  tone: 'blue'
-}, {
-  label: '解析成功率',
-  value: percent(documentQuality.value.parseSuccessRate),
-  detail: `降级 ${documentQuality.value.fallbackCount ?? 0} 份`,
-  tone: 'green'
-}, {
-  label: '召回率',
-  value: percent(quality.value.recallAt5),
-  detail: '当前评测集 Recall@5',
-  tone: 'cyan'
-}, {
-  label: '回答引用率',
-  value: percent(generation.value.citationRate),
-  detail: `无引用 ${percent(1 - Number(generation.value.citationRate || 0))}`,
-  tone: 'purple'
-}, {
-  label: '用户点赞率',
-  value: percent(feedback.value.likeRate),
-  detail: `点踩 ${percent(feedback.value.dislikeRate)}`,
-  tone: 'orange'
-}, {label: '活跃告警', value: alerts.value.length, detail: '需关注的异常项', tone: 'red'}])
-const performanceKpis = computed(() => [
-  {label: 'Docling 错误率', value: errorRate(performance.value.doclingErrorRate), tone: Number(performance.value.doclingErrorRate || 0) > 1 ? 'warning' : 'success'},
-  {label: 'Embedding 错误率', value: errorRate(performance.value.embeddingErrorRate), tone: Number(performance.value.embeddingErrorRate || 0) > 1 ? 'warning' : 'success'},
-  {label: 'Milvus 错误率', value: errorRate(performance.value.milvusErrorRate), tone: Number(performance.value.milvusErrorRate || 0) > 1 ? 'warning' : 'success'},
-  {label: 'LLM 错误率', value: errorRate(performance.value.llmErrorRate), tone: Number(performance.value.llmErrorRate || 0) > 1 ? 'warning' : 'success'},
-  {label: 'Rerank 错误率', value: errorRate(performance.value.rerankErrorRate), tone: Number(performance.value.rerankErrorRate || 0) > 1 ? 'warning' : 'success'},
-  {label: '今日问答 QPS', value: performance.value.todayQps ?? 0, tone: 'success'}
-])
-const performanceNotice = computed(() => {
-  const docling = stages.value.find((stage: AnyMap) => stage.operation === 'document.parse')
-  if (docling && Number(docling.p95_ms) >= 3000) {
-    return `Docling 解析 P95 达 ${Math.round(Number(docling.p95_ms))}ms，扫描件 PDF 占比上升导致耗时增加，建议：扫描文档量大时考虑 GPU 部署 docling-serve，或增加解析服务副本数。`
-  }
-  return ''
-})
-const statusCount = (status: string) => documentStatus.value.find((x: AnyMap) => x.status === status)?.count ?? 0;
-const documentState = (row: AnyMap) => row.chunkStatus === 'FAILED' || row.parseStatus === 'FAILED' ? '索引失败' : row.parseStatus === 'SUCCESS' ? '解析降级' : '处理中'
-const params = () => ({
-  ...(range.value?.length === 2 ? {
-    from: range.value[0],
-    to: range.value[1]
-  } : {})
-})
-function dateRange(days: number): [Date, Date] {
+
+const requestParams = () => {
   const end = new Date()
   const start = new Date(end)
-  start.setDate(start.getDate() - (days - 1))
-  start.setHours(0, 0, 0, 0)
-  return [start, end]
+  start.setDate(start.getDate() - windowDays.value)
+  return {from: formatBeijingTime(start), to: formatBeijingTime(end)}
 }
-const axis = (labels: any[], data: any[], color = '#9bbbf4') => ({
-  tooltip: {trigger: 'axis', confine: true},
-  grid: {left: 42, right: 20, top: 28, bottom: 34, containLabel: true},
-  xAxis: {type: 'category', data: labels, axisLabel: {fontSize: 11, color: '#64748b'}},
-  yAxis: {type: 'value', axisLabel: {fontSize: 11, color: '#64748b'}},
-  series: [{type: 'bar', data, itemStyle: {color, borderRadius: [4, 4, 0, 0]}, barWidth: '48%'}]
+
+const metricCards = computed(() => metricDefinitions.map(definition => {
+  const summary = metricSummary(definition.key)
+  const values = (evaluation.value.trend || [])
+    .map(item => normalized(item[definition.key]))
+    .filter((value): value is number => value !== null)
+  const current = normalized(summary.average)
+  const previous = values.length > 1 ? values[values.length - 2] : null
+  const delta = current !== null && previous !== null ? current - previous : null
+  const threshold = Number(summary.threshold ?? thresholdOf(definition.key))
+  return {
+    ...definition,
+    threshold,
+    score: scoreText(current),
+    min: scoreText(normalized(summary.min)),
+    max: scoreText(normalized(summary.max)),
+    delta,
+    sparkline: values,
+    status: current === null ? 'empty' : current >= threshold ? 'pass' : 'warning',
+  }
+}))
+
+const passRate = computed(() => {
+  const completed = Number(evaluation.value.completed || 0)
+  return completed ? `${Math.round(Number(evaluation.value.passed || 0) * 100 / completed)}%` : '—'
 })
-const pie = (data: any[]) => ({
-  tooltip: {trigger: 'item', confine: true},
-  legend: {bottom: 0, textStyle: {fontSize: 11}},
-  series: [{
-    type: 'pie',
-    radius: ['42%', '68%'],
-    center: ['50%', '43%'],
-    data,
-    label: {fontSize: 11, formatter: '{b}\n{d}%'}
-  }]
+const lastRun = computed(() => evaluation.value.lastRunAt ? formatBeijingTime(evaluation.value.lastRunAt) : '暂无运行')
+const formattedWindow = computed(() => {
+  const from = evaluation.value.from ? formatBeijingTime(evaluation.value.from) : ''
+  const to = evaluation.value.to ? formatBeijingTime(evaluation.value.to) : ''
+  return from && to ? `${from.slice(0, 10)} 至 ${to.slice(0, 10)}` : '等待数据加载'
 })
-const docStatusOption = computed(() => pie(documentStatus.value.map((x: AnyMap) => ({
-  value: x.count,
-  name: x.status === 'INDEXED' ? '索引成功' : x.status === 'FAILED' ? '索引失败' : x.status === 'INDEXING' ? '索引中' : x.status
-}))));
-const tokenOption = computed(() => axis(tokenDistribution.value.map((x: AnyMap) => x.bucket), tokenDistribution.value.map((x: AnyMap) => x.count)));
-const recallOption = computed(() => ({
-  tooltip: {trigger: 'axis'},
-  legend: {top: 0},
-  grid: {left: 42, right: 20, top: 34, bottom: 30, containLabel: true},
-  xAxis: {type: 'category', data: (retrieval.value.recallTrend || []).map((x: AnyMap) => x.period)},
-  yAxis: {type: 'value', max: 100},
-  series: [{
-    name: '召回率',
-    type: 'line',
-    smooth: true,
-    data: (retrieval.value.recallTrend || []).map((x: AnyMap) => score(x.recallAt5)),
-    itemStyle: {color: '#4967ed'},
-    areaStyle: {color: 'rgba(73,103,237,.10)'}
-  }]
-}));
-const similarityOption = computed(() => axis((retrieval.value.similarity || []).map((x: AnyMap) => x.bucket), (retrieval.value.similarity || []).map((x: AnyMap) => x.count), '#8bc8ea'));
-const hybridOption = computed(() => pie((retrieval.value.hybrid || []).map((x: AnyMap) => ({
-  value: x.count,
-  name: x.source === 'dense' ? '仅语义命中' : x.source === 'sparse' ? '仅关键词命中' : x.source === 'both' ? '共同命中' : x.source
-}))));
-const hotDocOption = computed(() => ({
-  tooltip: {trigger: 'axis'},
-  grid: {left: 100, right: 38, top: 10, bottom: 22, containLabel: true},
-  xAxis: {type: 'value'},
-  yAxis: {
-    type: 'category',
-    data: (retrieval.value.hotDocuments || []).slice().reverse().map((x: AnyMap) => x.fileName)
+const healthState = computed(() => {
+  const cards = metricCards.value
+  if (!cards.some(card => card.status !== 'empty')) return 'empty'
+  return cards.every(card => card.status === 'pass') ? 'healthy' : 'degraded'
+})
+const healthLabel = computed(() => healthState.value === 'healthy' ? '健康' : healthState.value === 'degraded' ? '下降' : '暂无数据')
+
+function metricSummary(key: MetricKey): Partial<RagasMetricSummary> {
+  return evaluation.value.metrics?.[key] || {}
+}
+function thresholdOf(key: MetricKey) {
+  return key === 'faithfulness' ? 0.80 : key === 'answerRelevancy' ? 0.75 : 0.70
+}
+function normalized(value: unknown): number | null {
+  const number = Number(value)
+  if (!Number.isFinite(number)) return null
+  return Math.max(0, Math.min(1, number > 1 ? number / 100 : number))
+}
+function scoreText(value: number | null) {
+  return value === null ? '—' : value.toFixed(3)
+}
+function formatDelta(value: number | null) {
+  if (value === null) return '—'
+  return `${value >= 0 ? '↑' : '↓'} ${Math.abs(value).toFixed(3)}`
+}
+function sparkPoints(values: number[]): string {
+  if (!values.length) return ''
+  if (values.length === 1) return `110,${pointY(values[0])}`
+  return values.map((value, index) => `${(index * 220) / (values.length - 1)},${pointY(value)}`).join(' ')
+}
+function sparkArea(values: number[]): string {
+  const points = sparkPoints(values)
+  if (!points) return ''
+  const first = values.length === 1 ? 110 : 0
+  const last = values.length === 1 ? 110 : 220
+  return `M ${first},58 L ${points.split(' ').join(' L ')} L ${last},58 Z`
+}
+function pointY(value: number) { return 54 - Math.max(0, Math.min(1, value)) * 48 }
+function lastPoint(values: number[]): TrendPoint {
+  const value = values[values.length - 1]
+  return {x: values.length === 1 ? 110 : 220, y: pointY(value)}
+}
+function thresholdY(value: number) { return pointY(value) }
+
+const trendOption = computed(() => ({
+  tooltip: {
+    trigger: 'axis',
+    valueFormatter: (value: number) => Number(value).toFixed(3),
   },
-  series: [{
-    type: 'bar',
-    data: (retrieval.value.hotDocuments || []).slice().reverse().map((x: AnyMap) => x.count),
-    itemStyle: {color: '#9bbbf4', borderRadius: [0, 4, 4, 0]},
-    label: {show: true, position: 'right'}
-  }]
-}));
-const citationOption = computed(() => pie((generation.value.citation || []).map((x: AnyMap) => ({
-  value: x.count,
-  name: x.status
-}))));
-const promptOption = computed(() => axis((generation.value.promptTokens || []).map((x: AnyMap) => x.bucket), (generation.value.promptTokens || []).map((x: AnyMap) => x.count), '#c9a7e8'));
-const performanceOption = computed(() => ({
-  tooltip: {trigger: 'axis'},
-  legend: {top: 0},
-  grid: {left: 70, right: 20, top: 34, bottom: 34, containLabel: true},
+  grid: {left: 46, right: 22, top: 28, bottom: 38, containLabel: true},
   xAxis: {
     type: 'category',
-    data: performanceStages.value.map((x: AnyMap) => stageChartLabel(x.operation)),
-    axisLabel: {interval: 0, fontSize: 12, color: '#475569'}
+    boundaryGap: false,
+    data: (evaluation.value.trend || []).map(item => item.period),
+    axisLabel: {color: '#86909c', fontSize: 11},
+    axisLine: {lineStyle: {color: '#e5e7eb'}},
   },
-  yAxis: {type: 'value', name: 'ms', axisLabel: {color: '#64748b'}},
-  series: [{
-    name: 'P50',
-    type: 'bar',
-    data: performanceStages.value.map((x: AnyMap) => x.p50_ms ?? x.avg_ms),
-    itemStyle: {color: '#8fb1ef', borderRadius: [6, 6, 0, 0]}
-  }, {name: 'P95', type: 'bar', data: performanceStages.value.map((x: AnyMap) => x.p95_ms), itemStyle: {color: '#ef666b', borderRadius: [6, 6, 0, 0]}}]
-}));
-const feedbackOption = computed(() => pie((feedback.value.distribution || []).map((x: AnyMap) => ({
-  value: x.count,
-  name: x.status
-}))));
-const feedbackReasonOption = computed(() => axis((feedback.value.reasons || []).map((x: AnyMap) => x.reason), (feedback.value.reasons || []).map((x: AnyMap) => x.count), '#f4b393'));
-const feedbackTrendOption = computed(() => ({
-  tooltip: {trigger: 'axis'},
-  legend: {top: 0},
-  grid: {left: 42, right: 20, top: 34, bottom: 30, containLabel: true},
-  xAxis: {type: 'category', data: (feedback.value.trend || []).map((x: AnyMap) => x.day)},
-  yAxis: {type: 'value'},
-  series: [{
-    name: '点赞',
+  yAxis: {
+    type: 'value', min: 0, max: 1, interval: .25,
+    axisLabel: {color: '#86909c', fontSize: 11, formatter: (value: number) => value.toFixed(2)},
+    splitLine: {lineStyle: {color: '#edf0f5'}},
+  },
+  series: metricDefinitions.map(definition => ({
+    name: definition.label,
     type: 'line',
     smooth: true,
-    data: (feedback.value.trend || []).map((x: AnyMap) => x.likes),
-    itemStyle: {color: '#52c41a'}
-  }, {
-    name: '点踩',
-    type: 'line',
-    smooth: true,
-    data: (feedback.value.trend || []).map((x: AnyMap) => x.dislikes),
-    itemStyle: {color: '#ea6668'}
-  }]
-}));
-const kbSatisfactionOption = computed(() => axis((feedback.value.knowledgeBases || []).map((x: AnyMap) => x.name), (feedback.value.knowledgeBases || []).map((x: AnyMap) => x.rate), '#9bbbf4'))
+    symbol: 'circle',
+    symbolSize: 5,
+    connectNulls: false,
+    data: (evaluation.value.trend || []).map(item => normalized(item[definition.key])),
+    lineStyle: {width: 2, color: definition.color},
+    itemStyle: {color: definition.color},
+  })),
+}))
 
-function setChartRef(id: string, el: unknown) {
-  if (el instanceof HTMLElement) chartRefs.set(id, el); else if (el === null) chartRefs.delete(id)
-}
-
-function emptyOption(option: any) {
-  return {
-    ...option,
-    graphic: {type: 'text', left: 'center', top: 'middle', style: {text: '暂无数据', fill: '#94a3b8', fontSize: 13}}
-  }
-}
-
-function renderCharts() {
+function renderTrend() {
   nextTick(() => {
-    const options: AnyMap = {
-      'doc-status': docStatusOption.value,
-      'token-distribution': tokenOption.value,
-      'recall-trend': recallOption.value,
-      similarity: similarityOption.value,
-      hybrid: hybridOption.value,
-      'hot-documents': hotDocOption.value,
-      citation: citationOption.value,
-      'prompt-tokens': promptOption.value,
-      performance: performanceOption.value,
-      feedback: feedbackOption.value,
-      'feedback-reasons': feedbackReasonOption.value,
-      'feedback-trend': feedbackTrendOption.value,
-      'kb-satisfaction': kbSatisfactionOption.value
-    };
-    chartRefs.forEach((el, id) => {
-      let chart = charts.get(id);
-      if (!chart) {
-        chart = echarts.init(el);
-        charts.set(id, chart)
-      }
-      const option = options[id] || {};
-      const hasData = (option.series || []).some((series: AnyMap) => Array.isArray(series.data) && series.data.length > 0);
-      chart.setOption(hasData ? option : emptyOption(option), true);
-      chart.resize()
-    })
+    if (!trendChart.value) return
+    chart ||= echarts.init(trendChart.value)
+    chart.setOption(trendOption.value, true)
+    chart.resize()
   })
 }
-
 async function load() {
-  loading.value = true;
-  error.value = '';
+  loading.value = true
+  error.value = ''
   try {
-    const dash = await monitoringApi.dashboard(params());
-    dashboard.value = dash.data || {};
-    updatedAt.value = dashboard.value.updatedAt ? new Date(dashboard.value.updatedAt).toLocaleString('zh-CN') : '-';
-    renderCharts()
-  } catch (e) {
-    error.value = e instanceof ApiError && e.status === 403 ? '当前账号无权查看监控数据' : e instanceof Error ? e.message : '监控数据加载失败';
+    const {data} = await monitoringApi.dashboard(requestParams())
+    evaluation.value = data.ragasEvaluation || {metrics: {} as RagasEvaluation['metrics'], trend: []}
+    renderTrend()
+  } catch (cause) {
+    error.value = cause instanceof ApiError && cause.status === 403
+      ? '当前账号无权查看 RAGAS 评估数据'
+      : cause instanceof Error ? cause.message : 'RAGAS 评估数据加载失败'
     ElMessage.error(error.value)
   } finally {
     loading.value = false
   }
 }
 
-function reset() {
-  range.value = [];
-  void load()
-};
-
-watch([activeTab, documentStatus, tokenDistribution, retrieval, generation, feedback, stages], renderCharts, {deep: true});
+watch(() => evaluation.value.trend, renderTrend, {deep: true})
 onMounted(() => {
-  load();
-  window.addEventListener('resize', renderCharts)
-});
-onBeforeUnmount(() => {
-  window.removeEventListener('resize', renderCharts);
-  charts.forEach(c => c.dispose())
+  void load()
+  window.addEventListener('resize', renderTrend)
 })
-
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', renderTrend)
+  chart?.dispose()
+})
 </script>
 
 <style scoped>
-.monitoring-page {
-  --dash-border: #e4e3dd;
-  --dash-muted: #6b7280;
-  --dash-bg: #f4f3ee;
-  background: #f4f3ee;
-  margin: -24px -28px -48px;
-  padding: 24px 28px 48px;
-  min-height: calc(100vh - 110px)
+.ragas-page {
+  --ragas-border: #e6eaf0;
+  --ragas-muted: #86909c;
+  --ragas-ink: #1d2129;
+  --ragas-surface: #fff;
+  min-height: calc(100vh - 108px);
+  margin: -28px -32px -52px;
+  padding: 28px 32px 52px;
+  background: #f7f9fc;
 }
-
-.monitoring-head {
-  align-items: flex-end
-}
-
-.head-actions {
-  display: flex;
-  align-items: center;
-  gap: 14px
-}
-
-.update-time {
-  font-size: 12px;
-  color: var(--dash-muted);
-  white-space: nowrap
-}
-
-.monitoring-filter {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  padding: 12px 14px;
-  margin-bottom: 16px;
-  background: #fff;
-  border: 1px solid var(--dash-border);
-  border-radius: 10px
-}
-
-.monitoring-filter :deep(.el-date-editor) {
-  width: min(430px, 100%);
-  min-width: 330px
-}
-
-.monitoring-error {
-  margin-bottom: 14px
-}
-
-.kpi-grid {
-  display: grid;
-  grid-template-columns:repeat(6, minmax(0, 1fr));
-  gap: 12px;
-  margin-bottom: 16px
-}
-
-.kpi-card {
-  position: relative;
-  min-height: 114px;
-  padding: 14px 16px;
-  background: #fff;
-  border: 1px solid var(--dash-border);
-  border-radius: 10px;
-  overflow: hidden
-}
-
-.kpi-card:before {
-  content: '';
-  position: absolute;
-  inset: 0 auto 0 0;
-  width: 3px;
-  background: #9bbbf4
-}
-
-.kpi-card.green:before {
-  background: #52c41a
-}
-
-.kpi-card.cyan:before {
-  background: #8bc8ea
-}
-
-.kpi-card.purple:before {
-  background: #c9a7e8
-}
-
-.kpi-card.orange:before {
-  background: #f4b393
-}
-
-.kpi-card.red:before {
-  background: #ea6668
-}
-
-.kpi-label {
-  font-size: 12px;
-  color: var(--dash-muted)
-}
-
-.kpi-value {
-  margin-top: 7px;
-  color: #1a1b1c;
-  font: 700 24px/1.1 Manrope, sans-serif;
-  font-variant-numeric: tabular-nums
-}
-
-.kpi-detail {
-  margin-top: 7px;
-  color: var(--dash-muted);
-  font-size: 11px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis
-}
-
-.alert-stack {
-  display: grid;
-  gap: 8px;
-  margin-bottom: 16px
-}
-
-.alert-item {
-  display: flex;
-  align-items: flex-start;
-  gap: 9px;
-  padding: 11px 14px;
-  border-radius: 8px;
-  border-left: 3px solid #9bbbf4;
-  background: rgba(155, 187, 244, .08);
-  color: #4a6fa5;
-  font-size: 12px
-}
-
-.alert-item :deep(.el-icon) {
-  margin-top: 1px
-}
-
-.alert-item div {
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap
-}
-
-.alert-item strong {
-  font-weight: 650
-}
-
-.alert-item span {
-  color: var(--dash-muted)
-}
-
-.alert-danger {
-  border-left-color: #ea6668;
-  background: rgba(234, 102, 104, .07);
-  color: #c23e4e
-}
-
-.alert-warning {
-  border-left-color: #faad14;
-  background: rgba(250, 173, 20, .09);
-  color: #a66a12
-}
-
-.monitor-tabs {
-  display: flex;
-  gap: 6px;
-  border-bottom: 2px solid var(--dash-border);
-  margin-bottom: 14px;
-  overflow-x: auto
-}
-
-.monitor-tab {
-  border: 0;
-  background: transparent;
-  padding: 10px 17px;
-  margin-bottom: -2px;
-  border-bottom: 2px solid transparent;
-  color: var(--dash-muted);
-  font-size: 13px;
-  white-space: nowrap;
-  cursor: pointer
-}
-
-.monitor-tab:hover, .monitor-tab.active {
-  color: #4a6fa5
-}
-
-.monitor-tab.active {
-  border-bottom-color: #9bbbf4;
-  font-weight: 650
-}
-
-.tab-content {
-  min-height: 100px
-}
-
-.chart-row {
-  display: grid;
-  grid-template-columns:repeat(2, minmax(0, 1fr));
-  gap: 14px;
-  margin-bottom: 14px
-}
-
-.chart-box, .table-wrap {
-  min-width: 0;
-  background: #fff;
-  border: 1px solid var(--dash-border);
-  border-radius: 10px;
-  padding: 14px
-}
-
-.chart-box.large {
-  margin-bottom: 14px
-}
-
-.section-title {
-  font-size: 13px;
-  font-weight: 650;
-  color: #1a1b1c;
-  margin-bottom: 8px
-}
-
-.section-title small {
-  margin-left: 8px;
-  color: var(--dash-muted);
-  font-size: 11px;
-  font-weight: 400
-}
-
-.chart-container {
-  height: 248px;
-  width: 100%
-}
-
-.chart-box.large .chart-container {
-  height: 290px
-}
-
-.notice {
-  display: flex;
-  gap: 10px;
-  padding: 12px 14px;
-  border-radius: 8px;
-  font-size: 12px;
-  line-height: 1.7
-}
-
-.notice-warning {
-  border-left: 3px solid #faad14;
-  background: rgba(250, 173, 20, .09);
-  color: #8c620f
-}
-
-.notice span {
-  color: var(--dash-muted)
-}
-
-.table-wrap {
-  overflow-x: auto;
-  margin-bottom: 14px
-}
-
-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 12px
-}
-
-th {
-  padding: 8px 10px;
-  text-align: left;
-  background: #f4f3ee;
-  color: var(--dash-muted);
-  font-weight: 600;
-  border-bottom: 1px solid var(--dash-border);
-  white-space: nowrap
-}
-
-td {
-  padding: 9px 10px;
-  border-bottom: 1px solid #f0f0ed;
-  color: #1a1b1c
-}
-
-.text-ellipsis {
-  max-width: 270px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap
-}
-
-.empty-inline {
-  padding: 34px 12px;
-  text-align: center;
-  color: #9aa1ad;
-  font-size: 12px
-}
-
-.performance-grid {
-  display: grid;
-  grid-template-columns:repeat(6, minmax(0, 1fr));
-  gap: 10px;
-  margin-bottom: 14px
-}
-
-.perf-card {
-  min-height: 90px;
-  padding: 14px 18px;
-  border-radius: 8px;
-  background: rgba(82, 196, 26, .10);
-  display: flex;
-  flex-direction: column;
-  justify-content: center
-}
-
-.perf-card.warning {
-  background: rgba(250, 173, 20, .1)
-}
-
-.perf-card span {
-  display: block;
-  color: var(--dash-muted);
-  font-size: 13px
-}
-
-.perf-card strong {
-  display: block;
-  margin-top: 4px;
-  color: #52c41a;
-  font: 700 28px/1.1 Manrope, sans-serif;
-  font-variant-numeric: tabular-nums
-}
-
-.perf-card.warning strong {
-  color: #b8860b
-}
-
-.performance-notice {
-  min-height: 92px;
-  padding: 14px 24px;
-  border-left: 3px solid #8fb1ef;
-  border-radius: 8px;
-  background: #eef1f2;
-  color: #10233d;
-  font-size: 13px;
-  line-height: 1.7
-}
-
-.performance-notice-title {
-  margin-bottom: 3px;
-  color: #3e6ea8;
-  font-weight: 650
-}
-
-@media (max-width: 1200px) {
-  .kpi-grid {
-    grid-template-columns:repeat(3, minmax(0, 1fr))
-  }
-
-  .performance-grid {
-    grid-template-columns:repeat(3, minmax(0, 1fr))
-  }
-}
-
-@media (max-width: 800px) {
-  .monitoring-page {
-    margin: -14px -14px -32px;
-    padding: 18px 14px 32px
-  }
-
-  .monitoring-head {
-    align-items: flex-start
-  }
-
-  .head-actions {
-    width: 100%;
-    justify-content: space-between
-  }
-
-  .monitoring-filter :deep(.el-date-editor) {
-    min-width: 100%;
-    width: 100%
-  }
-
-  .kpi-grid {
-    grid-template-columns:repeat(2, minmax(0, 1fr));
-    gap: 8px
-  }
-
-  .chart-row {
-    grid-template-columns:1fr
-  }
-
-  .performance-grid {
-    grid-template-columns:repeat(2, minmax(0, 1fr))
-  }
-
-}
-
-@media (max-width: 480px) {
-  .head-actions {
-    align-items: flex-start;
-    flex-direction: column;
-    gap: 8px
-  }
-
-  .kpi-card {
-    min-height: 104px;
-    padding: 12px
-  }
-
-  .kpi-value {
-    font-size: 20px
-  }
-
-  .chart-container {
-    height: 220px
-  }
-
-}
+.ragas-head { display: flex; align-items: center; justify-content: space-between; gap: 24px; margin-bottom: 26px; }
+.ragas-head .eyebrow { margin: 0 0 7px; color: #5478bd; font-weight: 700; letter-spacing: .12em; }
+.ragas-head h1 { margin: 0; color: var(--ragas-ink); font-size: 26px; line-height: 1.3; }
+.ragas-head p:last-child { margin: 7px 0 0; color: var(--ragas-muted); font-size: 13px; }
+.ragas-actions { display: flex; flex: 0 0 auto; gap: 10px; }
+.ragas-actions :deep(.el-select) { width: 124px; }
+.ragas-actions :deep(.el-button) { min-width: 88px; }
+.ragas-error { margin-bottom: 16px; }
+.ragas-summary { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); margin-bottom: 22px; border: 1px solid var(--ragas-border); border-radius: 10px; background: var(--ragas-surface); box-shadow: 0 4px 18px rgba(31, 54, 88, .045); }
+.summary-item { min-width: 0; padding: 17px 22px; border-right: 1px solid #edf0f5; }
+.summary-item:last-child { border-right: 0; }
+.summary-item > span, .summary-item small { display: block; color: var(--ragas-muted); font-size: 12px; }
+.summary-item strong { display: block; margin: 5px 0 4px; color: var(--ragas-ink); font-size: 25px; font-weight: 700; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.summary-item .summary-date { font-size: 18px; }
+.summary-item.danger strong, .summary-item.degraded strong { color: #d34f58; }
+.summary-item.healthy strong { color: #169c7f; }
+.summary-item.empty strong { color: var(--ragas-muted); }
+.ragas-metric-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; margin-bottom: 22px; }
+.ragas-metric-card { min-width: 0; padding: 18px 20px 16px; border: 1px solid var(--ragas-border); border-radius: 10px; background: var(--ragas-surface); box-shadow: 0 4px 18px rgba(31, 54, 88, .045); }
+.metric-topline, .metric-topline > div { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.metric-name { color: #4e5969; font-size: 13px; font-weight: 650; }
+.metric-help { width: 17px; height: 17px; padding: 0; border: 1px solid #ccd5e3; border-radius: 50%; color: #7f8ca1; background: transparent; font-size: 11px; cursor: help; }
+.metric-delta { font-size: 11px; font-weight: 650; font-variant-numeric: tabular-nums; }
+.metric-delta.up { color: #159179; }.metric-delta.down { color: #d34f58; }.metric-delta:not(.up):not(.down) { color: var(--ragas-muted); }
+.metric-score { display: block; min-height: 38px; margin-top: 13px; color: #d34f58; font-size: 34px; font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; }
+.ragas-metric-card.pass .metric-score { color: #169c7f; }.ragas-metric-card.empty .metric-score { color: #a5afbd; }
+.metric-threshold { display: block; margin-top: 8px; color: #9aa5b5; font-size: 11px; }
+.metric-sparkline { position: relative; height: 63px; margin: 12px 0 8px; }
+.metric-sparkline svg { width: 100%; height: 58px; overflow: visible; }.metric-sparkline > span { position: absolute; inset: 20px 0 auto; color: #a4adba; font-size: 11px; text-align: center; }
+.metric-stat-row { display: grid; grid-template-columns: repeat(3, 1fr); border-top: 1px solid #edf0f5; padding-top: 10px; text-align: center; }
+.metric-stat-row span { color: #a1aab7; font-size: 10px; }.metric-stat-row b { display: block; margin-top: 3px; color: #4e5969; font-size: 12px; font-variant-numeric: tabular-nums; }
+.ragas-trend-card { position: relative; min-width: 0; min-height: 334px; padding: 19px 22px 15px; border: 1px solid var(--ragas-border); border-radius: 10px; background: var(--ragas-surface); box-shadow: 0 4px 18px rgba(31, 54, 88, .045); }
+.trend-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; }.trend-head h2 { margin: 0; color: var(--ragas-ink); font-size: 15px; }.trend-head p { margin: 6px 0 0; color: var(--ragas-muted); font-size: 11px; }
+.trend-legend { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 13px; color: #687385; font-size: 11px; }.trend-legend span { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }.trend-legend i { width: 8px; height: 8px; border-radius: 2px; }
+.ragas-trend-chart { height: 262px; width: 100%; }.trend-empty { position: absolute; top: 58%; left: 50%; color: #98a3b3; font-size: 12px; transform: translate(-50%, -50%); }
+.metric-definitions { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-top: 16px; }.metric-definitions article { display: flex; gap: 9px; min-width: 0; padding: 12px; border: 1px solid var(--ragas-border); border-radius: 8px; background: rgba(255,255,255,.72); }.definition-marker { width: 3px; flex: 0 0 3px; border-radius: 3px; }.metric-definitions b { color: #4e5969; font-size: 12px; }.metric-definitions p { margin: 5px 0 0; color: #86909c; font-size: 11px; line-height: 1.55; }
+:global(html.dark) .ragas-page { --ragas-border: #314057; --ragas-muted: #aebbd0; --ragas-ink: #edf3ff; --ragas-surface: #182338; background: #0f1726; }.ragas-page :deep(.el-select__wrapper) { background: var(--ragas-surface); }.ragas-page :deep(.el-select__selected-item) { color: var(--ragas-ink); }
+:global(html.dark) .summary-item, :global(html.dark) .metric-stat-row { border-color: #314057; }:global(html.dark) .metric-name, :global(html.dark) .metric-stat-row b, :global(html.dark) .metric-definitions b { color: #dce7fa; }:global(html.dark) .metric-definitions article { background: #182338; }
+@media (max-width: 1180px) { .ragas-metric-grid, .metric-definitions { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 760px) { .ragas-page { margin: -20px -14px -36px; padding: 20px 14px 36px; }.ragas-head { align-items: flex-start; flex-direction: column; gap: 16px; }.ragas-actions { width: 100%; }.ragas-actions :deep(.el-select), .ragas-actions :deep(.el-button) { flex: 1; }.ragas-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }.summary-item:nth-child(2) { border-right: 0; }.summary-item:nth-child(-n + 2) { border-bottom: 1px solid var(--ragas-border); }.summary-item { padding: 14px; }.summary-item strong { font-size: 21px; }.summary-item .summary-date { font-size: 14px; }.ragas-metric-grid, .metric-definitions { grid-template-columns: 1fr; gap: 10px; }.trend-head { flex-direction: column; }.trend-legend { justify-content: flex-start; }.ragas-trend-chart { height: 250px; }.ragas-trend-card { padding: 16px 12px; }.trend-empty { width: 80%; text-align: center; } }
+@media (prefers-reduced-motion: reduce) { .ragas-page * { transition: none !important; } }
 </style>

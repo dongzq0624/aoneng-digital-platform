@@ -1,31 +1,42 @@
 <template>
-  <div>
-    <div class="page-head compact">
-      <div><p class="eyebrow">知识资产中心</p>
+  <div class="knowledge-base-page">
+    <div class="kb-hero">
+      <div class="kb-hero-grid" aria-hidden="true"></div>
+      <div class="page-head compact kb-page-head">
+      <div class="kb-head-copy"><p class="eyebrow">知识资产中心 · KNOWLEDGE HUB</p>
         <h1>知识库管理</h1>
         <p>集中管理组织知识，打造可信赖的信息源。</p></div>
-      <el-button type="primary" :icon="Plus" @click="create">新建知识库</el-button>
+      <div class="kb-head-actions">
+        <span class="kb-live-indicator"><i></i>实时知识资产</span>
+        <el-button type="primary" :icon="Plus" @click="create">新建知识库</el-button>
+      </div>
+      </div>
+      <div class="kb-hero-stats" aria-label="知识库概览">
+        <div class="kb-hero-stat"><span>知识库</span><strong>{{ filtered.length }}</strong><small>个可访问空间</small></div>
+        <div class="kb-hero-stat"><span>文档总量</span><strong>{{ totalDocuments }}</strong><small>份已纳入索引</small></div>
+        <div class="kb-hero-stat"><span>我可管理</span><strong>{{ manageableCount }}</strong><small>个协作空间</small></div>
+      </div>
     </div>
-    <div class="filter-bar">
+    <div class="filter-bar kb-filter-bar">
       <el-input v-model="keyword" placeholder="搜索知识库" clearable style="width:260px">
         <template #prefix><el-icon><Search /></el-icon></template>
       </el-input>
       <el-select v-model="visibility" placeholder="可见范围" clearable style="width:150px">
         <el-option label="全部范围" value=""/>
         <el-option label="全公司" value="ORG"/>
-        <el-option label="本部门" value="DEPT"/>
+        <el-option label="允许部门" value="DEPT"/>
         <el-option label="仅自己" value="PRIVATE"/>
       </el-select>
-      <span class="filter-count">共 {{ filtered.length }} 个知识库</span></div>
+      <span class="filter-count"><i class="kb-filter-dot"></i>共 {{ filtered.length }} 个知识库</span></div>
     <div class="kb-cards">
       <div class="kb-card" v-for="kb in filtered" :key="kb.id">
+        <span class="kb-card-accent" aria-hidden="true"></span>
         <div class="kb-card-top"><span class="large-kb-icon">{{ kb.category }}</span>
           <el-dropdown v-if="kb.canManage">
             <button class="more-btn" type="button" aria-label="知识库更多操作"><el-icon><MoreFilled /></el-icon></button>
             <template #dropdown>
               <el-dropdown-menu>
                 <el-dropdown-item @click="edit(kb)">编辑</el-dropdown-item>
-                <el-dropdown-item v-if="kb.canConfigureDepartments" @click="openDepartmentAccess(kb)">配置允许部门</el-dropdown-item>
                 <el-dropdown-item @click="remove(kb)" divided>删除</el-dropdown-item>
               </el-dropdown-menu>
             </template>
@@ -35,7 +46,7 @@
         <p>{{ kb.description }}</p>
         <div class="kb-meta"><span><el-icon aria-hidden="true"><Document /></el-icon>{{
             kb.docCount ?? (kb as any).doccount ?? 0
-          }} 篇文档</span><span><el-icon aria-hidden="true"><Clock /></el-icon>{{ kb.updatedAt || (kb as any).updatedat }}</span></div>
+          }} 篇文档</span><span><el-icon aria-hidden="true"><Clock /></el-icon>{{ formatBeijingTime(kb.updatedAt || (kb as any).updatedat) }}</span></div>
         <div class="kb-foot">
           <el-tag size="small" effect="plain">{{ label(kb.visibility) }}</el-tag>
           <RouterLink :to="`/kb/${kb.id}`">进入知识库 →</RouterLink>
@@ -43,7 +54,7 @@
       </div>
     </div>
     <el-empty v-if="!filtered.length" description="暂无匹配知识库"/>
-    <el-dialog v-model="createDialogVisible" title="新建知识库" width="560px" destroy-on-close align-center>
+    <el-dialog v-model="createDialogVisible" :title="dialogTitle" width="560px" destroy-on-close align-center>
       <el-form ref="createFormRef" :model="createForm" :rules="createRules" label-width="96px" @submit.prevent>
         <el-form-item label="知识库名称" prop="name">
           <el-input v-model="createForm.name" maxlength="128" show-word-limit placeholder="请输入知识库名称" />
@@ -57,26 +68,31 @@
         <el-form-item label="可见范围" prop="visibility">
           <el-select v-model="createForm.visibility" style="width: 100%" placeholder="请选择可见范围">
             <el-option label="仅自己" value="PRIVATE" />
-            <el-option label="本部门" value="DEPT" />
+            <el-option label="允许部门" value="DEPT" />
             <el-option label="全公司" value="ORG" />
             <el-option label="公开" value="PUBLIC" />
           </el-select>
         </el-form-item>
+        <div v-if="editingBase && createForm.visibility === 'DEPT'" class="department-access-section">
+          <div class="department-access-intro">
+            <b>允许访问部门</b>
+            <p v-if="editingBase?.canConfigureDepartments || !editingBase">可多选部门，只有所选部门的已授权成员可以访问该知识库。</p>
+            <p v-else>仅系统管理员可调整部门权限，当前授权部门保持不变。</p>
+          </div>
+          <el-checkbox-group v-model="selectedDepartmentIds" class="department-access-list"
+                             :disabled="Boolean(editingBase && !editingBase.canConfigureDepartments)">
+            <el-checkbox v-for="department in departmentOptions" :key="department.id" :value="department.id"
+                         :class="['department-option', {'is-parent': department.hasChildren, 'is-child': department.level > 0}]"
+                         :style="{paddingLeft: `${department.level * 20}px`}">
+              {{ department.name }}
+            </el-checkbox>
+          </el-checkbox-group>
+        </div>
       </el-form>
       <template #footer>
         <el-button @click="createDialogVisible = false">取消</el-button>
-        <el-button type="primary" :loading="createSaving" @click="submitCreate">创建知识库</el-button>
+        <el-button type="primary" :loading="createSaving" @click="submitCreate">{{ dialogSubmitLabel }}</el-button>
       </template>
-    </el-dialog>
-    <el-dialog v-model="departmentDialogVisible" title="配置允许访问部门" width="480px" destroy-on-close>
-      <div class="department-access-intro">
-        <b>{{ configuringBase?.name }}</b>
-        <p>仅所选部门的已授权成员可访问该知识库。组织级和公开知识库未选择部门时对所有已授权部门开放。</p>
-      </div>
-      <el-checkbox-group v-model="selectedDepartmentIds" class="department-access-list">
-        <el-checkbox v-for="department in departmentOptions" :key="department.id" :value="department.id">{{ department.label }}</el-checkbox>
-      </el-checkbox-group>
-      <template #footer><el-button @click="departmentDialogVisible=false">取消</el-button><el-button type="primary" :loading="departmentSaving" @click="saveDepartmentAccess">保存部门权限</el-button></template>
     </el-dialog>
   </div>
 </template>
@@ -85,17 +101,16 @@ import {Clock, Document, MoreFilled, Plus, Search} from '@element-plus/icons-vue
 import {ElMessage, ElMessageBox} from 'element-plus';
 import type {KnowledgeBase} from '../../types';
 import {knowledgeBaseApi, systemApi, type Department} from '../../api';
+import {formatBeijingTime} from '../../utils/datetime';
 
 const keyword = ref('');
 const visibility = ref('');
 const list = ref<KnowledgeBase[]>([]);
 const departments = ref<Department[]>([]);
-const departmentDialogVisible = ref(false);
-const departmentSaving = ref(false);
-const configuringBase = ref<KnowledgeBase>();
 const selectedDepartmentIds = ref<number[]>([]);
 const createDialogVisible = ref(false);
 const createSaving = ref(false);
+const editingBase = ref<KnowledgeBase | null>(null);
 const createFormRef = ref<any>();
 const createForm = reactive({
   name: '',
@@ -115,12 +130,22 @@ const createRules = {
 const docCountOf = (kb: any) => kb.docCount ?? kb.doccount ?? 0;
 const updatedAtOf = (kb: any) => kb.updatedAt || kb.updatedat || '-';
 const filtered = computed(() => list.value.filter(k => (!keyword.value || k.name.includes(keyword.value)) && (!visibility.value || k.visibility === visibility.value)));
-const label = (v: string) => ({PRIVATE: '仅自己', DEPT: '本部门', ORG: '全公司', PUBLIC: '公开'}[v] || v);
+const label = (v: string) => ({PRIVATE: '仅自己', DEPT: '允许部门', ORG: '全公司', PUBLIC: '公开'}[v] || v);
+const dialogTitle = computed(() => editingBase.value ? '编辑知识库' : '新建知识库');
+const dialogSubmitLabel = computed(() => editingBase.value ? '保存修改' : '创建知识库');
+const totalDocuments = computed(() => filtered.value.reduce((total, kb) => {
+  const count = Number(docCountOf(kb));
+  return total + (Number.isFinite(count) ? count : 0);
+}, 0));
+const manageableCount = computed(() => filtered.value.filter(kb => kb.canManage).length);
 const departmentOptions = computed(() => {
   const grouped = new Map<number, Department[]>();
   departments.value.forEach(item => { const parent = item.parentId || 0; grouped.set(parent, [...(grouped.get(parent) || []), item]) });
-  const output: Array<{id: number; label: string}> = [];
-  const visit = (parentId: number, level: number) => (grouped.get(parentId) || []).forEach(item => { output.push({id: item.id, label: `${'　'.repeat(level)}${item.name}`}); visit(item.id, level + 1) });
+  const output: Array<{id: number; name: string; level: number; hasChildren: boolean}> = [];
+  const visit = (parentId: number, level: number) => (grouped.get(parentId) || []).forEach(item => {
+    output.push({id: item.id, name: item.name, level, hasChildren: Boolean(grouped.get(item.id)?.length)});
+    visit(item.id, level + 1)
+  });
   visit(0, 0);
   return output
 });
@@ -148,6 +173,8 @@ onMounted(async () => {
 })
 
 function resetCreateForm() {
+  editingBase.value = null;
+  selectedDepartmentIds.value = [];
   createForm.name = '';
   createForm.description = '';
   createForm.category = '';
@@ -165,17 +192,32 @@ async function submitCreate() {
   if (!form) return;
   const valid = await form.validate().catch(() => false);
   if (!valid) return;
+  if (editingBase.value?.canConfigureDepartments && createForm.visibility === 'DEPT' && !selectedDepartmentIds.value.length) {
+    ElMessage.warning('部门知识库至少需要选择一个允许访问的部门');
+    return;
+  }
 
   createSaving.value = true;
   try {
-    const {data} = await knowledgeBaseApi.create({
+    const payload = {
       name: createForm.name.trim(),
       description: createForm.description.trim(),
       category: createForm.category.trim(),
-      visibility: createForm.visibility
-    });
-    const item: any = data;
-    list.value.unshift({
+      visibility: createForm.visibility,
+    };
+    const {data: baseData} = editingBase.value
+      ? await knowledgeBaseApi.update(editingBase.value.id, payload)
+      : await knowledgeBaseApi.create(payload);
+    let item: any = baseData;
+    const canSyncDepartments = Boolean(editingBase.value?.canConfigureDepartments);
+    if (canSyncDepartments) {
+      const {data} = await knowledgeBaseApi.updateAllowedDepartments(
+        item.id,
+        createForm.visibility === 'DEPT' ? selectedDepartmentIds.value : [],
+      );
+      item = data;
+    }
+    const normalized = {
       ...item,
       ownerId: item.ownerId ?? item.ownerid,
       deptId: item.deptId ?? item.deptid,
@@ -186,9 +228,15 @@ async function submitCreate() {
       canManage: item.canManage ?? item.canmanage,
       canConfigureDepartments: item.canConfigureDepartments ?? item.canconfiguredepartments,
       allowedDeptIds: item.allowedDeptIds ?? item.alloweddeptids ?? []
-    } as KnowledgeBase);
+    } as KnowledgeBase;
+    if (editingBase.value) {
+      const index = list.value.findIndex(entry => entry.id === editingBase.value?.id);
+      if (index >= 0) list.value[index] = {...list.value[index], ...normalized};
+    } else {
+      list.value.unshift(normalized);
+    }
     createDialogVisible.value = false;
-    ElMessage.success('知识库创建成功');
+    ElMessage.success(editingBase.value ? '知识库已更新' : '知识库创建成功');
   } catch (error) {
     ElMessage.error(error instanceof Error ? error.message : '创建失败');
   } finally {
@@ -196,51 +244,26 @@ async function submitCreate() {
   }
 }
 
-async function openDepartmentAccess(kb: KnowledgeBase) {
-  configuringBase.value = kb;
+async function loadDepartmentSelection(kb: KnowledgeBase) {
   selectedDepartmentIds.value = [...(kb.allowedDeptIds || [])];
+  if (!kb.canConfigureDepartments) return;
   try {
     const {data} = await knowledgeBaseApi.allowedDepartments(kb.id);
     selectedDepartmentIds.value = data.departmentIds || [];
-    departmentDialogVisible.value = true
   } catch (error) {
     ElMessage.error(error instanceof Error ? error.message : '部门权限加载失败')
   }
 }
 
-async function saveDepartmentAccess() {
-  const kb = configuringBase.value;
-  if (!kb) return;
-  if (kb.visibility === 'DEPT' && !selectedDepartmentIds.value.length) {
-    ElMessage.warning('部门知识库至少需要选择一个允许访问的部门');
-    return
-  }
-  departmentSaving.value = true;
-  try {
-    const {data} = await knowledgeBaseApi.updateAllowedDepartments(kb.id, selectedDepartmentIds.value);
-    const index = list.value.findIndex(item => item.id === kb.id);
-    if (index >= 0) list.value[index] = {...list.value[index], ...data, allowedDeptIds: (data as any).allowedDeptIds ?? (data as any).alloweddeptids ?? []};
-    departmentDialogVisible.value = false;
-    ElMessage.success('允许访问部门已保存')
-  } catch (error) {
-    ElMessage.error(error instanceof Error ? error.message : '部门权限保存失败')
-  } finally {
-    departmentSaving.value = false
-  }
-}
-
 async function edit(k: KnowledgeBase) {
-  try {
-    const result = await ElMessageBox.prompt('请输入新的知识库名称', '编辑知识库', {inputValue: k.name})
-    const name = result.value?.trim();
-    if (!name) return
-    const {data} = await knowledgeBaseApi.update(k.id, {name})
-    const index = list.value.findIndex(item => item.id === k.id)
-    if (index >= 0) list.value[index] = {...list.value[index], ...data}
-    ElMessage.success('知识库已更新')
-  } catch (error: any) {
-    if (error !== 'cancel') ElMessage.error(error instanceof Error ? error.message : '更新失败')
-  }
+  editingBase.value = k;
+  createForm.name = k.name || '';
+  createForm.description = k.description || '';
+  createForm.category = k.category || '';
+  createForm.visibility = k.visibility || 'DEPT';
+  await loadDepartmentSelection(k);
+  createFormRef.value?.clearValidate?.();
+  createDialogVisible.value = true;
 }
 
 async function remove(k: KnowledgeBase) {
@@ -254,14 +277,312 @@ async function remove(k: KnowledgeBase) {
   }
 }</script>
 <style scoped>
+.knowledge-base-page {
+  --kb-navy: #102752;
+  --kb-blue: #4e7dff;
+  --kb-cyan: #23d5e8;
+  position: relative;
+}
+
+.kb-hero {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  margin-bottom: 20px;
+  padding: 24px 28px 18px;
+  border: 1px solid #244b89;
+  border-radius: 16px;
+  color: #fff;
+  background: var(--kb-navy);
+  box-shadow: 0 16px 32px rgba(16, 39, 82, .18);
+}
+
+.kb-hero::before {
+  position: absolute;
+  z-index: -1;
+  top: -100px;
+  right: -20px;
+  width: 390px;
+  height: 260px;
+  border: 1px solid rgba(35, 213, 232, .22);
+  border-radius: 50%;
+  box-shadow: 0 0 0 26px rgba(35, 213, 232, .04), 0 0 0 52px rgba(35, 213, 232, .025);
+  content: '';
+  transform: rotate(-14deg);
+}
+
+.kb-hero-grid {
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  opacity: .16;
+  background-image: linear-gradient(rgba(157, 190, 255, .16) 1px, transparent 1px), linear-gradient(90deg, rgba(157, 190, 255, .16) 1px, transparent 1px);
+  background-size: 28px 28px;
+  mask-image: linear-gradient(90deg, #000 0%, transparent 82%);
+  pointer-events: none;
+}
+
+.kb-page-head {
+  position: relative;
+  z-index: 1;
+  align-items: center;
+  margin: 0;
+}
+
+.kb-head-copy .eyebrow {
+  margin: 0 0 8px;
+  color: #79dce7;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .13em;
+}
+
+.kb-head-copy h1 {
+  margin: 0 0 6px;
+  color: #fff;
+  font-size: 27px;
+  letter-spacing: .01em;
+}
+
+.kb-head-copy p:last-child {
+  margin: 0;
+  color: #b9c8e6;
+  font-size: 13px;
+}
+
+.kb-head-actions {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.kb-head-actions :deep(.el-button--primary) {
+  border-color: #fff;
+  color: #173c83;
+  background: #fff;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, .16);
+}
+
+.kb-head-actions :deep(.el-button--primary:hover) {
+  border-color: #d9f8ff;
+  color: #12336f;
+  background: #d9f8ff;
+}
+
+.kb-live-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: #b9e8ec;
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.kb-live-indicator i,
+.kb-filter-dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--kb-cyan);
+  box-shadow: 0 0 0 4px rgba(35, 213, 232, .14), 0 0 10px rgba(35, 213, 232, .65);
+}
+
+.kb-hero-stats {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0;
+  margin-top: 24px;
+}
+
+.kb-hero-stat {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: baseline;
+  column-gap: 10px;
+  padding: 13px 22px 0 0;
+  border-top: 1px solid rgba(184, 210, 255, .22);
+}
+
+.kb-hero-stat + .kb-hero-stat {
+  padding-left: 22px;
+  border-left: 1px solid rgba(184, 210, 255, .16);
+}
+
+.kb-hero-stat span,
+.kb-hero-stat small {
+  color: #a9bce1;
+  font-size: 11px;
+}
+
+.kb-hero-stat strong {
+  color: #fff;
+  font-size: 23px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.kb-hero-stat small {
+  grid-column: 1 / -1;
+  margin-top: 4px;
+  color: #7890ba;
+}
+
+.kb-filter-bar {
+  min-height: 62px;
+  margin-bottom: 18px;
+  padding: 10px 14px;
+  border: 1px solid var(--card-border);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, .82);
+  box-shadow: var(--card-shadow);
+  backdrop-filter: blur(10px);
+}
+
+.kb-filter-bar :deep(.el-input__wrapper),
+.kb-filter-bar :deep(.el-select__wrapper) {
+  background: #f6f8fc;
+  box-shadow: 0 0 0 1px #e0e6f1 inset;
+}
+
+.kb-filter-bar :deep(.el-input__wrapper:focus-within),
+.kb-filter-bar :deep(.el-select__wrapper.is-focused) {
+  box-shadow: 0 0 0 1px var(--kb-blue) inset, 0 0 0 3px rgba(78, 125, 255, .1);
+}
+
+.kb-filter-bar .filter-count {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.kb-filter-bar .kb-filter-dot {
+  width: 6px;
+  height: 6px;
+  background: var(--kb-blue);
+  box-shadow: 0 0 0 4px rgba(78, 125, 255, .12);
+}
+
+.knowledge-base-page .kb-cards {
+  gap: 18px;
+}
+
+.knowledge-base-page .kb-card {
+  position: relative;
+  overflow: hidden;
+  min-height: 232px;
+  padding: 21px 20px 18px;
+  border-color: #dce4f0;
+  border-radius: 13px;
+  background: rgba(255, 255, 255, .96);
+  box-shadow: 0 6px 22px rgba(31, 62, 113, .07);
+}
+
+.kb-card-accent {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  background: #4e7dff;
+}
+
+.kb-card:nth-child(3n + 2) .kb-card-accent { background: #11aeb9; }
+.kb-card:nth-child(3n) .kb-card-accent { background: #8056d9; }
+
+.knowledge-base-page .kb-card:hover {
+  border-color: #9cb8ff;
+  box-shadow: 0 14px 28px rgba(39, 85, 177, .14);
+  transform: translateY(-4px);
+}
+
+.knowledge-base-page .large-kb-icon {
+  border: 1px solid #d9e4ff;
+  border-radius: 11px;
+  color: #3969de;
+  background: #eff4ff;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: .02em;
+}
+
+.kb-card:nth-child(3n + 2) .large-kb-icon { border-color: #c9eff1; color: #0a8d97; background: #effbfc; }
+.kb-card:nth-child(3n) .large-kb-icon { border-color: #e4d8ff; color: #7048c9; background: #f6f1ff; }
+
+.knowledge-base-page .kb-card h3 {
+  margin-top: 17px;
+  color: var(--text-strong);
+  font-size: 16px;
+  letter-spacing: .01em;
+}
+
+.knowledge-base-page .kb-card p {
+  min-height: 38px;
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.65;
+}
+
+.knowledge-base-page .kb-meta {
+  margin: 16px 0 14px;
+  padding: 12px 0;
+  border-color: #edf0f5;
+  color: #8a98ae;
+  font-size: 11px;
+}
+
+.knowledge-base-page .kb-meta span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.knowledge-base-page .kb-meta .el-icon { color: #7092db; }
+.knowledge-base-page .kb-foot a { color: #3b6ee8; font-size: 11px; font-weight: 600; }
+.knowledge-base-page .kb-foot a:hover { color: #1d5cff; }
+.knowledge-base-page .more-btn:hover { color: #3b6ee8; background: #edf3ff; }
+
+:global(html.dark) .kb-filter-bar { background: rgba(24, 35, 56, .86); }
+:global(html.dark) .knowledge-base-page .kb-card { background: rgba(24, 35, 56, .96); border-color: #314057; }
+:global(html.dark) .knowledge-base-page .kb-meta { border-color: #314057; }
+
+@media (max-width: 760px) {
+  .kb-hero { padding: 20px 18px 16px; border-radius: 13px; }
+  .kb-page-head { align-items: flex-start; gap: 16px; }
+  .kb-head-actions { width: 100%; justify-content: space-between; }
+  .kb-head-copy h1 { font-size: 23px; }
+  .kb-hero-stats { margin-top: 20px; }
+  .kb-hero-stat { display: block; padding: 11px 10px 0 0; }
+  .kb-hero-stat + .kb-hero-stat { padding-left: 10px; }
+  .kb-hero-stat strong { display: block; margin: 5px 0 0; font-size: 20px; }
+  .kb-hero-stat small { display: block; font-size: 10px; }
+  .kb-filter-bar { padding: 10px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .knowledge-base-page .kb-card { transition: none; }
+  .knowledge-base-page .kb-card:hover { transform: none; }
+}
+
 .department-access-intro {
   padding: 12px 14px;
   background: var(--soft-green);
   border-radius: 6px;
   color: var(--ink)
 }
+.department-access-section {
+  margin-top: 4px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+}
 .department-access-intro b { font-size: 13px }
 .department-access-intro p { margin: 6px 0 0; color: var(--muted); font-size: 12px; line-height: 1.6 }
-.department-access-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 18px }
+.department-access-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 18px; margin-top: 16px; padding: 0 2px }
+.department-access-list :deep(.el-checkbox) { min-width: 0; margin-right: 0; }
+.department-access-list :deep(.el-checkbox__label) { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 @media (max-width: 520px) { .department-access-list { grid-template-columns: 1fr } }
 </style>

@@ -28,11 +28,11 @@ import org.springframework.http.codec.ServerSentEvent;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import reactor.core.publisher.Flux;
@@ -75,7 +75,7 @@ public class RagController {
         List<Long> permittedKbIds = chatService.permittedKbIds(scope, request.kbIds());
         PlatformRepository.ChatTurn turn = chatService.prepareTurn(scope.userId(),
                 request.conversationId(), request.question(), permittedKbIds);
-        return chatService.streamAnswer(scope, turn, request.question(), permittedKbIds);
+        return chatService.streamAnswer(scope, turn, username, request.question(), permittedKbIds);
     }
 
     // -------- 会话管理 --------
@@ -106,7 +106,7 @@ public class RagController {
         return Result.ok(conversationService.conversation(scope.userId(), id));
     }
 
-    @PatchMapping("/conversations/{id}")
+    @RequestMapping(value = "/conversations/{id}", method = {RequestMethod.PUT, RequestMethod.PATCH})
     public Result<ConversationVO> updateConversation(
             @AuthenticationPrincipal String username,
             @PathVariable long id,

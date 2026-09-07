@@ -565,6 +565,10 @@ public class PlatformRepository {
         return kbRepository.findParentChunk(parentId);
     }
 
+    public List<Map<String, Object>> parentChunks(long docId) {
+        return kbRepository.findParentChunksByDoc(docId);
+    }
+
     public List<Map<String, Object>> keywordChunks(List<String> terms, List<Long> allowedKbIds, int limit) {
         if (terms == null || terms.isEmpty() || allowedKbIds == null || allowedKbIds.isEmpty()) return List.of();
         int safeLimit = Math.max(1, Math.min(limit, 200));

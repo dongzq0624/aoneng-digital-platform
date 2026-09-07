@@ -27,9 +27,23 @@ public class AuditServiceImpl implements AuditService {
     }
 
     @Override
-    public AuditLogListVO listRecentLogs() {
-        List<AuditPersistenceService.AuditLogRow> rows = repository.findRecentLogs();
+    public AuditLogListVO listRecentLogs(String keyword, String module, String action, int page, int pageSize) {
+        List<AuditPersistenceService.AuditLogRow> all = repository.findRecentLogs();
+        String normalizedKeyword = keyword == null ? "" : keyword.trim().toLowerCase();
+        String normalizedModule = module == null ? "" : module.trim();
+        String normalizedAction = action == null ? "" : action.trim();
+        List<AuditPersistenceService.AuditLogRow> filtered = all.stream().filter(row ->
+                (normalizedKeyword.isBlank() || (String.valueOf(row.username()) + row.action() + row.module() + row.detailJson())
+                        .toLowerCase().contains(normalizedKeyword))
+                        && (normalizedModule.isBlank() || normalizedModule.equals(row.module()))
+                        && (normalizedAction.isBlank() || normalizedAction.equals(row.action()))
+        ).toList();
+        int safePage = Math.max(1, page);
+        int safeSize = Math.max(1, Math.min(pageSize, 100));
+        int from = Math.min((safePage - 1) * safeSize, filtered.size());
+        int to = Math.min(from + safeSize, filtered.size());
+        List<AuditPersistenceService.AuditLogRow> rows = filtered.subList(from, to);
         List<AuditLogVO> items = AuditConvert.INSTANCE.toResponses(rows, objectMapper);
-        return new AuditLogListVO(items, items.size());
+        return new AuditLogListVO(items, filtered.size());
     }
 }

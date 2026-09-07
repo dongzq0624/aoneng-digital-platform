@@ -41,6 +41,8 @@ public interface KbChunkMapper extends BaseMapper<KbChunkPO> {
 
     Map<String, Object> selectParent(@Param("id") long id);
 
+    List<Map<String, Object>> selectParentsByDoc(@Param("docId") long docId);
+
     int deleteByDoc(@Param("docId") long docId);
 
     int deleteParentsByDoc(@Param("docId") long docId);

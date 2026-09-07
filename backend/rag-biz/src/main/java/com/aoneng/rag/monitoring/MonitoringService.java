@@ -5,8 +5,12 @@ import com.aoneng.rag.application.repository.KbScope;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
+import java.time.ZoneId;
 import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -14,6 +18,9 @@ import java.util.Map;
 
 @Service
 public class MonitoringService {
+    private static final ZoneId DISPLAY_ZONE = ZoneId.of("Asia/Shanghai");
+    private static final DateTimeFormatter DISPLAY_DATE_TIME = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+
     private final JdbcTemplate jdbc;
     private final PlatformRepository repo;
 
@@ -63,25 +70,42 @@ public class MonitoringService {
     }
 
     /** 按文件聚合文档处理流水线各阶段耗时，保留没有观测事件的文档以便定位任务卡住问题。 */
-    public Map<String, Object> fileProcessing(String from, String to) {
-        Filter filter = filter(from, to, null, null, null);
-        List<Map<String, Object>> documents = jdbc.queryForList(
-                "SELECT d.id AS \"docId\", d.file_name AS \"fileName\", d.file_type AS \"fileType\", " +
-                        "d.parse_status AS \"parseStatus\", d.chunk_status AS \"chunkStatus\", " +
-                        "LEFT(COALESCE(d.error_msg,''),500) AS \"errorMessage\", d.created_at AS \"createdAt\" " +
-                        "FROM kb_document d WHERE d.deleted=FALSE AND (d.created_at BETWEEN ? AND ? OR EXISTS " +
-                        "(SELECT 1 FROM rag_observation_event e WHERE e.doc_id=d.id AND e.created_at BETWEEN ? AND ?)) " +
-                        "ORDER BY d.created_at DESC", filter.from, filter.to, filter.from, filter.to);
+    public Map<String, Object> fileProcessing(String from, String to, int page, int pageSize) {
+        boolean unbounded = !hasText(from) && !hasText(to);
+        Filter filter = unbounded ? null : filter(from, to, null, null, null);
+        String documentSql = "SELECT d.id AS \"docId\", d.file_name AS \"fileName\", d.file_type AS \"fileType\", " +
+                "d.parse_status AS \"parseStatus\", d.chunk_status AS \"chunkStatus\", " +
+                "LEFT(COALESCE(d.error_msg,''),500) AS \"errorMessage\", d.created_at AS \"createdAt\" " +
+                "FROM kb_document d WHERE d.deleted=FALSE";
+        List<Object> documentArgs = new ArrayList<>();
+        if (unbounded) {
+            documentSql += " ORDER BY d.created_at DESC";
+        } else {
+            documentSql += " AND (d.created_at BETWEEN ? AND ? OR EXISTS " +
+                    "(SELECT 1 FROM rag_observation_event e WHERE e.doc_id=d.id AND e.created_at BETWEEN ? AND ?)) " +
+                    "ORDER BY d.created_at DESC";
+            documentArgs.add(filter.from);
+            documentArgs.add(filter.to);
+            documentArgs.add(filter.from);
+            documentArgs.add(filter.to);
+        }
+        List<Map<String, Object>> documents = jdbc.queryForList(documentSql, documentArgs.toArray());
         List<Map<String, Object>> items = new ArrayList<>();
         for (Map<String, Object> document : documents) {
             long id = ((Number) document.get("docId")).longValue();
-            List<Map<String, Object>> events = jdbc.queryForList(
-                    "SELECT operation, COALESCE(SUM(duration_ms),0) AS duration_ms, " +
-                            "BOOL_AND(success) AS success, MAX(attributes->>'parse_method') AS parse_method, " +
-                            "MAX(attributes->>'error_type') AS error_type, " +
-                            "MAX(attributes->>'timing_version') AS timing_version " +
-                            "FROM rag_observation_event WHERE doc_id=? AND created_at BETWEEN ? AND ? GROUP BY operation",
-                    id, filter.from, filter.to);
+            String eventSql = "SELECT operation, COALESCE(SUM(duration_ms),0) AS duration_ms, " +
+                    "BOOL_AND(success) AS success, MAX(attributes->>'parse_method') AS parse_method, " +
+                    "MAX(attributes->>'error_type') AS error_type, " +
+                    "MAX(attributes->>'timing_version') AS timing_version " +
+                    "FROM rag_observation_event WHERE doc_id=?";
+            List<Object> eventArgs = new ArrayList<>(List.of(id));
+            if (!unbounded) {
+                eventSql += " AND created_at BETWEEN ? AND ?";
+                eventArgs.add(filter.from);
+                eventArgs.add(filter.to);
+            }
+            eventSql += " GROUP BY operation";
+            List<Map<String, Object>> events = jdbc.queryForList(eventSql, eventArgs.toArray());
             Map<String, Object> item = new LinkedHashMap<>();
             item.put("docId", id);
             item.put("fileName", document.get("fileName"));
@@ -132,7 +156,19 @@ public class MonitoringService {
             item.put("errorMessage", message.isBlank() && errorType != null ? errorType : (message.isBlank() ? null : message));
             items.add(item);
         }
-        return Map.of("from", filter.from, "to", filter.to, "items", items);
+        int safePage = Math.max(1, page);
+        int safeSize = Math.max(1, Math.min(pageSize, 100));
+        int total = items.size();
+        int fromIndex = Math.min((safePage - 1) * safeSize, total);
+        int toIndex = Math.min(fromIndex + safeSize, total);
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("from", unbounded ? "" : filter.from);
+        result.put("to", unbounded ? "" : filter.to);
+        result.put("items", items.subList(fromIndex, toIndex));
+        result.put("total", total);
+        result.put("page", safePage);
+        result.put("pageSize", safeSize);
+        return result;
     }
 
     private double value(Map<String, Double> durations, String... operations) {
@@ -148,6 +184,7 @@ public class MonitoringService {
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("updatedAt", OffsetDateTime.now(ZoneOffset.UTC));
         result.put("overview", overview(from, to, kbId, docId, conversationId));
+        result.put("ragasEvaluation", ragasEvaluation(filter, kbId, docId, conversationId));
 
         Map<String, Object> document = new LinkedHashMap<>();
         Map<String, Object> docTotals = jdbc.queryForMap("SELECT COUNT(*) AS total, COUNT(*) FILTER (WHERE parse_status='SUCCESS') AS parsed FROM kb_document d WHERE d.deleted=FALSE AND d.updated_at BETWEEN ? AND ?" + docScope(kbId, docId), docArgs(filter, kbId, docId).toArray());
@@ -193,6 +230,65 @@ public class MonitoringService {
         result.put("feedback", feedback);
         result.put("alerts", alerts(filter, kbId, docId));
         return result;
+    }
+
+    /**
+     * 聚合 RAGAS 原始评分。所有分数都规范到 [0,1]；无有效样本时保留 null，
+     * 让前端明确展示“暂无评估”，而不是用 0 冒充低分。
+     */
+    private Map<String, Object> ragasEvaluation(Filter filter, Long kbId, Long docId, Long conversationId) {
+        String where = evaluationWhere(filter, kbId, docId, conversationId);
+        List<Object> args = evaluationArgs(filter, kbId, docId, conversationId);
+        String faithfulness = normalizedMetric("faithfulness");
+        String answerRelevancy = normalizedMetric("answer_relevancy", "answer_relevance", "response_relevancy", "answer_correctness");
+        String contextPrecision = normalizedMetric("context_precision");
+        String contextRecall = normalizedMetric("context_recall");
+        Map<String, Object> run = jdbc.queryForMap(
+                "SELECT COUNT(*) FILTER (WHERE t.status='SUCCESS') AS evaluated, " +
+                        "COUNT(*) FILTER (WHERE t.status IN ('SUCCESS','FAILED')) AS completed, " +
+                        "COUNT(*) FILTER (WHERE t.status='FAILED') AS failed, " +
+                        "MAX(t.updated_at) FILTER (WHERE t.status='SUCCESS') AS \"lastRunAt\", " +
+                        "COALESCE(SUM(CASE WHEN t.status='SUCCESS' " +
+                        "AND " + faithfulness + ">=0.80 " +
+                        "AND " + answerRelevancy + ">=0.75 " +
+                        "AND " + contextPrecision + ">=0.70 " +
+                        "AND " + contextRecall + ">=0.70 THEN 1 ELSE 0 END),0) AS passed " +
+                        "FROM rag_evaluation_task t JOIN kb_qa_record q ON q.id=t.qa_record_id " + where,
+                args.toArray());
+
+        Map<String, Object> metrics = new LinkedHashMap<>();
+        metrics.put("faithfulness", ragasMetricSummary(where, args, faithfulness, 0.80));
+        metrics.put("answerRelevancy", ragasMetricSummary(where, args, answerRelevancy, 0.75));
+        metrics.put("contextPrecision", ragasMetricSummary(where, args, contextPrecision, 0.70));
+        metrics.put("contextRecall", ragasMetricSummary(where, args, contextRecall, 0.70));
+
+        List<Map<String, Object>> trend = jdbc.queryForList(
+                "SELECT to_char(date_trunc('day', t.updated_at),'MM-DD') AS period, " +
+                        "AVG(" + faithfulness + ") AS faithfulness, " +
+                        "AVG(" + answerRelevancy + ") AS \"answerRelevancy\", " +
+                        "AVG(" + contextPrecision + ") AS \"contextPrecision\", " +
+                        "AVG(" + contextRecall + ") AS \"contextRecall\" " +
+                        "FROM rag_evaluation_task t JOIN kb_qa_record q ON q.id=t.qa_record_id " + where +
+                        " AND t.status='SUCCESS' GROUP BY date_trunc('day', t.updated_at) " +
+                        "ORDER BY date_trunc('day', t.updated_at)",
+                args.toArray());
+
+        Map<String, Object> result = new LinkedHashMap<>(run);
+        result.put("metrics", metrics);
+        result.put("trend", trend);
+        result.put("from", filter.from);
+        result.put("to", filter.to);
+        return result;
+    }
+
+    private Map<String, Object> ragasMetricSummary(String where, List<Object> args, String expression, double threshold) {
+        Map<String, Object> summary = jdbc.queryForMap(
+                "SELECT COUNT(" + expression + ") AS samples, AVG(" + expression + ") AS average, " +
+                        "MIN(" + expression + ") AS min, MAX(" + expression + ") AS max " +
+                        "FROM rag_evaluation_task t JOIN kb_qa_record q ON q.id=t.qa_record_id " + where +
+                        " AND t.status='SUCCESS'", args.toArray());
+        summary.put("threshold", threshold);
+        return summary;
     }
 
     private Map<String, Object> performance(List<Map<String, Object>> stages, Filter filter) {
@@ -265,6 +361,19 @@ public class MonitoringService {
         return where.toString();
     }
 
+    /** RAGAS 面板按评估完成时间过滤，避免待处理任务被计入评估窗口。 */
+    private String evaluationWhere(Filter filter, Long kbId, Long docId, Long conversationId) {
+        StringBuilder where = new StringBuilder("WHERE t.updated_at BETWEEN ? AND ?");
+        if (kbId != null) where.append(" AND q.kb_ids @> ARRAY[?]::bigint[]");
+        if (docId != null) where.append(" AND EXISTS (SELECT 1 FROM kb_chunk c WHERE c.id = ANY(q.retrieved_chunk_ids) AND c.doc_id=?)");
+        if (conversationId != null) where.append(" AND q.conversation_id=?");
+        return where.toString();
+    }
+
+    private List<Object> evaluationArgs(Filter filter, Long kbId, Long docId, Long conversationId) {
+        return qualityArgs(filter, kbId, docId, conversationId);
+    }
+
     private List<Object> qualityArgs(Filter filter, Long kbId, Long docId, Long conversationId) {
         List<Object> args = new ArrayList<>(List.of(filter.from, filter.to));
         if (kbId != null) args.add(kbId);
@@ -275,6 +384,19 @@ public class MonitoringService {
 
     private String metric(String key) {
         return "CASE WHEN t.metrics->>'" + key + "' ~ '^[0-9]+(\\.[0-9]+)?$' THEN (t.metrics->>'" + key + "')::numeric END";
+    }
+
+    private String normalizedMetric(String... keys) {
+        StringBuilder raw = new StringBuilder("COALESCE(");
+        for (int index = 0; index < keys.length; index++) {
+            if (index > 0) raw.append(",");
+            raw.append(metric(keys[index]));
+        }
+        raw.append(")");
+        String value = raw.toString();
+        return "CASE WHEN " + value + " IS NULL THEN NULL " +
+                "WHEN " + value + " > 1 AND " + value + " <= 100 THEN " + value + " / 100 " +
+                "ELSE LEAST(GREATEST(" + value + ",0),1) END";
     }
 
     /**
@@ -312,9 +434,23 @@ public class MonitoringService {
         return Math.max(0D, Math.min(1D, ratio));
     }
 
+    private boolean hasText(String value) {
+        return value != null && !value.isBlank();
+    }
+
     private OffsetDateTime parse(String value, OffsetDateTime fallback) {
-        try { return value == null || value.isBlank() ? fallback : OffsetDateTime.parse(value); }
-        catch (Exception ignored) { return fallback; }
+        if (value == null || value.isBlank()) return fallback;
+        try {
+            return OffsetDateTime.parse(value);
+        } catch (DateTimeParseException ignored) {
+            try {
+                return LocalDateTime.parse(value, DISPLAY_DATE_TIME)
+                        .atZone(DISPLAY_ZONE)
+                        .toOffsetDateTime();
+            } catch (DateTimeParseException invalidValue) {
+                return fallback;
+            }
+        }
     }
     private record Filter(String sql, List<Object> args, OffsetDateTime from, OffsetDateTime to) { }
 }

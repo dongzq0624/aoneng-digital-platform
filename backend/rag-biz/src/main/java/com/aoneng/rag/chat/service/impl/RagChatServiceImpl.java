@@ -4,6 +4,7 @@ import com.aoneng.rag.chat.service.RagChatService;
 import com.aoneng.rag.application.repository.KbScope;
 import com.aoneng.rag.application.repository.PlatformRepository;
 import com.aoneng.rag.application.retrieval.RetrievalService;
+import com.aoneng.rag.audit.service.AuditPersistenceService;
 import com.aoneng.rag.infra.config.RagSseProperties;
 import com.aoneng.rag.infra.llm.LlmService;
 import org.slf4j.Logger;
@@ -39,16 +40,19 @@ public class RagChatServiceImpl implements RagChatService {
     private final LlmService dash;
     private final RagSseProperties sseProperties;
     private final Duration sseTimeout;
+    private final AuditPersistenceService audit;
 
     public RagChatServiceImpl(PlatformRepository repo,
-                              RetrievalService retrieval,
-                              LlmService dash,
-                              RagSseProperties sseProperties) {
+                               RetrievalService retrieval,
+                               LlmService dash,
+                               RagSseProperties sseProperties,
+                               AuditPersistenceService audit) {
         this.repo = repo;
         this.retrieval = retrieval;
         this.dash = dash;
         this.sseProperties = sseProperties;
         this.sseTimeout = Duration.ofSeconds(sseProperties.timeoutSeconds());
+        this.audit = audit;
     }
 
     @Override
@@ -91,6 +95,7 @@ public class RagChatServiceImpl implements RagChatService {
     @Override
     public Flux<ServerSentEvent<Object>> streamAnswer(KbScope scope,
                                                        PlatformRepository.ChatTurn turn,
+                                                       String username,
                                                        String question,
                                                        List<Long> permittedKbIds) {
         AtomicBoolean completed = new AtomicBoolean(false);
@@ -115,12 +120,16 @@ public class RagChatServiceImpl implements RagChatService {
 
                     Mono<ServerSentEvent<Object>> done = Mono.fromCallable(() -> {
                                 String answerText = removeSourceMarkers(answer.toString());
+                                List<Map<String, Object>> cited = citedSources(answer.toString(), p.citationsBySource());
                                 Map<String, Object> donePayload = new LinkedHashMap<>(completeTurn(turn, scope, question, answerText,
-                                        permittedKbIds, p.chunkIds(), p.citationsBySource(), result.trace()));
+                                        permittedKbIds, p.chunkIds(), p.citationsBySource(), cited, result.trace()));
                                 // 只返回模型实际标记的来源；检索候选不再作为引用展示。
                                 donePayload.put("citations", publicCitations(groupCitations(
                                         citedSources(answer.toString(), p.citationsBySource()))));
                                 completed.set(true);
+                                recordAudit(scope.userId(), username, "QA_ASK", "智能问答",
+                                        Map.of("question", question, "conversationId", turn.conversationId(),
+                                                "messageId", turn.assistantMessageId(), "recordId", donePayload.get("recordId")), 1);
                                 return buildEvent("done", donePayload);
                             })
                             .subscribeOn(Schedulers.boundedElastic());
@@ -129,8 +138,14 @@ public class RagChatServiceImpl implements RagChatService {
                 })
                 .timeout(sseTimeout)
                 .onErrorResume(error -> {
-                    if (completed.compareAndSet(false, true)) {
+                    boolean firstFailure = completed.compareAndSet(false, true);
+                    if (firstFailure) {
                         failTurn(turn, "闂瓟鐢熸垚澶辫触锛岃绋嶅悗閲嶈瘯");
+                    }
+                    if (firstFailure) {
+                        recordAudit(scope.userId(), username, "QA_ASK", "智能问答",
+                                Map.of("question", question, "conversationId", turn.conversationId(),
+                                        "messageId", turn.assistantMessageId(), "error", error.getClass().getSimpleName()), 0);
                     }
                     log.warn("SSE 流式问答异常，conversationId={}, messageId={}, error={}",
                             turn.conversationId(), turn.assistantMessageId(), error.getMessage(), error);
@@ -188,9 +203,10 @@ public class RagChatServiceImpl implements RagChatService {
                                              List<Long> permittedKbIds,
                                              List<Long> chunkIds,
                                              Map<String, Map<String, Object>> citationsBySource,
+                                             List<Map<String, Object>> citations,
                                              Map<String, Object> trace) {
         long id = repo.completeChatTurn(turn, scope.userId(), question, answerText, permittedKbIds, chunkIds,
-                citedSources(answerText, citationsBySource), 0, trace);
+                citations == null ? List.of() : citations, 0, trace);
         return Map.of("recordId", id,
                 "conversationId", turn.conversationId(),
                 "userMessageId", turn.userMessageId(),
@@ -200,6 +216,16 @@ public class RagChatServiceImpl implements RagChatService {
     @Override
     public void failTurn(PlatformRepository.ChatTurn turn, String message) {
         repo.failChatTurn(turn, message);
+    }
+
+    private void recordAudit(Long userId, String username, String action, String module,
+                             Map<String, Object> detail, int result) {
+        try {
+            audit.record(userId, username, action, module, detail, result);
+        } catch (Exception auditFailure) {
+            log.warn("Audit log persistence failed: action={}, user={}, error={}",
+                    action, username, auditFailure.getMessage());
+        }
     }
 
     @Override

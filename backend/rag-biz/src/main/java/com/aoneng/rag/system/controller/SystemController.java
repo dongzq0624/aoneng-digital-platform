@@ -27,6 +27,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -48,8 +49,11 @@ public class SystemController {
     // -------- 用户管理 --------
 
     @GetMapping("/users")
-    public Result<List<UserVO>> users() {
-        return Result.ok(systemService.listUsers());
+    public Result<?> users(@RequestParam(name = "keyword", required = false) String keyword,
+                           @RequestParam(name = "deptId", required = false) Long deptId,
+                           @RequestParam(name = "page", defaultValue = "1") int page,
+                           @RequestParam(name = "pageSize", defaultValue = "20") int pageSize) {
+        return Result.ok(systemService.listUsers(keyword, deptId, page, pageSize));
     }
 
     @GetMapping("/users/{id}")
@@ -107,8 +111,10 @@ public class SystemController {
     // -------- 角色管理 --------
 
     @GetMapping("/roles")
-    public Result<List<RoleVO>> roles(@AuthenticationPrincipal String username) {
-        return Result.ok(systemService.listRoles(username));
+    public Result<?> roles(@AuthenticationPrincipal String username,
+                           @RequestParam(name = "page", defaultValue = "1") int page,
+                           @RequestParam(name = "pageSize", defaultValue = "20") int pageSize) {
+        return Result.ok(systemService.listRoles(username, page, pageSize));
     }
 
     @PostMapping("/roles")

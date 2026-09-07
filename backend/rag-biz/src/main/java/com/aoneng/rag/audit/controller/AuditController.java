@@ -4,6 +4,7 @@ import com.aoneng.rag.audit.service.AuditService;
 import com.aoneng.rag.audit.vo.AuditLogListVO;
 import com.aoneng.rag.common.result.Result;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -27,7 +28,12 @@ public class AuditController {
      * @return 最近的审计日志
      */
     @GetMapping("/logs")
-    public Result<AuditLogListVO> logs() {
-        return Result.ok(auditService.listRecentLogs());
+    public Result<AuditLogListVO> logs(
+            @RequestParam(name = "keyword", required = false) String keyword,
+            @RequestParam(name = "module", required = false) String module,
+            @RequestParam(name = "action", required = false) String action,
+            @RequestParam(name = "page", defaultValue = "1") int page,
+            @RequestParam(name = "pageSize", defaultValue = "100") int pageSize) {
+        return Result.ok(auditService.listRecentLogs(keyword, module, action, page, pageSize));
     }
 }

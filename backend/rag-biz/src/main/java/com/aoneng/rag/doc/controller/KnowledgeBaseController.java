@@ -9,8 +9,11 @@ import com.aoneng.rag.doc.vo.AllowedDepartmentsVO;
 import com.aoneng.rag.doc.vo.DeleteVO;
 import com.aoneng.rag.doc.vo.KnowledgeBaseDocumentVO;
 import com.aoneng.rag.doc.vo.KnowledgeBaseVO;
+import com.aoneng.rag.doc.vo.DocumentParentChunksVO;
 import jakarta.validation.Valid;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.core.io.InputStreamResource;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -20,12 +23,15 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestPart;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.util.List;
 import java.util.Map;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 
 /**
  * 知识库和文档管理入口。负责 HTTP 协议层面的请求校验和响应封装，
@@ -92,10 +98,13 @@ public class KnowledgeBaseController {
     // -------- 文档管理 --------
 
     @GetMapping("/bases/{id}/docs")
-    public Result<List<KnowledgeBaseDocumentVO>> docs(
+    public Result<?> docs(
             @AuthenticationPrincipal String username,
-            @PathVariable long id) {
-        return Result.ok(service.listDocuments(username, id));
+            @PathVariable long id,
+            @RequestParam(name = "keyword", required = false) String keyword,
+            @RequestParam(name = "page", defaultValue = "1") int page,
+            @RequestParam(name = "pageSize", defaultValue = "20") int pageSize) {
+        return Result.ok(service.listDocuments(username, id, keyword, page, pageSize));
     }
 
     @PostMapping(value = "/bases/{id}/docs", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -111,6 +120,31 @@ public class KnowledgeBaseController {
             @AuthenticationPrincipal String username,
             @PathVariable long id) {
         return Result.ok(service.getDocument(username, id));
+    }
+
+    @GetMapping("/docs/{id}/parent-chunks")
+    public Result<DocumentParentChunksVO> parentChunks(
+            @AuthenticationPrincipal String username,
+            @PathVariable long id) {
+        return Result.ok(service.listParentChunks(username, id));
+    }
+
+    @GetMapping("/docs/{id}/preview")
+    public ResponseEntity<InputStreamResource> preview(
+            @AuthenticationPrincipal String username,
+            @PathVariable long id) {
+        KnowledgeBaseService.DocumentPreview preview = service.previewDocument(username, id);
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType(preview.contentType()))
+                .contentLength(preview.size())
+                .header("Content-Disposition", contentDisposition(preview.fileName()))
+                .body(new InputStreamResource(preview.stream()));
+    }
+
+    private String contentDisposition(String fileName) {
+        String safe = fileName == null || fileName.isBlank() ? "document" : fileName.replaceAll("[\\r\\n\\\"]", "_");
+        String encoded = URLEncoder.encode(safe, StandardCharsets.UTF_8).replace("+", "%20");
+        return "inline; filename=\"document\"; filename*=UTF-8''" + encoded;
     }
 
     @DeleteMapping("/docs/{id}")

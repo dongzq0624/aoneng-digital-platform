@@ -15,6 +15,7 @@ import com.aoneng.rag.system.vo.RoleMenuVO;
 import com.aoneng.rag.system.vo.RoleVO;
 import com.aoneng.rag.system.vo.UserMenuVO;
 import com.aoneng.rag.system.vo.UserVO;
+import com.aoneng.rag.common.result.PageResult;
 
 import java.util.List;
 
@@ -26,7 +27,7 @@ public interface SystemService {
 
     // -------- 用户管理 --------
 
-    List<UserVO> listUsers();
+    PageResult<UserVO> listUsers(String keyword, Long deptId, int page, int pageSize);
 
     UserVO getUser(long id);
 
@@ -50,7 +51,7 @@ public interface SystemService {
 
     // -------- 角色管理 --------
 
-    List<RoleVO> listRoles(String username);
+    PageResult<RoleVO> listRoles(String username, int page, int pageSize);
 
     RoleVO createRole(String username, CreateRoleDTO req);
 

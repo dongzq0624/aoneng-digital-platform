@@ -33,4 +33,19 @@ class TextChunkerTest {
         assertFalse(chunks.isEmpty());
         chunks.forEach(chunk -> org.junit.jupiter.api.Assertions.assertTrue(chunker.countTokens(chunk) <= 4));
     }
+
+    @Test
+    void longInputIsNotCollapsedIntoTokenizerMaximum() {
+        ModelTokenizer tokenizer = mock(ModelTokenizer.class);
+        when(tokenizer.count(anyString())).thenAnswer(invocation ->
+                ((String) invocation.getArgument(0)).codePointCount(0,
+                        ((String) invocation.getArgument(0)).length()));
+
+        TextChunker chunker = new TextChunker(tokenizer);
+        String text = "字".repeat(2_600);
+        var chunks = chunker.splitTokens(text, 1_200, 64);
+
+        org.junit.jupiter.api.Assertions.assertTrue(chunks.size() > 1);
+        chunks.forEach(chunk -> org.junit.jupiter.api.Assertions.assertTrue(chunker.countTokens(chunk) <= 1_200));
+    }
 }

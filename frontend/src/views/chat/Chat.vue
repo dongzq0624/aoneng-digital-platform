@@ -1,31 +1,38 @@
 <template>
-  <div class="chat-page chat-history-page">
-    <div class="page-head compact">
-      <div>
+  <div class="chat-page chat-history-page ai-chat-page">
+    <div class="page-head compact chat-page-head">
+      <div class="chat-head-grid" aria-hidden="true"></div>
+      <div class="chat-head-copy">
         <p class="eyebrow">企业知识助手</p>
         <h1>智能问答</h1>
         <p>基于权限过滤的可信知识问答，答案附带原文引用。</p>
       </div>
-      <el-tag type="success" effect="plain">服务正常</el-tag>
+      <div class="chat-head-actions">
+        <span class="chat-head-signal"><i></i>AI KNOWLEDGE ENGINE</span>
+        <el-tag class="chat-status" type="success" effect="plain">服务正常</el-tag>
+      </div>
     </div>
 
     <div class="chat-workspace">
       <aside class="conversation-panel" aria-label="历史会话">
         <div class="conversation-panel-head">
-          <b>会话记录</b>
-          <el-tooltip content="新建会话" placement="top">
-            <el-button circle :icon="Plus" aria-label="新建会话" @click="startNewConversation"/>
-          </el-tooltip>
+          <button class="new-conversation-button" type="button" @click="startNewConversation">
+            <el-icon aria-hidden="true"><Plus/></el-icon>
+            <span>开启新对话</span>
+          </button>
         </div>
+        <div class="conversation-section-label">最近</div>
         <el-scrollbar class="conversation-list">
           <div v-if="loadingConversations" class="conversation-loading">正在加载会话…</div>
           <template v-else>
             <button v-for="conversation in conversations" :key="conversation.id" class="conversation-item"
                     :class="{active: activeConversationId === conversation.id}" type="button"
                     @click="selectConversation(conversation.id)">
+              <span class="conversation-item-icon" aria-hidden="true">
+                <el-icon><ChatDotRound/></el-icon>
+              </span>
               <span class="conversation-item-main">
                 <b>{{ conversation.title }}</b>
-                <small>{{ formatTime(conversation.lastMessageAt) }}</small>
               </span>
               <el-dropdown trigger="click" @command="handleConversationCommand($event, conversation)">
                 <span class="conversation-more" role="button" tabindex="0" aria-label="会话操作" @click.stop
@@ -69,7 +76,7 @@
               </el-icon>
             </div>
             <div>
-              <div class="msg-bubble">你好，我是奥能电源知识助手。你可以问我关于制度、产品、流程或客户案例的问题。</div>
+              <div class="msg-bubble">你好，我是奥能电源知识助手。你可以问我关于制度、产品的问题。</div>
               <div class="suggestions">
                 <button v-for="item in suggestions" :key="item" type="button" :disabled="isAsking" @click="ask(item)">
                   {{ item }}
@@ -120,15 +127,14 @@
 </template>
 
 <script setup lang="ts">
-import DOMPurify from 'dompurify'
-import {marked} from 'marked'
 import {nextTick, onMounted, onUnmounted, reactive, ref, watch} from 'vue'
 import {useRoute, useRouter} from 'vue-router'
-import {Delete, Document, EditPen, MagicStick, MoreFilled, Plus, Promotion} from '@element-plus/icons-vue'
+import {ChatDotRound, Delete, Document, EditPen, MagicStick, MoreFilled, Plus, Promotion} from '@element-plus/icons-vue'
 import {ElMessage, ElMessageBox} from 'element-plus'
 import type {ChatConversation, ChatHistoryMessage, Citation, CursorPage} from '../../types'
 import {ragApi, toApiError} from '../../api'
 import {streamChat, type StreamCitation} from '../../utils/sse'
+import {renderMarkdown} from '../../utils/markdown'
 
 type ChatRole = 'user' | 'assistant'
 type ChatCitation = Citation & { key: string }
@@ -155,7 +161,7 @@ const loadingConversations = ref(false)
 const loadingMessages = ref(false)
 const messages = ref<ChatMessage[]>([])
 const conversationPage = ref<CursorPage<ChatConversation>>({items: [], hasMore: false})
-const suggestions = ['今年的年假规则是什么？', '如何申请差旅报销？', '产品发布流程有哪些步骤？']
+const suggestions = ['上班时间是什么？', '就餐安排是什么？', '公司有哪些福利？']
 let localMessageId = -1
 let shouldFollowOutput = true
 let conversationLoadVersion = 0
@@ -163,15 +169,8 @@ let componentDisposed = false
 let activeAbortController: AbortController | undefined
 let cancelActiveOutput: (() => void) | undefined
 
-marked.setOptions({breaks: true, gfm: true})
-
 function messageText(message: ChatMessage): string {
   return message.text || (message.pending ? '正在生成回答…' : '未生成有效回答。')
-}
-
-function renderMarkdown(content: string): string {
-  const visibleContent = content.replace(/(?:【(?:来源|source)[:：]\s*\d+\s*-\s*\d+】|\[(?:来源|source)[:：]?\s*\d+\s*-\s*\d+\])/gi, '')
-  return DOMPurify.sanitize(marked.parse(visibleContent, {async: false}) as string, {USE_PROFILES: {html: true}})
 }
 
 function handleMessagesScroll() {
@@ -515,18 +514,6 @@ async function handleConversationCommand(command: 'rename' | 'delete', conversat
   }
 }
 
-function formatTime(value?: string): string {
-  if (!value) return ''
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return ''
-  const now = new Date()
-  if (date.toDateString() === now.toDateString()) return date.toLocaleTimeString('zh-CN', {
-    hour: '2-digit',
-    minute: '2-digit'
-  })
-  return date.toLocaleDateString('zh-CN', {month: 'numeric', day: 'numeric'})
-}
-
 watch(() => route.query.conversation, async () => {
   const id = conversationFromRoute()
   if (!id) {
@@ -562,6 +549,388 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
+.ai-chat-page {
+  --chat-navy: #102752;
+  --chat-blue: #3370ff;
+  --chat-cyan: #16c6d8;
+  min-width: 0;
+}
+
+.chat-page-head {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  min-height: 118px;
+  margin-bottom: 16px;
+  padding: 20px;
+  border: 1px solid #244b89;
+  border-radius: 14px;
+  color: #fff;
+  background: var(--chat-navy);
+  box-shadow: 0 14px 30px rgba(16, 39, 82, .17);
+}
+
+.chat-head-grid {
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  opacity: .16;
+  background-image: linear-gradient(rgba(152, 192, 255, .18) 1px, transparent 1px), linear-gradient(90deg, rgba(152, 192, 255, .18) 1px, transparent 1px);
+  background-size: 26px 26px;
+  mask-image: linear-gradient(90deg, #000, transparent 86%);
+  pointer-events: none;
+}
+
+.chat-page-head::after {
+  position: absolute;
+  z-index: -1;
+  right: 8%;
+  bottom: -38px;
+  width: 190px;
+  height: 88px;
+  border: 1px solid rgba(22, 198, 216, .34);
+  border-radius: 50%;
+  box-shadow: 0 0 0 14px rgba(22, 198, 216, .04);
+  content: '';
+  transform: rotate(-8deg);
+}
+
+.chat-head-copy .eyebrow {
+  margin: 0 0 7px;
+  color: #79dce7;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .13em;
+}
+
+.chat-head-copy h1 {
+  margin: 0 0 5px;
+  color: #fff;
+  font-size: 26px;
+  letter-spacing: .01em;
+}
+
+.chat-head-copy p:last-child {
+  margin: 0;
+  color: #b9c8e6;
+  font-size: 13px;
+}
+
+.chat-head-actions {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+}
+
+.chat-head-signal {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: #b9e8ec;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: .07em;
+  white-space: nowrap;
+}
+
+.chat-head-signal i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--chat-cyan);
+  box-shadow: 0 0 0 4px rgba(22, 198, 216, .14), 0 0 10px rgba(22, 198, 216, .7);
+}
+
+.chat-status {
+  --el-tag-bg-color: rgba(22, 198, 216, .12);
+  --el-tag-border-color: rgba(122, 230, 235, .4);
+  --el-tag-text-color: #b9f2f3;
+}
+
+.ai-chat-page .chat-workspace {
+  grid-template-columns: 300px minmax(0, 1fr);
+  gap: 16px;
+}
+
+.ai-chat-page .conversation-panel,
+.ai-chat-page .chat-shell {
+
+  border-color: #d6e1f3;
+  box-shadow: 0 8px 24px rgba(31, 62, 113, .07);
+}
+
+.ai-chat-page .conversation-panel {
+  border: 0;
+  border-radius: 0;
+  background: #f3f7fb;
+  box-shadow: none;
+}
+
+.ai-chat-page .conversation-panel-head {
+  min-height: 0;
+  padding: 10px 15px 0;
+  border-bottom: 0;
+  background: transparent;
+}
+
+.new-conversation-button {
+  width: 100%;
+  min-height: 50px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  border: 1px dashed #b9c9ff;
+  border-radius: 11px;
+  color: #4c5eff;
+  background: rgba(255, 255, 255, .72);
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 1.2;
+  cursor: pointer;
+  transition: border-color 160ms ease, background 160ms ease, box-shadow 160ms ease;
+}
+
+.new-conversation-button:hover,
+.new-conversation-button:focus-visible {
+  border-color: #7187ff;
+  background: #fff;
+  box-shadow: 0 4px 14px rgba(76, 94, 255, .12);
+  outline: none;
+}
+
+.new-conversation-button .el-icon {
+  font-size: 19px;
+  font-weight: 400;
+}
+
+.conversation-section-label {
+  margin: 24px 25px 8px;
+  color: #8d9bae;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.ai-chat-page .conversation-list {
+  padding: 0 15px 18px;
+}
+
+.ai-chat-page .conversation-item {
+  position: relative;
+  min-height: 48px;
+  margin-bottom: 2px;
+  gap: 10px;
+  padding: 7px 10px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  color: #58697e;
+}
+
+.ai-chat-page .conversation-item:hover {
+  border-color: transparent;
+  background: rgba(224, 232, 248, .68);
+}
+
+.ai-chat-page .conversation-item.active {
+  border-color: transparent;
+  color: #4055cc;
+  background: rgba(218, 227, 255, .8);
+  box-shadow: none;
+}
+
+.conversation-item-icon {
+  width: 30px;
+  height: 30px;
+  flex: 0 0 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #d9e2f0;
+  border-radius: 8px;
+  color: #596bff;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(56, 81, 124, .03);
+}
+
+.conversation-item-icon .el-icon { font-size: 16px; }
+
+.ai-chat-page .conversation-item-main b {
+  overflow: hidden;
+  color: #56667b;
+  font-size: 15px;
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ai-chat-page .conversation-item.active .conversation-item-main b { color: #4055cc; }
+
+.ai-chat-page .conversation-item .conversation-more {
+  position: absolute;
+  top: 50%;
+  right: 6px;
+  width: 30px;
+  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #f3f7fb;
+  line-height: 1;
+  transform: translateY(-50%);
+}
+
+.ai-chat-page .conversation-item:hover .conversation-more,
+.ai-chat-page .conversation-item.active .conversation-more,
+.ai-chat-page .conversation-more:focus {
+  background: rgba(255, 255, 255, .9);
+}
+
+.ai-chat-page .chat-shell {
+  overflow: hidden;
+  border-radius: 14px;
+  background: #fff;
+}
+
+.ai-chat-page .chat-messages {
+  padding: 27px;
+  background-color: #fbfdff;
+  background-image: linear-gradient(rgba(84, 130, 218, .035) 1px, transparent 1px), linear-gradient(90deg, rgba(84, 130, 218, .035) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+
+.ai-chat-page .message { gap: 12px; }
+
+.ai-chat-page .msg-avatar {
+  position: relative;
+  width: 34px;
+  height: 34px;
+  border: 1px solid #b9d1ff;
+  border-radius: 10px;
+  color: var(--chat-blue);
+  background: #edf4ff;
+  box-shadow: 0 4px 12px rgba(51, 112, 255, .13);
+}
+
+.ai-chat-page .msg-avatar::after {
+  position: absolute;
+  right: -2px;
+  bottom: -2px;
+  width: 7px;
+  height: 7px;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  background: var(--chat-cyan);
+  content: '';
+}
+
+.ai-chat-page .msg-bubble {
+  max-width: min(700px, 78vw);
+  border: 1px solid #e1e9f6;
+  border-radius: 4px 14px 14px 14px;
+  background: #fff;
+  box-shadow: 0 6px 18px rgba(39, 72, 130, .06);
+}
+
+.ai-chat-page .message.user .msg-bubble {
+  border-color: #2b63d7;
+  border-radius: 14px 4px 14px 14px;
+  color: #fff;
+  background: linear-gradient(135deg, #2967e8, #3c8fe9);
+  box-shadow: 0 7px 18px rgba(42, 102, 226, .22);
+}
+
+.ai-chat-page .suggestions button {
+  min-height: 36px;
+  border-color: #c7d8fa;
+  border-radius: 18px;
+  color: #3567c9;
+  background: rgba(255, 255, 255, .9);
+  transition: border-color 160ms ease, background 160ms ease, transform 160ms ease;
+}
+
+.ai-chat-page .suggestions button:hover {
+  border-color: #7ea4ff;
+  background: #eff4ff;
+  transform: translateY(-1px);
+}
+
+.ai-chat-page .citations {
+  gap: 8px;
+  margin-top: 12px;
+  color: #5475aa;
+}
+
+.ai-chat-page .citation-source-label { color: #5475aa; }
+.ai-chat-page .citation-file {
+  border-color: #c6d9fa;
+  border-radius: 8px;
+  color: #3567c9;
+  background: #f2f6ff;
+}
+
+.ai-chat-page .chat-input {
+  padding: 15px 17px;
+  border-top-color: #dbe6f5;
+  background: #fff;
+}
+
+.ai-chat-page .chat-input :deep(.el-input__wrapper) {
+  border-radius: 10px;
+  background: #f7faff;
+  box-shadow: 0 0 0 1px #d7e3f4 inset;
+}
+
+.ai-chat-page .chat-input :deep(.el-input__wrapper:focus-within) {
+  box-shadow: 0 0 0 1px var(--chat-blue) inset, 0 0 0 3px rgba(51, 112, 255, .12);
+}
+
+.ai-chat-page .chat-input :deep(.el-button) {
+  min-width: 82px;
+  border-radius: 10px;
+  box-shadow: 0 5px 13px rgba(51, 112, 255, .2);
+}
+
+:global(html.dark) .ai-chat-page .conversation-panel { background: #151f32; border-color: transparent; }
+:global(html.dark) .ai-chat-page .conversation-panel-head { background: transparent; border-color: transparent; }
+:global(html.dark) .new-conversation-button {
+  border-color: #6374d5;
+  color: #b9c3ff;
+  background: rgba(34, 48, 79, .72);
+}
+:global(html.dark) .new-conversation-button:hover,
+:global(html.dark) .new-conversation-button:focus-visible { border-color: #95a4ff; background: #243458; }
+:global(html.dark) .conversation-section-label { color: #8c9ab2; }
+:global(html.dark) .ai-chat-page .conversation-item { color: #b4bfd3; }
+:global(html.dark) .ai-chat-page .conversation-item:hover { background: rgba(48, 67, 108, .64); border-color: transparent; }
+:global(html.dark) .ai-chat-page .conversation-item.active { color: #c2cbff; background: rgba(55, 74, 124, .82); border-color: transparent; }
+:global(html.dark) .conversation-item-icon { border-color: #3b4d70; color: #aab6ff; background: #202e4a; }
+:global(html.dark) .ai-chat-page .conversation-item-main b,
+:global(html.dark) .ai-chat-page .conversation-item.active .conversation-item-main b { color: inherit; }
+:global(html.dark) .ai-chat-page .conversation-item .conversation-more { background: #151f32; }
+:global(html.dark) .ai-chat-page .conversation-item:hover .conversation-more,
+:global(html.dark) .ai-chat-page .conversation-item.active .conversation-more { background: #283b63; }
+:global(html.dark) .ai-chat-page .chat-shell { background: #182338; border-color: #314057; }
+:global(html.dark) .ai-chat-page .chat-messages { background-color: #152033; }
+:global(html.dark) .ai-chat-page .msg-bubble { border-color: #314057; background: #1d2a41; color: #edf3ff; }
+:global(html.dark) .ai-chat-page .chat-input { background: #182338; border-color: #314057; }
+
+@media (max-width: 760px) {
+  .chat-page-head { min-height: 0; padding: 20px 18px; }
+  .chat-page-head { align-items: flex-start; gap: 14px; }
+  .chat-head-actions { width: 100%; justify-content: space-between; }
+  .chat-head-copy h1 { font-size: 23px; }
+  .ai-chat-page .chat-workspace { grid-template-columns: 1fr; }
+  .ai-chat-page .chat-messages { padding: 18px 14px; }
+  .ai-chat-page .msg-bubble { max-width: calc(100vw - 88px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ai-chat-page .suggestions button { transition: none; }
+  .ai-chat-page .suggestions button:hover { transform: none; }
+}
+
 .chat-history-page {
   min-width: 0;
 }
@@ -693,9 +1062,11 @@ onUnmounted(() => {
 
 @media (max-width: 900px) {
   .chat-workspace {
-    grid-template-columns: 208px minmax(0, 1fr);
+    grid-template-columns: 240px minmax(0, 1fr);
     gap: 10px;
   }
+
+  .ai-chat-page .chat-workspace { grid-template-columns: 240px minmax(0, 1fr); }
 }
 
 @media (max-width: 760px) {

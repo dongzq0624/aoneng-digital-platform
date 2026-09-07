@@ -240,8 +240,14 @@ export const documentApi = {
             onUploadProgress: (event) => onUploadProgress?.(event.total ? Math.round((event.loaded / event.total) * 100) : 0)
         })
     },
-    list: (kbId: number) => request.get<DocumentItem[]>(`/kb/bases/${kbId}/docs`),
+    list: (kbId: number, params?: {keyword?: string; page?: number; pageSize?: number}) =>
+        request.get<PageResponse<DocumentItem> | DocumentItem[]>(`/kb/bases/${kbId}/docs`, {params}),
     get: (id: number) => request.get<DocumentItem>(`/kb/docs/${id}`),
+    parentChunks: (id: number) => request.get<{fileName: string; items: Array<{sequence: number; content: string; tokenCount?: number | null}>}>(`/kb/docs/${id}/parent-chunks`),
+    preview: (id: number) => request.get<Blob>(`/kb/docs/${id}/preview`, {
+        responseType: 'blob',
+        timeout: 30000,
+    }),
     remove: (id: number) => request.delete<{ docId: number; deleted: boolean }>(`/kb/docs/${id}`),
     reindex: (id: number) => request.post<DocumentItem>(`/kb/docs/${id}/reindex`),
 }
@@ -258,7 +264,8 @@ export const ragApi = {
     conversations: (params?: {cursor?: string; pageSize?: number}) => request.get<CursorPage<ChatConversation>>('/rag/conversations', {params}),
     createConversation: (payload: {title: string; kbIds?: number[]}) => request.post<ChatConversation>('/rag/conversations', payload),
     conversation: (id: number) => request.get<ChatConversation>(`/rag/conversations/${id}`),
-    updateConversation: (id: number, payload: {title: string}) => request.patch<ChatConversation>(`/rag/conversations/${id}`, payload),
+    // Conversation updates follow the REST contract: path id + full JSON body.
+    updateConversation: (id: number, payload: {title: string}) => request.put<ChatConversation>(`/rag/conversations/${id}`, payload),
     removeConversation: (id: number) => request.delete<{id: number; deleted: boolean}>(`/rag/conversations/${id}`),
     messages: (id: number, params?: {before?: string; pageSize?: number}) => request.get<CursorPage<ChatHistoryMessage>>(`/rag/conversations/${id}/messages`, {params}),
 }
@@ -280,7 +287,7 @@ export const systemApi = {
     createDepartment: (payload: Partial<Department>) => request.post<Department>('/system/depts', payload),
     updateDepartment: (id: number, payload: Partial<Department>) => request.put<Department>(`/system/depts/${id}`, payload),
     removeDepartment: (id: number) => request.delete<{ id: number; deleted: boolean }>(`/system/depts/${id}`),
-    roles: () => request.get<Role[]>('/system/roles'),
+    roles: (params?: {page?: number; pageSize?: number}) => request.get<PageResponse<Role> | Role[]>('/system/roles', {params}),
     createRole: (payload: Partial<Role>) => request.post<Role>('/system/roles', payload),
     updateRole: (id: number, payload: Partial<Role>) => request.put<Role>(`/system/roles/${id}`, payload),
     removeRole: (id: number) => request.delete<{ id: number; deleted: boolean }>(`/system/roles/${id}`),
@@ -338,6 +345,39 @@ export interface MonitoringRetrievalQuality {
     lowSimilarityQueries: string[]
 }
 
+export interface RagasMetricSummary {
+    samples: number;
+    average: number | null;
+    min: number | null;
+    max: number | null;
+    threshold: number
+}
+
+export interface RagasEvaluationTrend {
+    period: string;
+    faithfulness: number | null;
+    answerRelevancy: number | null;
+    contextPrecision: number | null;
+    contextRecall: number | null
+}
+
+export interface RagasEvaluation {
+    evaluated: number;
+    completed: number;
+    failed: number;
+    passed: number;
+    lastRunAt?: string;
+    from: string;
+    to: string;
+    metrics: {
+        faithfulness: RagasMetricSummary;
+        answerRelevancy: RagasMetricSummary;
+        contextPrecision: RagasMetricSummary;
+        contextRecall: RagasMetricSummary
+    };
+    trend: RagasEvaluationTrend[]
+}
+
 export interface MonitoringDashboard {
     updatedAt: string;
     overview: {
@@ -349,6 +389,7 @@ export interface MonitoringDashboard {
         performance?: Record<string, number>
     };
     retrievalQuality?: MonitoringRetrievalQuality;
+    ragasEvaluation?: RagasEvaluation;
     [key: string]: unknown
 }
 
@@ -357,9 +398,7 @@ export interface DashboardSummary {
     documentCount: number;
     todayQaCount: number;
     recallRate: number;
-    pendingCount: number;
-    recentKbs: Array<KnowledgeBase & { docs?: number }>;
-    todos: Array<{ title: string; type?: string; time?: string; color?: string }>
+    recentKbs: Array<KnowledgeBase & { docs?: number }>
 }
 
 export const monitoringApi = {
@@ -367,8 +406,8 @@ export const monitoringApi = {
         request.get<MonitoringDashboard>('/monitoring/dashboard', {params}),
       overview: (params?: {from?: string; to?: string; kbId?: number; docId?: number; conversationId?: number}) =>
          request.get<{from: string; to: string; stages: MonitoringStage[]; quality: MonitoringQuality; summary: {calls: number; total_ms: number; errors: number; throughput: number}; performance?: Record<string, number>}>('/monitoring/overview', {params}),
-      fileProcessing: (params?: {from?: string; to?: string}) =>
-        request.get<{from: string; to: string; items: FileProcessingItem[]}>('/monitoring/file-processing', {params}),
+    fileProcessing: (params?: {from?: string; to?: string; page?: number; pageSize?: number}) =>
+        request.get<{from: string; to: string; items: FileProcessingItem[]; total: number; page: number; pageSize: number}>('/monitoring/file-processing', {params}),
 }
 
 export interface FileProcessingItem {

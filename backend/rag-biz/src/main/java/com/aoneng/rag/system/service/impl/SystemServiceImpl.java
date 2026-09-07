@@ -20,6 +20,7 @@ import com.aoneng.rag.system.vo.RoleMenuVO;
 import com.aoneng.rag.system.vo.RoleVO;
 import com.aoneng.rag.system.vo.UserMenuVO;
 import com.aoneng.rag.system.vo.UserVO;
+import com.aoneng.rag.common.result.PageResult;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -42,8 +43,15 @@ public class SystemServiceImpl implements SystemService {
     // -------- 用户管理 --------
 
     @Override
-    public List<UserVO> listUsers() {
-        return OrgConvert.INSTANCE.toUserResponses(repo.users());
+    public PageResult<UserVO> listUsers(String keyword, Long deptId, int page, int pageSize) {
+        String normalized = keyword == null ? "" : keyword.trim().toLowerCase();
+        List<UserVO> users = OrgConvert.INSTANCE.toUserResponses(repo.users()).stream()
+                .filter(user -> deptId == null || deptId.equals(user.deptId()))
+                .filter(user -> normalized.isBlank()
+                        || (String.valueOf(user.realName()) + user.employeeNo() + user.username())
+                        .toLowerCase().contains(normalized))
+                .toList();
+        return page(users, page, pageSize);
     }
 
     @Override
@@ -96,9 +104,9 @@ public class SystemServiceImpl implements SystemService {
     // -------- 角色管理 --------
 
     @Override
-    public List<RoleVO> listRoles(String username) {
+    public PageResult<RoleVO> listRoles(String username, int page, int pageSize) {
         requireAdmin(username);
-        return OrgConvert.INSTANCE.toRoleResponses(repo.roles());
+        return page(OrgConvert.INSTANCE.toRoleResponses(repo.roles()), page, pageSize);
     }
 
     @Override
@@ -167,5 +175,12 @@ public class SystemServiceImpl implements SystemService {
     private void requireAdmin(String username) {
         boolean admin = repo.kbScope(username).admin();
         if (!admin) throw new ForbiddenException("仅系统管理员可访问该资源");
+    }
+    private static <T> PageResult<T> page(List<T> rows, int requestedPage, int requestedSize) {
+        int page = Math.max(1, requestedPage);
+        int pageSize = Math.max(1, Math.min(requestedSize, 100));
+        int from = Math.min((page - 1) * pageSize, rows.size());
+        int to = Math.min(from + pageSize, rows.size());
+        return new PageResult<>(rows.size(), page, pageSize, rows.subList(from, to));
     }
 }

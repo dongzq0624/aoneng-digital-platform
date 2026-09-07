@@ -9,6 +9,7 @@ import com.aoneng.rag.common.exception.UnauthorizedException;
 import com.aoneng.rag.infra.security.JwtUtil;
 import com.aoneng.rag.domain.auth.OrgRecords;
 import com.aoneng.rag.application.repository.PlatformRepository;
+import com.aoneng.rag.audit.service.AuditPersistenceService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -21,11 +22,13 @@ public class AuthServiceImpl implements AuthService {
 
     private final JwtUtil jwtUtil;
     private final PlatformRepository repository;
+    private final AuditPersistenceService audit;
     private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
-    public AuthServiceImpl(JwtUtil jwtUtil, PlatformRepository repository) {
+    public AuthServiceImpl(JwtUtil jwtUtil, PlatformRepository repository, AuditPersistenceService audit) {
         this.jwtUtil = jwtUtil;
         this.repository = repository;
+        this.audit = audit;
     }
 
     /**
@@ -48,6 +51,7 @@ public class AuthServiceImpl implements AuthService {
         if (user.status() != null && user.status() == 0) {
             throw new ForbiddenException("用户已停用");
         }
+        audit.record(user.id(), username, "LOGIN", "系统管理", java.util.Map.of("message", "网页登录"), 1);
         return new LoginVO(jwtUtil.issue(user.id(), username), summary(user));
     }
 

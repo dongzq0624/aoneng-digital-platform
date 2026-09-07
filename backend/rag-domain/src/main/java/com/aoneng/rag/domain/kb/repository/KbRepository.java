@@ -97,6 +97,9 @@ public interface KbRepository {
 
     Map<String, Object> findParentChunk(long parentId);
 
+    /** Find all parent chunks belonging to a document, ordered by source sequence. */
+    List<Map<String, Object>> findParentChunksByDoc(long docId);
+
     /** 删除文档的分块。 */
     void deleteChunksByDoc(long docId);
 

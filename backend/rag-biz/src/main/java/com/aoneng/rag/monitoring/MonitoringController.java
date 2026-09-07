@@ -17,32 +17,34 @@ public class MonitoringController {
 
     @GetMapping("/overview")
     public Result<Map<String, Object>> overview(@AuthenticationPrincipal String username,
-                                                @RequestParam(required = false) String from,
-                                                @RequestParam(required = false) String to,
-                                                @RequestParam(required = false) Long kbId,
-                                                @RequestParam(required = false) Long docId,
-                                                @RequestParam(required = false) Long conversationId) {
+                                                @RequestParam(name = "from", required = false) String from,
+                                                @RequestParam(name = "to", required = false) String to,
+                                                @RequestParam(name = "kbId", required = false) Long kbId,
+                                                @RequestParam(name = "docId", required = false) Long docId,
+                                                @RequestParam(name = "conversationId", required = false) Long conversationId) {
         service.requireAdmin(username);
         return Result.ok(service.overview(from, to, kbId, docId, conversationId));
     }
 
     @GetMapping("/dashboard")
     public Result<Map<String, Object>> dashboard(@AuthenticationPrincipal String username,
-                                                  @RequestParam(required = false) String from,
-                                                  @RequestParam(required = false) String to,
-                                                  @RequestParam(required = false) Long kbId,
-                                                  @RequestParam(required = false) Long docId,
-                                                  @RequestParam(required = false) Long conversationId) {
+                                                  @RequestParam(name = "from", required = false) String from,
+                                                  @RequestParam(name = "to", required = false) String to,
+                                                  @RequestParam(name = "kbId", required = false) Long kbId,
+                                                  @RequestParam(name = "docId", required = false) Long docId,
+                                                  @RequestParam(name = "conversationId", required = false) Long conversationId) {
         service.requireAdmin(username);
         return Result.ok(service.dashboard(from, to, kbId, docId, conversationId));
     }
 
     @GetMapping("/file-processing")
     public Result<Map<String, Object>> fileProcessing(@AuthenticationPrincipal String username,
-                                                       @RequestParam(required = false) String from,
-                                                       @RequestParam(required = false) String to) {
+                                                       @RequestParam(name = "from", required = false) String from,
+                                                       @RequestParam(name = "to", required = false) String to,
+                                                       @RequestParam(name = "page", defaultValue = "1") int page,
+                                                       @RequestParam(name = "pageSize", defaultValue = "20") int pageSize) {
         service.requireAdmin(username);
-        return Result.ok(service.fileProcessing(from, to));
+        return Result.ok(service.fileProcessing(from, to, page, pageSize));
     }
 
 }

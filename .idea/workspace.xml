@@ -6,19 +6,52 @@
   <component name="ChangeListManager">
     <list default="true" id="bbcf13ae-cb9e-43a8-8224-323ad3b04ac0" name="更改" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/aoneng/rag/application/chat/ChatServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/aoneng/rag/application/chat/ChatServiceImpl.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/aoneng/rag/application/processing/DocumentProcessorImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/aoneng/rag/application/processing/DocumentProcessorImpl.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/aoneng/rag/application/repository/PlatformRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/aoneng/rag/application/repository/PlatformRepository.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/aoneng/rag/audit/controller/AuditController.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/aoneng/rag/audit/controller/AuditController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/aoneng/rag/audit/service/AuditPersistenceService.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/aoneng/rag/audit/service/AuditPersistenceService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/aoneng/rag/audit/service/AuditService.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/aoneng/rag/audit/service/AuditService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/aoneng/rag/audit/service/impl/AuditServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/aoneng/rag/audit/service/impl/AuditServiceImpl.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/aoneng/rag/auth/service/impl/AuthServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/aoneng/rag/auth/service/impl/AuthServiceImpl.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/aoneng/rag/chat/controller/RagController.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/aoneng/rag/chat/controller/RagController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/aoneng/rag/chat/service/RagChatService.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/aoneng/rag/chat/service/RagChatService.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/aoneng/rag/chat/service/impl/RagChatServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/aoneng/rag/chat/service/impl/RagChatServiceImpl.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/rag-domain/src/main/java/com/aoneng/rag/domain/chat/po/KbChatMessageCitationPO.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/rag-domain/src/main/java/com/aoneng/rag/domain/chat/po/KbChatMessageCitationPO.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/rag-domain/src/main/java/com/aoneng/rag/domain/chat/repository/ChatRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/rag-domain/src/main/java/com/aoneng/rag/domain/chat/repository/ChatRepository.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/rag-domain/src/main/resources/mapper/KbChatMessageCitationMapper.xml" beforeDir="false" afterPath="$PROJECT_DIR$/backend/rag-domain/src/main/resources/mapper/KbChatMessageCitationMapper.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/aoneng/rag/dashboard/service/impl/DashboardServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/aoneng/rag/dashboard/service/impl/DashboardServiceImpl.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/aoneng/rag/dashboard/vo/DashboardSummaryVO.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/aoneng/rag/dashboard/vo/DashboardSummaryVO.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/aoneng/rag/doc/controller/KnowledgeBaseController.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/aoneng/rag/doc/controller/KnowledgeBaseController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/aoneng/rag/doc/service/KnowledgeBaseService.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/aoneng/rag/doc/service/KnowledgeBaseService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/aoneng/rag/doc/service/impl/KnowledgeBaseServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/aoneng/rag/doc/service/impl/KnowledgeBaseServiceImpl.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/aoneng/rag/monitoring/MonitoringController.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/aoneng/rag/monitoring/MonitoringController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/aoneng/rag/monitoring/MonitoringService.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/aoneng/rag/monitoring/MonitoringService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/aoneng/rag/system/controller/SystemController.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/aoneng/rag/system/controller/SystemController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/aoneng/rag/system/service/SystemService.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/aoneng/rag/system/service/SystemService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/aoneng/rag/system/service/impl/SystemServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/aoneng/rag/system/service/impl/SystemServiceImpl.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/rag-biz/src/main/resources/db/migration/V4__seed_platform_defaults.sql" beforeDir="false" afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/resources/db/migration/V4__seed_platform_defaults.sql" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/rag-domain/src/main/java/com/aoneng/rag/domain/audit/repository/AuditRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/rag-domain/src/main/java/com/aoneng/rag/domain/audit/repository/AuditRepository.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/rag-domain/src/main/java/com/aoneng/rag/domain/kb/mapper/KbChunkMapper.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/rag-domain/src/main/java/com/aoneng/rag/domain/kb/mapper/KbChunkMapper.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/rag-domain/src/main/java/com/aoneng/rag/domain/kb/repository/KbRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/rag-domain/src/main/java/com/aoneng/rag/domain/kb/repository/KbRepository.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/rag-domain/src/main/resources/mapper/KbChunkMapper.xml" beforeDir="false" afterPath="$PROJECT_DIR$/backend/rag-domain/src/main/resources/mapper/KbChunkMapper.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/rag-infrastructure/src/main/java/com/aoneng/rag/infra/advice/ResultEnvelopeAdvice.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/rag-infrastructure/src/main/java/com/aoneng/rag/infra/advice/ResultEnvelopeAdvice.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/rag-infrastructure/src/main/java/com/aoneng/rag/infra/chunk/ModelTokenizer.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/rag-infrastructure/src/main/java/com/aoneng/rag/infra/chunk/ModelTokenizer.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/backend/rag-infrastructure/src/main/java/com/aoneng/rag/infra/llm/DashScopeLlmService.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/rag-infrastructure/src/main/java/com/aoneng/rag/infra/llm/DashScopeLlmService.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/rag-infrastructure/src/main/java/com/aoneng/rag/infra/repository/ChatRepositoryImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/rag-infrastructure/src/main/java/com/aoneng/rag/infra/repository/ChatRepositoryImpl.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/rag-infrastructure/src/main/java/com/aoneng/rag/infra/repository/AuditRepositoryImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/rag-infrastructure/src/main/java/com/aoneng/rag/infra/repository/AuditRepositoryImpl.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/rag-infrastructure/src/main/java/com/aoneng/rag/infra/repository/KbRepositoryImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/rag-infrastructure/src/main/java/com/aoneng/rag/infra/repository/KbRepositoryImpl.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/rag-infrastructure/src/test/java/com/aoneng/rag/infra/chunk/TextChunkerTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/rag-infrastructure/src/test/java/com/aoneng/rag/infra/chunk/TextChunkerTest.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/package-lock.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/package.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/api.ts" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/api.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/components/monitoring/MonitoringDataTable.vue" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/components/monitoring/MonitoringDataTable.vue" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/main.ts" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/main.ts" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/frontend/src/styles.scss" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/styles.scss" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/src/types.ts" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/types.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/src/utils/sse.ts" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/utils/sse.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/views/audit/Audit.vue" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/views/audit/Audit.vue" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/frontend/src/views/chat/Chat.vue" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/views/chat/Chat.vue" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/views/dashboard/Dashboard.vue" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/views/dashboard/Dashboard.vue" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/views/kb/KnowledgeBaseDetail.vue" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/views/kb/KnowledgeBaseDetail.vue" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/views/kb/KnowledgeBases.vue" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/views/kb/KnowledgeBases.vue" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/views/layout/AppLayout.vue" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/views/layout/AppLayout.vue" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/views/monitoring/FileProcessing.vue" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/views/monitoring/FileProcessing.vue" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/views/monitoring/Monitoring.vue" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/views/monitoring/Monitoring.vue" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/views/system/Roles.vue" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/views/system/Roles.vue" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/views/system/Users.vue" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/views/system/Users.vue" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/sql/rag.sql" beforeDir="false" afterPath="$PROJECT_DIR$/sql/rag.sql" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -133,7 +166,9 @@
       <workItem from="1788398654979" duration="16783000" />
       <workItem from="1788447328677" duration="110000" />
       <workItem from="1788484345238" duration="9111000" />
-      <workItem from="1788494501012" duration="10527000" />
+      <workItem from="1788494501012" duration="18758000" />
+      <workItem from="1788594078253" duration="15652000" />
+      <workItem from="1788744341596" duration="23421000" />
     </task>
     <servers />
   </component>
@@ -154,5 +189,17 @@
         </entry>
       </map>
     </option>
+  </component>
+  <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <breakpoints>
+        <line-breakpoint enabled="true" type="javascript">
+          <url>file://$PROJECT_DIR$/frontend/src/views/chat/Chat.vue</url>
+          <line>16</line>
+          <properties lambdaOrdinal="-1" />
+          <option name="timeStamp" value="1" />
+        </line-breakpoint>
+      </breakpoints>
+    </breakpoint-manager>
   </component>
 </project>

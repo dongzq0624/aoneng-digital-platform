@@ -30,6 +30,13 @@ import java.util.function.Consumer;
 @Component
 public class DashScopeLlmService implements LlmService {
 
+    private static final String MARKDOWN_RESPONSE_INSTRUCTION = "所有回答必须使用结构化 Markdown 格式。"
+            + "请根据问题类型合理使用标题层级、段落、编号列表、无序列表、表格和代码块，以清晰呈现内容结构。"
+            + "标题层级必须连续，列表格式必须统一，代码必须使用带语言标识的围栏代码块（例如 ```java）。"
+            + "除非用户明确要求，否则不要输出无结构的连续文本、HTML 或其他格式；无法确定合适结构时，"
+            + "优先采用“结论、分析、建议”等清晰的分层组织方式。"
+            + "简单问题也至少使用一个清晰的段落或列表，避免为了格式化而添加无意义标题。";
+
     private final RestClient client;
     private final RestClient rerankClient;
     private final WebClient webClient;
@@ -158,7 +165,8 @@ public class DashScopeLlmService implements LlmService {
     @Override
     public String chat(String question, String context) {
         requireKey();
-        String prompt = "仅依据以下企业知识库上下文回答问题。每条已标记【来源:文档ID-分块ID】的上下文，"
+        String prompt = MARKDOWN_RESPONSE_INSTRUCTION + "\n"
+                + "仅依据以下企业知识库上下文回答问题。每条已标记【来源:文档ID-分块ID】的上下文，"
                 + "如被用于回答事实，必须在对应句末原样标注该来源；不得标注未提供的来源，也不要输出通用的[引用]。"
                 + "如果上下文不足，请明确说明未找到相关信息。\n上下文：\n" + context + "\n问题：" + question;
         java.util.Map<String, Object> body = java.util.Map.of("model", chatModel,
@@ -175,7 +183,8 @@ public class DashScopeLlmService implements LlmService {
                            BooleanSupplier cancelled) {
         requireKey();
         Objects.requireNonNull(onDelta, "onDelta");
-        String prompt = "仅依据以下企业知识库上下文回答问题。每条已标记[source:文档ID-分块ID]的上下文，"
+        String prompt = MARKDOWN_RESPONSE_INSTRUCTION + "\n"
+                + "仅依据以下企业知识库上下文回答问题。每条已标记[source:文档ID-分块ID]的上下文，"
                 + "如被用于回答事实，必须在对应句末原样标注该来源；不得标注未提供的来源，也不要输出通用的[引用]。"
                 + "如果上下文不足，请明确说明未找到相关信息。\n上下文：\n" + (context == null ? "" : context)
                 + "\n问题：" + (question == null ? "" : question);
@@ -223,7 +232,8 @@ public class DashScopeLlmService implements LlmService {
     @Override
     public Flux<String> streamChatFlux(String question, String context) {
         requireKey();
-        String prompt = "仅依据以下企业知识库上下文回答问题。每条已标记[source:文档ID-分块ID]的上下文，"
+        String prompt = MARKDOWN_RESPONSE_INSTRUCTION + "\n"
+                + "仅依据以下企业知识库上下文回答问题。每条已标记[source:文档ID-分块ID]的上下文，"
                 + "如被用于回答事实，必须在对应句末原样标注该来源；不得标注未提供的来源，也不要输出通用的[引用]。"
                 + "如果上下文不足，请明确说明未找到相关信息。\n上下文：\n" + (context == null ? "" : context)
                 + "\n问题：" + (question == null ? "" : question);

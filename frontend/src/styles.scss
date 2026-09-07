@@ -1173,6 +1173,14 @@ body {
     }
 }
 
+/* Keep data tables visually consistent across all management screens. */
+.el-table th.el-table__cell,
+.el-table td.el-table__cell,
+.el-table th.el-table__cell .cell,
+.el-table td.el-table__cell .cell {
+    text-align: center !important;
+}
+
 .audit-table,
 .detail-table {
     border: 1px solid var(--border-subtle);
@@ -1182,7 +1190,7 @@ body {
 
 .el-pagination {
     margin-top: var(--space-4);
-    justify-content: flex-end;
+    justify-content: center;
     font-variant-numeric: tabular-nums;
 }
 
@@ -1709,6 +1717,7 @@ html.dark .menu-node code { color: var(--primary-hover); background: var(--prima
     .panel-title { align-items: flex-start; flex-wrap: wrap; gap: 10px; }
     .panel-title > .el-input { width: 100% !important; }
     .panel-title > .el-button { width: 100%; }
+    .table-pagination { justify-content: center; overflow-x: auto; }
 
     .kb-cards,
     .dash-grid,
@@ -2077,6 +2086,15 @@ button { border: 0; background: none; }
 .el-table .cell { line-height: 1.45; }
 .el-table__row { transition: background-color 160ms ease; }
 .el-pagination { margin-top: 16px; font-variant-numeric: tabular-nums; }
+.table-pagination {
+    display: flex;
+    justify-content: center;
+    min-height: 40px;
+    padding: 12px 2px 0;
+}
+.table-pagination .el-pagination { margin-top: 0; }
+.user-filter .el-input { width: min(280px, 100%) !important; }
+.panel-title > .el-input { width: min(280px, 100%) !important; }
 .el-tag { border-radius: 4px; font-weight: 600; }
 .el-tag--success { --el-tag-bg-color: #ecfdf5; --el-tag-border-color: #b7ebd5; --el-tag-text-color: #087858; }
 .el-tag--warning { --el-tag-bg-color: #fff8e8; --el-tag-border-color: #f3daa2; --el-tag-text-color: #a86409; }
@@ -2326,4 +2344,176 @@ button { border: 0; background: none; }
 
 @media (max-width: 760px) {
     .sidebar-flyout { display: none; }
+}
+
+/* Arco-inspired visual refresh: crisp workspace surfaces with a vivid blue accent. */
+:root {
+    --canvas: #f5f7fb;
+    --surface: #ffffff;
+    --surface-subtle: #f7f8fa;
+    --surface-selected: #e8f3ff;
+    --ink: #1d2129;
+    --text-strong: #1d2129;
+    --muted: #86909c;
+    --text-muted: #86909c;
+    --line: #e5e6eb;
+    --border-subtle: #e5e6eb;
+    --primary: #3370ff;
+    --primary-hover: #1d5cff;
+    --primary-soft: #e8f3ff;
+    --nav-surface: #ffffff;
+    --nav-surface-hover: #f2f3f5;
+    --nav-text: #4e5969;
+    --nav-text-active: #3370ff;
+    --focus-ring: rgba(51, 112, 255, .3);
+    --card-bg: #ffffff;
+    --card-border: #e5e6eb;
+    --card-radius: 10px;
+    --card-shadow: 0 6px 20px rgba(31, 35, 41, .055);
+    --shadow-xs: 0 1px 3px rgba(31, 35, 41, .06);
+    --shadow-sm: 0 6px 18px rgba(31, 35, 41, .08);
+    --shadow-md: 0 14px 36px rgba(31, 35, 41, .14);
+    --teal: var(--primary);
+    --teal-deep: var(--primary-hover);
+    --soft-green: var(--primary-soft);
+}
+
+html, body { background: var(--canvas); color: var(--ink); }
+.layout { background: var(--canvas); }
+.side {
+    width: 216px;
+    background: var(--nav-surface);
+    border-right: 1px solid var(--line);
+    box-shadow: 2px 0 12px rgba(31, 35, 41, .05);
+}
+.brand > span, .login-logo span {
+    background: linear-gradient(135deg, #3370ff 12%, #00c2ff 88%);
+    box-shadow: 0 6px 14px rgba(51, 112, 255, .28);
+}
+.brand b { color: var(--ink); letter-spacing: .01em; }
+.brand small { color: var(--muted); }
+.menu-item { border-radius: 8px; }
+.menu-item.router-link-active {
+    background: var(--primary-soft);
+    color: var(--primary);
+    box-shadow: inset 3px 0 0 var(--primary);
+}
+.menu-item:hover { background: var(--nav-surface-hover); color: var(--ink); }
+.menu-group.is-active .menu-group-trigger { color: var(--primary); background: var(--nav-surface-hover); }
+.menu-children { border-left-color: var(--line); }
+.main { background: var(--canvas); }
+.top {
+    height: 62px;
+    background: rgba(255, 255, 255, .94);
+    border-bottom-color: var(--line);
+    box-shadow: 0 1px 8px rgba(31, 35, 41, .05);
+    backdrop-filter: blur(12px);
+}
+.search .el-input__wrapper {
+    background: #f2f3f5;
+    border-radius: 8px;
+}
+.theme-toggle, .bell, .user-menu { border-radius: 9px; }
+.theme-toggle:hover, .bell:hover, .user-menu:hover { background: #f2f3f5; }
+.workspace-tabs {
+    top: 62px;
+    height: 44px;
+    background: rgba(255, 255, 255, .96);
+    border-bottom-color: var(--line);
+}
+.workspace-tab.active { background: var(--primary-soft); border-bottom-color: var(--primary); }
+.page.page-fluid { padding: 20px 20px 52px; }
+.page-head h1 { font-size: 26px; letter-spacing: -.01em; }
+.page-head p:last-child { color: var(--muted); }
+.panel, .kb-card, .chat-shell, .detail-summary > div, .profile-summary, .profile-details,
+.audit-summary-item, .filter-bar:not(.audit-filter-bar) {
+    border-color: var(--card-border);
+    border-radius: var(--card-radius);
+    box-shadow: var(--card-shadow);
+}
+.panel:hover, .kb-card:hover { border-color: #c7d7ff; box-shadow: var(--shadow-sm); }
+.el-button { border-radius: 8px; }
+.el-button--primary {
+    --el-button-bg-color: var(--primary);
+    --el-button-border-color: var(--primary);
+    --el-button-hover-bg-color: var(--primary-hover);
+    --el-button-hover-border-color: var(--primary-hover);
+    box-shadow: 0 4px 12px rgba(51, 112, 255, .2);
+}
+.el-input__wrapper, .el-select__wrapper, .el-textarea__inner {
+    border-radius: 8px;
+    box-shadow: 0 0 0 1px #c9cdd4 inset;
+}
+.el-input__wrapper:hover, .el-select__wrapper:hover { box-shadow: 0 0 0 1px #9bb8ff inset; }
+.el-table { --el-table-header-bg-color: #f2f3f5; --el-table-row-hover-bg-color: #f2f7ff; --el-table-border-color: var(--line); }
+.el-table th.el-table__cell { color: #4e5969; }
+.el-table td.el-table__cell { color: #4e5969; }
+.el-tag { border-radius: 6px; }
+.hero {
+    border-color: #1f4fb9;
+    background: linear-gradient(120deg, #142d66 0%, #2456c7 58%, #087f9b 100%);
+    box-shadow: 0 14px 30px rgba(27, 73, 166, .22);
+}
+.stat { border-color: var(--card-border); box-shadow: var(--card-shadow); }
+.stat:hover { transform: translateY(-2px); box-shadow: var(--shadow-sm); }
+.stat > span, .kb-icon, .large-kb-icon, .msg-avatar { background: var(--primary-soft); color: var(--primary); }
+.chat-shell { box-shadow: var(--card-shadow); }
+.chat-input { border-top-color: var(--line); }
+.login-page { background: var(--canvas); }
+.login-art { background: linear-gradient(135deg, #101d3d 0%, #1b438e 58%, #0c8da2 100%); }
+
+html.dark {
+    --canvas: #0f1726;
+    --surface: #182338;
+    --surface-subtle: #202d43;
+    --surface-selected: #263861;
+    --ink: #edf3ff;
+    --text-strong: #edf3ff;
+    --muted: #aebbd0;
+    --text-muted: #aebbd0;
+    --line: #314057;
+    --border-subtle: #314057;
+    --card-bg: #182338;
+    --card-border: #314057;
+    --card-shadow: 0 6px 20px rgba(0, 0, 0, .26);
+    --nav-surface: #111a2d;
+    --nav-surface-hover: rgba(255, 255, 255, .08);
+    --nav-text: #a9b7d0;
+    --nav-text-active: #ffffff;
+}
+html.dark .top, html.dark .workspace-tabs { background: rgba(24, 35, 56, .96); }
+html.dark .search .el-input__wrapper, html.dark .theme-toggle:hover,
+html.dark .bell:hover, html.dark .user-menu:hover { background: var(--surface-subtle); }
+html.dark .panel:hover, html.dark .kb-card:hover { border-color: #52679e; }
+html.dark .brand b { color: #fff; }
+
+@media (max-width: 1100px) {
+    .page.page-fluid { padding-inline: 24px; }
+}
+
+@media (max-width: 760px) {
+    .page.page-fluid { padding-inline: 14px; }
+    .top { height: 56px; }
+    .workspace-tabs { top: 56px; }
+    .page-head h1 { font-size: 23px; }
+    .panel:hover, .kb-card:hover, .stat:hover { transform: none; }
+}
+
+/* Keep the date range controls compact inside the filter bars. */
+.processing-filter .el-date-editor.processing-date-picker,
+.monitoring-filter .el-date-editor.monitoring-date-picker {
+    width: 360px !important;
+    min-width: 360px !important;
+    max-width: 360px !important;
+    flex: 0 0 360px !important;
+}
+
+@media (max-width: 760px) {
+    .processing-filter .el-date-editor.processing-date-picker,
+    .monitoring-filter .el-date-editor.monitoring-date-picker {
+        width: 100% !important;
+        min-width: 0 !important;
+        max-width: 100% !important;
+        flex-basis: 100% !important;
+    }
 }

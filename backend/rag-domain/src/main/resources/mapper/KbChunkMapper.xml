@@ -41,6 +41,13 @@
          WHERE id = #{id}
     </select>
 
+    <select id="selectParentsByDoc" resultType="java.util.LinkedHashMap">
+        SELECT id, seq, content, token_count AS "tokenCount"
+          FROM kb_parent_chunk
+         WHERE doc_id = #{docId}
+         ORDER BY seq ASC, id ASC
+    </select>
+
     <delete id="deleteByDoc">
         DELETE FROM kb_chunk WHERE doc_id = #{docId}
     </delete>

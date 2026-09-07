@@ -2,6 +2,7 @@ package com.aoneng.rag.infra.advice;
 
 import com.aoneng.rag.common.result.Result;
 import org.springframework.core.MethodParameter;
+import org.springframework.core.io.Resource;
 import org.springframework.http.MediaType;
 import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.http.server.ServerHttpRequest;
@@ -28,6 +29,9 @@ public class ResultEnvelopeAdvice implements ResponseBodyAdvice<Object> {
                                   ServerHttpRequest request, ServerHttpResponse response) {
         if (body instanceof Result<?>) return body;
         if (body == null) return Result.ok();
+        // Binary/file responses must reach their native message converter unchanged.
+        // Wrapping a Resource in Result causes ResourceHttpMessageConverter to fail.
+        if (body instanceof Resource) return body;
         // Skip SSE / streaming responses so EventSource can parse them.
         String contentType = response.getHeaders().getFirst("Content-Type");
         if (contentType != null && contentType.startsWith(MediaType.TEXT_EVENT_STREAM_VALUE)) {

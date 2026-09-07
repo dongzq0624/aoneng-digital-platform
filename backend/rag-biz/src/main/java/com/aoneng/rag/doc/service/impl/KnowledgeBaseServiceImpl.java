@@ -2,11 +2,13 @@ package com.aoneng.rag.doc.service.impl;
 
 import com.aoneng.rag.application.repository.KbScope;
 import com.aoneng.rag.application.repository.PlatformRepository;
+import com.aoneng.rag.audit.service.AuditPersistenceService;
 import com.aoneng.rag.observability.RagObservability;
 import com.aoneng.rag.application.processing.DocumentProcessor;
 import com.aoneng.rag.common.exception.BusinessValidationException;
 import com.aoneng.rag.common.exception.ForbiddenException;
 import com.aoneng.rag.common.exception.ResourceNotFoundException;
+import com.aoneng.rag.common.result.PageResult;
 import com.aoneng.rag.doc.dto.CreateKnowledgeBaseDTO;
 import com.aoneng.rag.doc.dto.UpdateAllowedDepartmentsDTO;
 import com.aoneng.rag.doc.dto.UpdateKnowledgeBaseDTO;
@@ -14,6 +16,7 @@ import com.aoneng.rag.doc.service.KnowledgeBaseService;
 import com.aoneng.rag.doc.vo.AllowedDepartmentsVO;
 import com.aoneng.rag.doc.vo.KnowledgeBaseDocumentVO;
 import com.aoneng.rag.doc.vo.KnowledgeBaseVO;
+import com.aoneng.rag.doc.vo.DocumentParentChunksVO;
 import com.aoneng.rag.infra.parse.DocParser;
 import com.aoneng.rag.infra.storage.ObjectStorage;
 import com.aoneng.rag.application.convert.KbConvert;
@@ -50,17 +53,20 @@ public class KnowledgeBaseServiceImpl implements KnowledgeBaseService {
     private final DocParser parser;
     private final DocumentProcessor documentProcessor;
     private final RagObservability observability;
+    private final AuditPersistenceService audit;
 
     public KnowledgeBaseServiceImpl(PlatformRepository repo,
                                     ObjectStorage storage,
                                     DocParser parser,
                                     DocumentProcessor documentProcessor,
-                                    RagObservability observability) {
+                                    RagObservability observability,
+                                    AuditPersistenceService audit) {
         this.repo = repo;
         this.storage = storage;
         this.parser = parser;
         this.documentProcessor = documentProcessor;
         this.observability = observability;
+        this.audit = audit;
         // 桶初始化由 MinioProperties 配合启动钩子处理；此处不再主动调用。
     }
 
@@ -136,9 +142,19 @@ public class KnowledgeBaseServiceImpl implements KnowledgeBaseService {
     // -------- Documents --------
 
     @Override
-    public List<KnowledgeBaseDocumentVO> listDocuments(String username, long kbId) {
+    public PageResult<KnowledgeBaseDocumentVO> listDocuments(String username, long kbId, String keyword,
+                                                             int page, int pageSize) {
         requireReadableBase(kbId, requireScope(username));
-        return KbConvert.INSTANCE.toDocumentResponses(repo.docs(kbId));
+        String normalized = keyword == null ? "" : keyword.trim().toLowerCase(Locale.ROOT);
+        List<KnowledgeBaseDocumentVO> documents = KbConvert.INSTANCE.toDocumentResponses(repo.docs(kbId)).stream()
+                .filter(document -> normalized.isBlank()
+                        || String.valueOf(document.fileName()).toLowerCase(Locale.ROOT).contains(normalized))
+                .toList();
+        int safePage = Math.max(1, page);
+        int safeSize = Math.max(1, Math.min(pageSize, 100));
+        int from = Math.min((safePage - 1) * safeSize, documents.size());
+        int to = Math.min(from + safeSize, documents.size());
+        return new PageResult<>(documents.size(), safePage, safeSize, documents.subList(from, to));
     }
 
     @Override
@@ -174,6 +190,8 @@ public class KnowledgeBaseServiceImpl implements KnowledgeBaseService {
                 if (!documentProcessor.start(docId, kbId, objectKey)) {
                     throw new IllegalStateException("文档处理任务已存在");
                 }
+                audit.record(scope.userId(), username, "DOC_UPLOAD", "知识库",
+                        Map.of("file", originalName, "documentId", docId, "kbId", kbId), 1);
                 return KbConvert.INSTANCE.toDocumentResponse(repo.doc(docId));
             } catch (Exception storageFailure) {
                 observability.record("object.upload", System.nanoTime() - storageStarted, false,
@@ -207,6 +225,56 @@ public class KnowledgeBaseServiceImpl implements KnowledgeBaseService {
     }
 
     @Override
+    public DocumentParentChunksVO listParentChunks(String username, long docId) {
+        Map<String, Object> document = repo.doc(docId);
+        long kbId = longValue(document.get("kbId"));
+        requireReadableBase(kbId, requireScope(username));
+        List<DocumentParentChunksVO.ParentChunkVO> items = repo.parentChunks(docId).stream()
+                .map(row -> new DocumentParentChunksVO.ParentChunkVO(
+                        (int) longValue(row.get("seq")) + 1,
+                        String.valueOf(row.getOrDefault("content", "")),
+                        row.get("tokenCount") instanceof Number n ? n.intValue() : null))
+                .toList();
+        return new DocumentParentChunksVO(
+                String.valueOf(document.getOrDefault("fileName", "未命名文件")), items);
+    }
+
+    @Override
+    public KnowledgeBaseService.DocumentPreview previewDocument(String username, long docId) {
+        Map<String, Object> document = repo.doc(docId);
+        long kbId = longValue(document.get("kbId"));
+        requireReadableBase(kbId, requireScope(username));
+        String fileType = String.valueOf(document.getOrDefault("fileType", "")).toLowerCase(Locale.ROOT);
+        String contentType = previewContentType(fileType);
+        if (contentType == null) {
+            throw new BusinessValidationException("该文件类型暂不支持在线预览，请下载后查看");
+        }
+        String objectKey = String.valueOf(document.getOrDefault("objectKey", ""));
+        if (objectKey.isBlank() || "null".equalsIgnoreCase(objectKey)) {
+            throw new ResourceNotFoundException("文件内容不存在");
+        }
+        try {
+            InputStream stream = storage.download(objectKey);
+            Long storedSize = longValue(document.get("fileSize"));
+            long size = storedSize == null ? 0L : storedSize;
+            return new KnowledgeBaseService.DocumentPreview(stream,
+                    String.valueOf(document.getOrDefault("fileName", "document")), contentType, size);
+        } catch (RuntimeException failure) {
+            throw new ResourceNotFoundException("文件内容暂时无法预览");
+        }
+    }
+
+    private String previewContentType(String fileType) {
+        return switch (fileType) {
+            case "pdf" -> "application/pdf";
+            case "jpg", "jpeg" -> "image/jpeg";
+            case "png" -> "image/png";
+            case "txt", "md" -> "text/plain; charset=UTF-8";
+            default -> null;
+        };
+    }
+
+    @Override
     public void deleteDocument(String username, long docId) {
         Map<String, Object> document = repo.doc(docId);
         long kbId = longValue(document.get("kbId"));
@@ -214,6 +282,8 @@ public class KnowledgeBaseServiceImpl implements KnowledgeBaseService {
         documentProcessor.deleteIndex(docId);
         storage.delete(String.valueOf(document.get("objectKey")));
         repo.deleteDoc(docId);
+        audit.record(requireScope(username).userId(), username, "DOC_DELETE", "知识库",
+                Map.of("documentId", docId, "kbId", kbId), 1);
     }
 
     @Override

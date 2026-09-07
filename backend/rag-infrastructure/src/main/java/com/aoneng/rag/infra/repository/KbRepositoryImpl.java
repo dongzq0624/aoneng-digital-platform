@@ -220,6 +220,11 @@ public class KbRepositoryImpl implements KbRepository {
     }
 
     @Override
+    public List<Map<String, Object>> findParentChunksByDoc(long docId) {
+        return chunkMapper.selectParentsByDoc(docId);
+    }
+
+    @Override
     public void deleteChunksByDoc(long docId) {
         chunkMapper.deleteByDoc(docId);
         chunkMapper.deleteParentsByDoc(docId);

@@ -16,5 +16,5 @@ public interface AuditRepository {
     /**
      * 插入审计日志。
      */
-    void insert(String username, String action, String module, String detailJson, int result);
+    void insert(Long userId, String username, String action, String module, String detailJson, int result);
 }

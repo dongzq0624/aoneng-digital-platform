@@ -6,10 +6,12 @@
         <p>管理企业账号、部门归属与角色权限。</p></div>
       <el-button type="primary" @click="openCreate">新增用户</el-button>
     </div>
-    <div class="filter-bar">
+    <div class="filter-bar user-filter">
       <el-input v-model="keyword" placeholder="搜索姓名 / 工号" clearable style="width:260px"/>
-      <span class="filter-count">共 {{ filtered.length }} 位员工</span></div>
-    <el-table :data="filtered" class="audit-table" v-loading="loading">
+      <el-button type="primary" plain @click="applyFilters">查询</el-button>
+      <span class="filter-count">共 {{ total }} 位员工</span></div>
+    <el-table :data="rows" class="audit-table" v-loading="loading">
+      <el-table-column type="index" label="序号" width="70" align="center" :index="rowNumber" />
       <el-table-column label="员工" min-width="220">
         <template #default="{row}">
           <div class="table-user"><span>{{ row.name.slice(0, 1) }}</span>
@@ -35,6 +37,11 @@
         </template>
       </el-table-column>
     </el-table>
+    <div class="table-pagination">
+      <el-pagination v-model:current-page="page" v-model:page-size="pageSize" :total="total"
+                     :page-sizes="[10, 20, 50]" layout="total, sizes, prev, pager, next, jumper"
+                     @current-change="load" @size-change="handleSizeChange" />
+    </div>
 
     <el-dialog v-model="dialogVisible" :title="editing ? '编辑用户' : '新增用户'" width="460px" destroy-on-close>
       <el-form :model="form" label-width="90px">
@@ -95,9 +102,12 @@ const saving = ref(false);
 const dialogVisible = ref(false);
 const editing = ref(false)
 const rows = ref<UserRow[]>([]);
+const page = ref(1);
+const pageSize = ref(20);
+const total = ref(0);
 const departments = ref<Department[]>([])
 const form = reactive<UserForm>({realName: '', employeeNo: '', username: '', deptId: undefined, enabled: true})
-const filtered = computed(() => rows.value.filter(r => !keyword.value || `${r.name}${r.employeeNo}`.includes(keyword.value)))
+const filtered = computed(() => rows.value)
 const departmentOptions = computed(() => {
   const byParent = new Map<number, Department[]>();
   departments.value.forEach(d => {
@@ -119,28 +129,47 @@ const departmentOptions = computed(() => {
 async function load() {
   loading.value = true
   try {
-    const [users, depts] = await Promise.all([systemApi.users(), systemApi.departments()])
-    const items: any[] = Array.isArray(users.data) ? users.data : users.data.items
+    const [users, depts] = await Promise.all([systemApi.users({keyword: keyword.value || undefined, page: page.value, pageSize: pageSize.value}), systemApi.departments()])
+    const payload: any = Array.isArray(users.data) ? {items: users.data, total: users.data.length} : users.data
+    const items: any[] = payload.items || []
+    const departmentItems = (Array.isArray(depts.data) ? depts.data : []).map((d: any) => ({
+      ...d,
+      parentId: d.parentId ?? d.parentid
+    })) as Department[]
+    const departmentById = new Map(departmentItems.map(dept => [Number(dept.id), dept.name]))
+    total.value = Number(payload.total ?? items.length)
     rows.value = items.map(item => ({
       id: item.id,
       name: item.name || item.realName || item.realname,
       employeeNo: item.employeeNo || item.employeeno,
       username: item.username,
-      dept: item.dept || `部门 ${item.deptId ?? item.deptid ?? '-'}`,
+      dept: departmentName(item, departmentById),
       deptId: item.deptId ?? item.deptid,
       role: item.role || '普通员工',
       status: item.status ?? 1
     }))
-    departments.value = (Array.isArray(depts.data) ? depts.data : []).map((d: any) => ({
-      ...d,
-      parentId: d.parentId ?? d.parentid
-    }))
+    departments.value = departmentItems
   } catch (error) {
     ElMessage.error(error instanceof Error ? error.message : '用户和部门加载失败')
   } finally {
     loading.value = false
   }
 }
+
+function departmentName(item: any, departmentById: Map<number, string>): string {
+  const deptId = item.deptId ?? item.deptid
+  const rawDept = item.dept ?? item.deptName ?? item.deptname ?? item.departmentName ?? item.departmentname
+  if (typeof rawDept === 'string' && rawDept.trim()) return rawDept.trim()
+  if (rawDept && typeof rawDept === 'object' && typeof rawDept.name === 'string' && rawDept.name.trim()) {
+    return rawDept.name.trim()
+  }
+  const mapped = deptId == null ? undefined : departmentById.get(Number(deptId))
+  return mapped || (deptId == null ? '未分配部门' : `部门 ${deptId}`)
+}
+
+function applyFilters() { page.value = 1; load() }
+function handleSizeChange(size: number) { pageSize.value = size; page.value = 1; load() }
+function rowNumber(index: number) { return (page.value - 1) * pageSize.value + index + 1 }
 
 onMounted(load)
 

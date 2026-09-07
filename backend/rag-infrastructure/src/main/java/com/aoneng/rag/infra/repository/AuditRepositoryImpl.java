@@ -22,8 +22,9 @@ public class AuditRepositoryImpl implements AuditRepository {
     }
 
     @Override
-    public void insert(String username, String action, String module, String detailJson, int result) {
+    public void insert(Long userId, String username, String action, String module, String detailJson, int result) {
         AuditLogPO p = new AuditLogPO();
+        p.setUserId(userId);
         p.setUsername(username);
         p.setAction(action);
         p.setModule(module);

@@ -22,7 +22,7 @@
         <div><small>{{ item.label }}</small><b>{{ item.value }}</b><em>{{ item.delta }}</em></div>
       </div>
     </div>
-    <div class="dash-grid">
+    <div class="dash-grid dashboard-knowledge-grid">
       <section class="panel">
         <div class="panel-title">
           <div><h3>最近使用的知识库</h3><small>快速进入你关注的内容</small></div>
@@ -34,17 +34,6 @@
             <strong>{{ kb.updated }}</strong></div>
         </div>
       </section>
-      <section class="panel">
-        <div class="panel-title">
-          <div><h3>我的待办 <i>{{ stats.pendingCount }}</i></h3><small>需要你处理的事项</small></div>
-          <a>查看全部 →</a></div>
-        <div class="todo-list">
-          <div class="todo" v-for="item in todos" :key="item.title"><span :class="item.color"></span>
-            <div><b>{{ item.title }}</b><small>{{ item.type }} · {{ item.time }}</small></div>
-            <button @click="done(item.title)">处理 →</button>
-          </div>
-        </div>
-      </section>
     </div>
   </div>
 </template>
@@ -52,8 +41,9 @@
 import {ArrowRight, ChatDotRound, Collection, Document, FolderOpened, Histogram, Reading} from '@element-plus/icons-vue';
 import {ElMessage} from 'element-plus';
 import {authApi, dashboardApi} from '../../api';
+import {formatBeijingTime} from '../../utils/datetime';
 
-const stats = reactive({kb: 0, recallRate: 0, pendingCount: 0});
+const stats = reactive({kb: 0, recallRate: 0});
 const statCards = reactive([{label: '知识库空间', value: '0', delta: '接口统计', icon: FolderOpened}, {
   label: '文档总量',
   value: '0',
@@ -66,17 +56,15 @@ const statCards = reactive([{label: '知识库空间', value: '0', delta: '接�
   icon: Histogram
 }]);
 const recentKbs = ref<any[]>([]);
-const todos = ref<any[]>([]);
 const userName = ref('同事');
-const todayLabel = new Intl.DateTimeFormat('zh-CN', {weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'}).format(new Date());
-const visibilityLabel = (v?: string) => ({PRIVATE: '仅自己', DEPT: '本部门', ORG: '全公司', PUBLIC: '公开'} as Record<string, string>)[v || ''] || v || '-';
+const todayLabel = formatBeijingTime(new Date());
+const visibilityLabel = (v?: string) => ({PRIVATE: '仅自己', DEPT: '允许部门', ORG: '全公司', PUBLIC: '公开'} as Record<string, string>)[v || ''] || v || '-';
 
 onMounted(async () => {
   try {
     const [{data}, me] = await Promise.all([dashboardApi.summary(), authApi.me()]);
     stats.kb = data.knowledgeBaseCount;
     stats.recallRate = data.recallRate;
-    stats.pendingCount = data.pendingCount;
     userName.value = me.data.realName || me.data.username;
     statCards[0].value = String(data.knowledgeBaseCount);
     statCards[1].value = String(data.documentCount);
@@ -85,10 +73,9 @@ onMounted(async () => {
     recentKbs.value = (data.recentKbs || []).map((item: any) => ({
       ...item,
       visibility: item.visibility,
-      updated: item.updatedAt || item.updatedat,
+      updated: formatBeijingTime(item.updatedAt || item.updatedat),
       docs: item.docs ?? item.doccount
     }));
-    todos.value = data.todos || []
   } catch (error) {
     ElMessage.error(error instanceof Error ? error.message : '工作台数据加载失败')
   }
@@ -100,6 +87,9 @@ function categoryIcon(category?: string) {
   return FolderOpened
 }
 
-function done(t: string) {
-  ElMessage.success(`已打开：${t}`)
-}</script>
+</script>
+<style scoped>
+.dashboard-knowledge-grid {
+  grid-template-columns: minmax(0, 1fr);
+}
+</style>

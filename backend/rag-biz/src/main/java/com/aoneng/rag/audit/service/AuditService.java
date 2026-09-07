@@ -13,5 +13,5 @@ public interface AuditService {
      *
      * @return 审计日志列表响应
      */
-    AuditLogListVO listRecentLogs();
+    AuditLogListVO listRecentLogs(String keyword, String module, String action, int page, int pageSize);
 }

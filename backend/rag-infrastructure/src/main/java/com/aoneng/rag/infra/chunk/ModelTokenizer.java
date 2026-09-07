@@ -61,7 +61,13 @@ public final class ModelTokenizer {
                 return null;
             }
             try {
-                current = HuggingFaceTokenizer.newInstance(Path.of(path));
+                // DJL otherwise inherits the model's 512-token maximum and silently
+                // truncates long documents. Counting must see the complete input;
+                // chunk budgets are enforced by TextChunker instead.
+                current = HuggingFaceTokenizer.builder()
+                        .optTokenizerPath(Path.of(path))
+                        .optTruncation(false)
+                        .build();
                 tokenizer = current;
                 return current;
             } catch (Exception failure) {

@@ -35,15 +35,17 @@
         <el-option label="智能问答" value="智能问答"/>
         <el-option label="系统管理" value="系统管理"/>
       </el-select>
-      <el-button v-if="keyword || module" link type="primary" @click="resetFilters">清除筛选</el-button>
-      <span class="filter-count">显示 {{ filtered.length }} / {{ rows.length }} 条</span>
+      <el-button type="primary" plain @click="applyFilters">查询</el-button>
+      <el-button v-if="keyword || module" link type="primary" @click="resetFilters">重置</el-button>
+      <span class="filter-count">显示 {{ rows.length }} / {{ total }} 条</span>
     </div>
     <el-table :data="filtered" class="audit-table" v-loading="loading" row-key="id" empty-text="暂无匹配的审计记录">
-      <el-table-column prop="time" label="时间" width="175"/>
+      <el-table-column type="index" label="序号" width="70" align="center" :index="rowNumber" />
       <el-table-column prop="user" label="操作人" width="130"/>
       <el-table-column prop="module" label="模块" width="120"/>
       <el-table-column prop="action" label="操作"/>
       <el-table-column prop="detail" label="详情" min-width="220" show-overflow-tooltip/>
+      <el-table-column prop="time" label="时间" width="170"/>
       <el-table-column label="结果" width="90">
         <template #default="{row}">
           <el-tag :type="row.result?'success':'danger'" effect="light" size="small">{{
@@ -53,45 +55,60 @@
         </template>
       </el-table-column>
     </el-table>
+    <div class="table-pagination">
+      <el-pagination v-model:current-page="page" v-model:page-size="pageSize" :total="total"
+                     :page-sizes="[10, 20, 50]" layout="total, sizes, prev, pager, next, jumper"
+                     @current-change="load" @size-change="handleSizeChange" />
+    </div>
   </div>
 </template>
 <script setup lang="ts">import {computed, onMounted, ref} from 'vue';
 import {Calendar, CircleCheck, CircleClose, Document, Download, Refresh, Search} from '@element-plus/icons-vue';
 import {ElMessage} from 'element-plus';
 import {auditApi} from '../../api';
+import {formatBeijingTime} from '../../utils/datetime';
 
 const keyword = ref('');
 const module = ref('');
 const rows = ref<any[]>([]);
 const loading = ref(false);
 const lastUpdated = ref('');
-const filtered = computed(() => rows.value.filter(r => (!keyword.value || `${r.user}${r.action}${r.detail}`.includes(keyword.value)) && (!module.value || r.module === module.value)));
+const page = ref(1);
+const pageSize = ref(20);
+const total = ref(0);
+const filtered = computed(() => rows.value);
 const successCount = computed(() => rows.value.filter(r => Number(r.result) === 1).length);
 const failureCount = computed(() => rows.value.filter(r => Number(r.result) !== 1).length);
 const todayCount = computed(() => {
-  const today = new Date().toISOString().slice(0, 10);
+  const today = formatBeijingTime(new Date()).slice(0, 10);
   return rows.value.filter(r => String(r.time || '').slice(0, 10) === today).length;
 });
 
 async function load() {
   loading.value = true;
   try {
-    const {data} = await auditApi.logs();
-    rows.value = (Array.isArray(data) ? data : data.items).map((item: any) => ({
+    const {data} = await auditApi.logs({keyword: keyword.value || undefined, module: module.value || undefined, page: page.value, pageSize: pageSize.value});
+    const payload: any = Array.isArray(data) ? {items: data, total: data.length} : data;
+    rows.value = (payload.items || []).map((item: any) => ({
       ...item,
-      time: item.time || item.createdAt || item.createdat || '',
+      time: formatBeijingTime(item.time || item.createdAt || item.createdat),
       user: item.user || item.username || '',
       module: moduleLabel(item.module),
       action: actionLabel(item.action),
       detail: detailLabel(item.detail)
     }))
-    lastUpdated.value = new Intl.DateTimeFormat('zh-CN', {hour: '2-digit', minute: '2-digit'}).format(new Date())
+    total.value = Number(payload.total ?? rows.value.length)
+    lastUpdated.value = formatBeijingTime(new Date())
   } catch (error) {
     ElMessage.error(error instanceof Error ? error.message : '审计日志加载失败')
   } finally {
     loading.value = false
   }
 }
+
+function applyFilters() { page.value = 1; load() }
+function handleSizeChange(size: number) { pageSize.value = size; page.value = 1; load() }
+function rowNumber(index: number) { return (page.value - 1) * pageSize.value + index + 1 }
 
 onMounted(load)
 
@@ -122,8 +139,8 @@ function exportLog() {
     ElMessage.warning('当前没有可导出的记录')
     return
   }
-  const header = ['时间', '操作人', '模块', '操作', '详情', '结果'];
-  const lines = filtered.value.map(item => [item.time, item.user, item.module, item.action, item.detail, item.result ? '成功' : '失败']
+  const header = ['操作人', '模块', '操作', '详情', '时间', '结果'];
+  const lines = filtered.value.map(item => [item.user, item.module, item.action, item.detail, item.time, item.result ? '成功' : '失败']
     .map(value => `"${String(value ?? '').replace(/"/g, '""')}"`).join(','));
   const blob = new Blob([`\ufeff${[header.join(','), ...lines].join('\n')}`], {type: 'text/csv;charset=utf-8'});
   const url = URL.createObjectURL(blob);
@@ -140,4 +157,5 @@ function exportLog() {
 function resetFilters() {
   keyword.value = '';
   module.value = '';
+  applyFilters();
 }</script>

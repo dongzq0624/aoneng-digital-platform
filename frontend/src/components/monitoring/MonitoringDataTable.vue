@@ -11,16 +11,25 @@
       </tr>
       </thead>
       <tbody>
-      <tr v-for="row in rows" :key="row.docId">
+      <tr v-for="row in pagedRows" :key="row.docId">
         <slot :row="row"/>
       </tr>
       </tbody>
-    </table>
+      </table>
+    <el-pagination v-if="rows.length" v-model:current-page="page" v-model:page-size="pageSize"
+                   :total="rows.length" :page-sizes="[5, 10, 20]"
+                   layout="total, sizes, prev, pager, next" />
     <div v-else class="empty-inline">{{ emptyText }}</div>
   </div>
 </template>
 <script setup lang="ts">
-defineProps<{ title: string; rows: Record<string, any>[]; emptyText: string; columns?: string[] }>()
+import {computed, ref, watch} from 'vue'
+
+const props = defineProps<{ title: string; rows: Record<string, any>[]; emptyText: string; columns?: string[] }>()
+const page = ref(1)
+const pageSize = ref(10)
+const pagedRows = computed(() => props.rows.slice((page.value - 1) * pageSize.value, page.value * pageSize.value))
+watch(() => props.rows, () => { page.value = 1 })
 </script>
 <style scoped>
 .table-wrap {
@@ -47,7 +56,7 @@ table {
 
 th {
   padding: 8px 10px;
-  text-align: left;
+  text-align: center;
   background: #f4f3ee;
   color: #6b7280;
   font-weight: 600;
@@ -57,6 +66,7 @@ th {
 
 td {
   padding: 9px 10px;
+  text-align: center;
   border-bottom: 1px solid #f0f0ed;
   color: #1a1b1c
 }
@@ -67,4 +77,6 @@ td {
   color: #9aa1ad;
   font-size: 12px
 }
+
+.el-pagination { justify-content: center; margin-top: 12px; }
 </style>

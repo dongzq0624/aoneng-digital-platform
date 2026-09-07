@@ -28,6 +28,7 @@ public interface RagChatService {
 
     Flux<ServerSentEvent<Object>> streamAnswer(KbScope scope,
                                                PlatformRepository.ChatTurn turn,
+                                               String username,
                                                String question,
                                                List<Long> permittedKbIds);
 
@@ -44,6 +45,7 @@ public interface RagChatService {
                                      List<Long> permittedKbIds,
                                      List<Long> chunkIds,
                                      Map<String, Map<String, Object>> citationsBySource,
+                                     List<Map<String, Object>> citations,
                                      Map<String, Object> trace);
 
     void failTurn(PlatformRepository.ChatTurn turn, String message);
