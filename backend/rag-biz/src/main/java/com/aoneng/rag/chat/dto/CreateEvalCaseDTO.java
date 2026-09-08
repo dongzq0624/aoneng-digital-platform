@@ -20,6 +20,9 @@ public record CreateEvalCaseDTO(
 
         List<Long> expectedChunkIds,
 
+        @Size(max = 20000, message = "参考答案长度不能超过 20000 个字符")
+        String referenceAnswer,
+
         String note,
 
         Boolean enabled) {

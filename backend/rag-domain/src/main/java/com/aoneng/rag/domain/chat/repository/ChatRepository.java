@@ -107,5 +107,5 @@ public interface ChatRepository {
     Map<String, Object> findEvalCaseById(long id);
 
     /** 创建评测用例。 */
-    long createEvalCase(String question, String expectedChunkIds, boolean enabled, String note);
+    long createEvalCase(String question, String expectedChunkIds, String referenceAnswer, boolean enabled, String note);
 }

@@ -633,11 +633,12 @@ public class PlatformRepository {
         KbRetrievalEvalCasePO po = new KbRetrievalEvalCasePO();
         po.setQuestion(question);
         po.setExpectedChunkIds(arrayLiteral(expected));
+        po.setReferenceAnswer(stringOrNull(request.get("referenceAnswer")));
         po.setEnabled(request.get("enabled") == null ? Boolean.TRUE
                 : request.get("enabled") instanceof Boolean b ? b
                 : Boolean.parseBoolean(String.valueOf(request.get("enabled"))));
         po.setNote(stringOrNull(request.get("note")));
-        long id = chatRepository.createEvalCase(question, arrayLiteral(expected),
+        long id = chatRepository.createEvalCase(question, arrayLiteral(expected), po.getReferenceAnswer(),
                 po.getEnabled(), po.getNote());
         return retrievalEvalCase(id);
     }

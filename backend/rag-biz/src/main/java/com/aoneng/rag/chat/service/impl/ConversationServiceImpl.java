@@ -121,6 +121,7 @@ public class ConversationServiceImpl implements ConversationService {
         Map<String, Object> payload = new HashMap<>();
         payload.put("question", req.question());
         payload.put("expectedChunkIds", req.expectedChunkIds());
+        payload.put("referenceAnswer", req.referenceAnswer());
         payload.put("note", req.note());
         payload.put("enabled", req.enabled() == null ? Boolean.TRUE : req.enabled());
         return toEvalCase(repo.createRetrievalEvalCase(payload));
@@ -204,6 +205,7 @@ public class ConversationServiceImpl implements ConversationService {
                 longOrZero(row.get("id")),
                 stringOrNull(row.get("question")),
                 longList(row.get("expectedChunkIds")),
+                stringOrNull(row.get("referenceAnswer")),
                 row.get("enabled") == null ? Boolean.TRUE : (row.get("enabled") instanceof Boolean b ? b : Boolean.parseBoolean(String.valueOf(row.get("enabled")))),
                 stringOrNull(row.get("note")),
                 aggregate instanceof Map<?, ?> m ? (Map<String, Object>) m : Map.of(),

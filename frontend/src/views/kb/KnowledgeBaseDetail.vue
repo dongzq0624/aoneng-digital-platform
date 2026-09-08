@@ -448,11 +448,11 @@ async function refreshProcessingState(docId: number) {
 .parent-chunk-head { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; border-bottom: 1px solid var(--line, #e5e7eb); color: var(--ink, #1f2937); font-weight: 600; }
 .parent-chunk-head small { color: var(--text-muted, #8b95a7); font-weight: 400; }
 .parent-chunk-content { margin: 0; padding: 14px; max-height: 360px; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; color: var(--ink, #1f2937); font: 13px/1.7 ui-monospace, SFMono-Regular, Consolas, monospace; }
-:global(html.dark) .document-preview-body { border-color:var(--line,#334155); background:var(--surface-soft,#111c2d); }
-:global(html.dark) .preview-text { color:var(--ink,#e5ecf8); }
-:global(html.dark) .parent-chunk-item { border-color: var(--line,#334155); background: var(--surface-soft,#111c2d); }
-:global(html.dark) .parent-chunk-head { border-color: var(--line,#334155); color: var(--ink,#e5ecf8); }
-:global(html.dark) .parent-chunk-content { color: var(--ink,#e5ecf8); }
+:global(html.dark .document-preview-body) { border-color:var(--line,#334155); background:var(--surface-soft,#111c2d); }
+:global(html.dark .preview-text) { color:var(--ink,#e5ecf8); }
+:global(html.dark .parent-chunk-item) { border-color: var(--line,#334155); background: var(--surface-soft,#111c2d); }
+:global(html.dark .parent-chunk-head) { border-color: var(--line,#334155); color: var(--ink,#e5ecf8); }
+:global(html.dark .parent-chunk-content) { color: var(--ink,#e5ecf8); }
 
 @media (max-width: 760px) {
   .detail-summary {

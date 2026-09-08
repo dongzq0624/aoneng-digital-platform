@@ -234,6 +234,26 @@ onMounted(load)
   padding: 8px 4px;
 }
 
+:global(html.dark .role-list-panel),
+:global(html.dark .role-permission-panel) {
+  border-color: #3b4b66;
+  background: #151f32;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, .22);
+}
+:global(html.dark .permission-tree) {
+  border: 1px solid #34445e;
+  border-radius: 8px;
+  background: #1a2740;
+}
+:global(html.dark .permission-tree) :deep(.el-tree-node__content) { color: #dce5f3; }
+:global(html.dark .permission-tree) :deep(.el-tree-node__content:hover),
+:global(html.dark .permission-tree) :deep(.el-tree-node:focus > .el-tree-node__content) { background: #293b5e; }
+:global(html.dark .role-permission-panel) :deep(.el-empty) {
+  border-color: #465976;
+  background: #1a2740;
+}
+:global(html.dark .role-permission-panel) :deep(.el-empty__description) { color: #aebbd0; }
+
 @media (max-width: 900px) {
   .role-layout {
     grid-template-columns:1fr;

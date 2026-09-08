@@ -27,6 +27,10 @@ public class KbRetrievalEvalCasePO {
     @TableField("expected_chunk_ids")
     private String expectedChunkIds;
 
+    /** 人工确认的参考答案，用于 RAGAS context recall。 */
+    @TableField("reference_answer")
+    private String referenceAnswer;
+
     /** 是否启用该评测用例。 */
     private Boolean enabled;
 

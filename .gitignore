@@ -5,6 +5,7 @@ dist/
 
 # ---------- Java / Maven ----------
 **/target/
+**/__pycache__/
 **/.mvn/wrapper/maven-wrapper.jar
 *.class
 *.jar

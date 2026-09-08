@@ -11,6 +11,7 @@ public record EvalCaseVO(
         long id,
         String question,
         List<Long> expectedChunkIds,
+        String referenceAnswer,
         Boolean enabled,
         String note,
         Map<String, Object> aggregate,

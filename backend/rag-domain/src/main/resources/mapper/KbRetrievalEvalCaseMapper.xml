@@ -5,6 +5,7 @@
     <select id="selectAllCases" resultType="java.util.LinkedHashMap">
         SELECT id, question,
                expected_chunk_ids AS "expectedChunkIdsRaw",
+               reference_answer AS "referenceAnswer",
                enabled, note,
                created_at AS "createdAt", updated_at AS "updatedAt"
           FROM kb_retrieval_eval_case
@@ -14,6 +15,7 @@
     <select id="selectCaseById" resultType="java.util.LinkedHashMap">
         SELECT id, question,
                expected_chunk_ids AS "expectedChunkIdsRaw",
+               reference_answer AS "referenceAnswer",
                enabled, note,
                created_at AS "createdAt", updated_at AS "updatedAt"
           FROM kb_retrieval_eval_case
@@ -21,7 +23,7 @@
     </select>
 
     <insert id="insertCase" useGeneratedKeys="true" keyProperty="id">
-        INSERT INTO kb_retrieval_eval_case(question, expected_chunk_ids, enabled, note)
-        VALUES(#{question}, CAST(#{expectedChunkIds} AS bigint[]), #{enabled}, #{note})
+        INSERT INTO kb_retrieval_eval_case(question, expected_chunk_ids, reference_answer, enabled, note)
+        VALUES(#{question}, CAST(#{expectedChunkIds} AS bigint[]), #{referenceAnswer}, #{enabled}, #{note})
     </insert>
 </mapper>

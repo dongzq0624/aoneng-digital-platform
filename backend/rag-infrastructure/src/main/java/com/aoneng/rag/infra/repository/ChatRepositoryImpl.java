@@ -215,10 +215,11 @@ public class ChatRepositoryImpl implements ChatRepository {
     }
 
     @Override
-    public long createEvalCase(String question, String expectedChunkIds, boolean enabled, String note) {
+    public long createEvalCase(String question, String expectedChunkIds, String referenceAnswer, boolean enabled, String note) {
         KbRetrievalEvalCasePO p = new KbRetrievalEvalCasePO();
         p.setQuestion(question);
         p.setExpectedChunkIds(expectedChunkIds);
+        p.setReferenceAnswer(referenceAnswer);
         p.setEnabled(enabled);
         p.setNote(note);
         evalMapper.insertCase(p);

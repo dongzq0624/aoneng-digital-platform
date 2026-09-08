@@ -114,6 +114,26 @@ services:
       retries: 30
       start_period: 60s
 
+  ragas:
+    build:
+      context: ./backend/ragas-service
+    environment:
+      DATABASE_URL: postgresql://${PG_USER:-rag}:${PG_PASSWORD:-rag123456}@postgres:5432/${PG_DB:-rag_platform}
+      RAGAS_API_KEY: "${DASHSCOPE_API_KEY:-}"
+      RAGAS_BASE_URL: "${RAGAS_BASE_URL:-https://dashscope.aliyuncs.com/compatible-mode/v1}"
+      RAGAS_LLM_MODEL: "${RAGAS_LLM_MODEL:-qwen-plus}"
+      RAGAS_EMBEDDING_MODEL: "${RAGAS_EMBEDDING_MODEL:-text-embedding-v4}"
+    depends_on:
+      postgres: {condition: service_healthy}
+    ports: ["8095:8095"]
+    networks: [rag-net]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8095/health', timeout=3)"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+
   backend:
     build:
       context: .
@@ -158,11 +178,12 @@ services:
       LANGFUSE_PUBLIC_KEY: "${LANGFUSE_PUBLIC_KEY:-}"
       LANGFUSE_SECRET_KEY: "${LANGFUSE_SECRET_KEY:-}"
       RAG_OBSERVABILITY_ENVIRONMENT: "${RAG_OBSERVABILITY_ENVIRONMENT:-docker}"
-      RAG_EVALUATION_ENABLED: "${RAG_EVALUATION_ENABLED:-false}"
+      RAG_EVALUATION_ENABLED: "${RAG_EVALUATION_ENABLED:-true}"
       RAGAS_ENDPOINT: "${RAGAS_ENDPOINT:-http://ragas:8095}"
       GEPA_ENABLED: "${GEPA_ENABLED:-false}"
       GEPA_ENDPOINT: "${GEPA_ENDPOINT:-http://gepa:8096}"
       RAG_EVALUATION_POLL_MS: "${RAG_EVALUATION_POLL_MS:-60000}"
+      RAG_EVALUATION_BACKFILL_ON_START: "${RAG_EVALUATION_BACKFILL_ON_START:-true}"
     volumes:
       - ./backend/models/qwen3-embedding-tokenizer:/models/qwen3-embedding-tokenizer:ro
     depends_on:
@@ -171,6 +192,7 @@ services:
       milvus: {condition: service_healthy}
       docling: {condition: service_healthy}
       paddleocr: {condition: service_healthy}
+      ragas: {condition: service_healthy}
     ports: ["8080:8080"]
     networks: [rag-net]
     healthcheck:

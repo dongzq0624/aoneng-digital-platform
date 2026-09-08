@@ -121,6 +121,8 @@ const error = ref('')
 const windowDays = ref(30)
 const evaluation = ref<Partial<RagasEvaluation>>({metrics: {} as RagasEvaluation['metrics'], trend: []})
 const trendChart = ref<HTMLElement>()
+const themeVersion = ref(0)
+let themeObserver: MutationObserver | undefined
 let chart: echarts.ECharts | undefined
 
 const metricDefinitions: Array<{key: MetricKey; label: string; color: string; description: string; formula: string}> = [
@@ -228,7 +230,10 @@ function lastPoint(values: number[]): TrendPoint {
 }
 function thresholdY(value: number) { return pointY(value) }
 
-const trendOption = computed(() => ({
+const trendOption = computed(() => {
+  // Rebuild ECharts colors when the global theme class changes.
+  themeVersion.value
+  return {
   tooltip: {
     trigger: 'axis',
     valueFormatter: (value: number) => Number(value).toFixed(3),
@@ -238,13 +243,13 @@ const trendOption = computed(() => ({
     type: 'category',
     boundaryGap: false,
     data: (evaluation.value.trend || []).map(item => item.period),
-    axisLabel: {color: '#86909c', fontSize: 11},
-    axisLine: {lineStyle: {color: '#e5e7eb'}},
+    axisLabel: {color: document.documentElement.classList.contains('dark') ? '#aebbd0' : '#86909c', fontSize: 11},
+    axisLine: {lineStyle: {color: document.documentElement.classList.contains('dark') ? '#3b4b66' : '#e5e7eb'}},
   },
   yAxis: {
     type: 'value', min: 0, max: 1, interval: .25,
-    axisLabel: {color: '#86909c', fontSize: 11, formatter: (value: number) => value.toFixed(2)},
-    splitLine: {lineStyle: {color: '#edf0f5'}},
+    axisLabel: {color: document.documentElement.classList.contains('dark') ? '#aebbd0' : '#86909c', fontSize: 11, formatter: (value: number) => value.toFixed(2)},
+    splitLine: {lineStyle: {color: document.documentElement.classList.contains('dark') ? '#2c3b55' : '#edf0f5'}},
   },
   series: metricDefinitions.map(definition => ({
     name: definition.label,
@@ -257,7 +262,8 @@ const trendOption = computed(() => ({
     lineStyle: {width: 2, color: definition.color},
     itemStyle: {color: definition.color},
   })),
-}))
+  }
+})
 
 function renderTrend() {
   nextTick(() => {
@@ -288,9 +294,16 @@ watch(() => evaluation.value.trend, renderTrend, {deep: true})
 onMounted(() => {
   void load()
   window.addEventListener('resize', renderTrend)
+  themeObserver = new MutationObserver(() => {
+    themeVersion.value++
+    renderTrend()
+  })
+  themeObserver.observe(document.documentElement, {attributes: true, attributeFilter: ['class']})
 })
 onBeforeUnmount(() => {
   window.removeEventListener('resize', renderTrend)
+  themeObserver?.disconnect()
+  themeObserver = undefined
   chart?.dispose()
 })
 </script>
@@ -342,8 +355,46 @@ onBeforeUnmount(() => {
 .trend-legend { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 13px; color: #687385; font-size: 11px; }.trend-legend span { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }.trend-legend i { width: 8px; height: 8px; border-radius: 2px; }
 .ragas-trend-chart { height: 262px; width: 100%; }.trend-empty { position: absolute; top: 58%; left: 50%; color: #98a3b3; font-size: 12px; transform: translate(-50%, -50%); }
 .metric-definitions { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-top: 16px; }.metric-definitions article { display: flex; gap: 9px; min-width: 0; padding: 12px; border: 1px solid var(--ragas-border); border-radius: 8px; background: rgba(255,255,255,.72); }.definition-marker { width: 3px; flex: 0 0 3px; border-radius: 3px; }.metric-definitions b { color: #4e5969; font-size: 12px; }.metric-definitions p { margin: 5px 0 0; color: #86909c; font-size: 11px; line-height: 1.55; }
-:global(html.dark) .ragas-page { --ragas-border: #314057; --ragas-muted: #aebbd0; --ragas-ink: #edf3ff; --ragas-surface: #182338; background: #0f1726; }.ragas-page :deep(.el-select__wrapper) { background: var(--ragas-surface); }.ragas-page :deep(.el-select__selected-item) { color: var(--ragas-ink); }
-:global(html.dark) .summary-item, :global(html.dark) .metric-stat-row { border-color: #314057; }:global(html.dark) .metric-name, :global(html.dark) .metric-stat-row b, :global(html.dark) .metric-definitions b { color: #dce7fa; }:global(html.dark) .metric-definitions article { background: #182338; }
+:global(html.dark .ragas-page) { --ragas-border: #314057; --ragas-muted: #aebbd0; --ragas-ink: #edf3ff; --ragas-surface: #182338; background: #0f1726; }
+:global(html.dark .ragas-page) :deep(.el-select__wrapper) { background: var(--ragas-surface); }
+:global(html.dark .ragas-page) :deep(.el-select__selected-item) { color: var(--ragas-ink); }
+:global(html.dark .ragas-page) .summary-item,
+:global(html.dark .ragas-page) .metric-stat-row { border-color: #314057; }
+:global(html.dark .ragas-page) .metric-name,
+:global(html.dark .ragas-page) .metric-stat-row b,
+:global(html.dark .ragas-page) .metric-definitions b { color: #dce7fa; }
+:global(html.dark .ragas-page) .metric-definitions article { background: #182338; }
+:global(html.dark .ragas-page) {
+  --ragas-border: #3b4b66;
+  --ragas-muted: #b7c3d6;
+  --ragas-ink: #f5f7ff;
+  --ragas-surface: #151f32;
+  background: #0b1220;
+}
+:global(html.dark .ragas-page) .ragas-head .eyebrow { color: #91aaff; }
+:global(html.dark .ragas-page) .ragas-summary,
+:global(html.dark .ragas-page) .ragas-metric-card,
+:global(html.dark .ragas-page) .ragas-trend-card { border-color: #3b4b66; background: #151f32; box-shadow: 0 8px 24px rgba(0, 0, 0, .22); }
+:global(html.dark .ragas-page) .summary-item { border-color: #34445e; }
+:global(html.dark .ragas-page) .summary-item > span,
+:global(html.dark .ragas-page) .summary-item small,
+:global(html.dark .ragas-page) .metric-threshold,
+:global(html.dark .ragas-page) .metric-sparkline > span,
+:global(html.dark .ragas-page) .trend-head p,
+:global(html.dark .ragas-page) .trend-empty { color: #aebbd0; }
+:global(html.dark .ragas-page) .summary-item strong,
+:global(html.dark .ragas-page) .trend-head h2 { color: #f5f7ff; }
+:global(html.dark .ragas-page) .metric-name,
+:global(html.dark .ragas-page) .metric-stat-row b,
+:global(html.dark .ragas-page) .metric-definitions b { color: #dce5f3; }
+:global(html.dark .ragas-page) .metric-stat-row { border-color: #34445e; }
+:global(html.dark .ragas-page) .metric-stat-row span,
+:global(html.dark .ragas-page) .trend-legend { color: #aebbd0; }
+:global(html.dark .ragas-page) .metric-help { border-color: #607292; color: #c3d0e5; }
+:global(html.dark .ragas-page) .metric-score { color: #ff8796; }
+:global(html.dark .ragas-page) .ragas-metric-card.pass .metric-score { color: #66d7b7; }
+:global(html.dark .ragas-page) .ragas-metric-card.empty .metric-score { color: #9eacc2; }
+:global(html.dark .ragas-page) .metric-definitions article { border-color: #3b4b66; background: #1a2740; }
 @media (max-width: 1180px) { .ragas-metric-grid, .metric-definitions { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 760px) { .ragas-page { margin: -20px -14px -36px; padding: 20px 14px 36px; }.ragas-head { align-items: flex-start; flex-direction: column; gap: 16px; }.ragas-actions { width: 100%; }.ragas-actions :deep(.el-select), .ragas-actions :deep(.el-button) { flex: 1; }.ragas-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }.summary-item:nth-child(2) { border-right: 0; }.summary-item:nth-child(-n + 2) { border-bottom: 1px solid var(--ragas-border); }.summary-item { padding: 14px; }.summary-item strong { font-size: 21px; }.summary-item .summary-date { font-size: 14px; }.ragas-metric-grid, .metric-definitions { grid-template-columns: 1fr; gap: 10px; }.trend-head { flex-direction: column; }.trend-legend { justify-content: flex-start; }.ragas-trend-chart { height: 250px; }.ragas-trend-card { padding: 16px 12px; }.trend-empty { width: 80%; text-align: center; } }
 @media (prefers-reduced-motion: reduce) { .ragas-page * { transition: none !important; } }

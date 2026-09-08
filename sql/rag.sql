@@ -389,6 +389,7 @@ FROM kb_chat_message m WHERE m.qa_record_id = q.id AND q.assistant_message_id IS
 CREATE TABLE IF NOT EXISTS kb_retrieval_eval_case (
     id BIGSERIAL PRIMARY KEY, question TEXT NOT NULL,
     expected_chunk_ids BIGINT[] NOT NULL DEFAULT '{}', enabled BOOLEAN NOT NULL DEFAULT TRUE,
+    reference_answer TEXT,
     note VARCHAR(500), created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );

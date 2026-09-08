@@ -80,6 +80,7 @@ rag:
     optimizer-enabled: ${GEPA_ENABLED:false}
     optimizer-endpoint: ${GEPA_ENDPOINT:http://gepa:8096}
     poll-ms: ${RAG_EVALUATION_POLL_MS:60000}
+    backfill-on-start: ${RAG_EVALUATION_BACKFILL_ON_START:true}
 docling:
   enabled: ${DOCLING_ENABLED:false}
   endpoint: ${DOCLING_ENDPOINT:http://localhost:8090}

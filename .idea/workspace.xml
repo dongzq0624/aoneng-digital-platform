@@ -6,14 +6,29 @@
   <component name="ChangeListManager">
     <list default="true" id="bbcf13ae-cb9e-43a8-8224-323ad3b04ac0" name="更改" comment="">
       <change beforePath="$PROJECT_DIR$/.env.example" beforeDir="false" afterPath="$PROJECT_DIR$/.env.example" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/Dockerfile" beforeDir="false" afterPath="$PROJECT_DIR$/backend/Dockerfile" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/RAG知识库质量监控仪表盘.html" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/aoneng/rag/application/repository/PlatformRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/aoneng/rag/application/repository/PlatformRepository.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/aoneng/rag/chat/dto/CreateEvalCaseDTO.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/aoneng/rag/chat/dto/CreateEvalCaseDTO.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/aoneng/rag/chat/service/impl/ConversationServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/aoneng/rag/chat/service/impl/ConversationServiceImpl.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/aoneng/rag/chat/vo/EvalCaseVO.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/aoneng/rag/chat/vo/EvalCaseVO.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/aoneng/rag/evaluation/RagEvaluationService.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/java/com/aoneng/rag/evaluation/RagEvaluationService.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/backend/rag-biz/src/main/resources/application.yml" beforeDir="false" afterPath="$PROJECT_DIR$/backend/rag-biz/src/main/resources/application.yml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/rag-domain/src/main/resources/mapper/KbBaseMapper.xml" beforeDir="false" afterPath="$PROJECT_DIR$/backend/rag-domain/src/main/resources/mapper/KbBaseMapper.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/rag-infrastructure/src/main/java/com/aoneng/rag/infra/chunk/ModelTokenizer.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/rag-infrastructure/src/main/java/com/aoneng/rag/infra/chunk/ModelTokenizer.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/rag-domain/src/main/java/com/aoneng/rag/domain/chat/repository/ChatRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/rag-domain/src/main/java/com/aoneng/rag/domain/chat/repository/ChatRepository.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/rag-domain/src/main/java/com/aoneng/rag/domain/kb/po/KbRetrievalEvalCasePO.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/rag-domain/src/main/java/com/aoneng/rag/domain/kb/po/KbRetrievalEvalCasePO.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/rag-domain/src/main/resources/mapper/KbRetrievalEvalCaseMapper.xml" beforeDir="false" afterPath="$PROJECT_DIR$/backend/rag-domain/src/main/resources/mapper/KbRetrievalEvalCaseMapper.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/rag-infrastructure/src/main/java/com/aoneng/rag/infra/repository/ChatRepositoryImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/rag-infrastructure/src/main/java/com/aoneng/rag/infra/repository/ChatRepositoryImpl.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/docker-compose.yml" beforeDir="false" afterPath="$PROJECT_DIR$/docker-compose.yml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/styles.scss" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/styles.scss" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/views/chat/Chat.vue" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/views/chat/Chat.vue" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/views/kb/KnowledgeBaseDetail.vue" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/views/kb/KnowledgeBaseDetail.vue" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/frontend/src/views/kb/KnowledgeBases.vue" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/views/kb/KnowledgeBases.vue" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/views/monitoring/FileProcessing.vue" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/views/monitoring/FileProcessing.vue" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/views/monitoring/Monitoring.vue" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/views/monitoring/Monitoring.vue" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/views/system/Roles.vue" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/views/system/Roles.vue" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/sql/rag.sql" beforeDir="false" afterPath="$PROJECT_DIR$/sql/rag.sql" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/手撕代码.md" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -129,7 +144,7 @@
       <workItem from="1788484345238" duration="9111000" />
       <workItem from="1788494501012" duration="18758000" />
       <workItem from="1788594078253" duration="15652000" />
-      <workItem from="1788744341596" duration="28062000" />
+      <workItem from="1788744341596" duration="36051000" />
     </task>
     <servers />
   </component>
